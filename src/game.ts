@@ -1,16 +1,17 @@
 import { Blast } from "./blast";
+import { Platform } from "./platform";
 import { Player } from "./player";
 import { box, safeGetElementById } from "./util";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
     private static readonly gameDiv = safeGetElementById("gameDiv");
-    private static readonly wall1 = safeGetElementById("wall1");
     private xSize = window.innerWidth - 50; // decides this.box width in pixels -- SET AUTOMATICALLY TO SCREEN SIZE
     private readonly ySize = 500; // decides this.box height in pixels
     private readonly keyState: Record<string, boolean> = {};
     private readonly players: Player[] = [];
     private blasts: Blast[] = [];
+    private platforms: Platform[] = [];
     private frameIntervalId?: NodeJS.Timeout; // higher number means slower game
 
     constructor(private readonly config: any) {
@@ -96,9 +97,28 @@ export class Game {
         box.style.width = this.xSize + "px";
         box.style.height = this.ySize + "px";
 
-        Game.wall1.style.width = (this.xSize * 3) / 4 + "px";
-        Game.wall1.style.top = (this.ySize * 3) / 4 + "px";
-        Game.wall1.style.left = this.xSize / 8 + "px";
+        this.platforms.push(
+            new Platform(
+                {
+                    height: 10,
+                    width: (this.xSize * 3) / 4,
+                },
+                {
+                    x: this.xSize / 8,
+                    y: (this.ySize * 3) / 4,
+                },
+            ),
+            new Platform(
+                {
+                    height: 10,
+                    width: (this.xSize * 3) / 8,
+                },
+                {
+                    x: this.xSize / 8 + (this.xSize * 3) / 4 / 4,
+                    y: (this.ySize * 3) / 8,
+                },
+            ),
+        );
 
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
@@ -133,6 +153,7 @@ export class Game {
         Game.gameDiv.style.display = "none";
         Game.menuDiv.style.display = "block";
         this.blasts.forEach((blast) => blast.delete());
+        this.platforms.forEach((platform) => platform.delete());
         if (this.frameIntervalId) {
             clearInterval(this.frameIntervalId);
         }
@@ -142,8 +163,6 @@ export class Game {
         if (this.xSize != window.innerWidth - 50) {
             this.xSize = window.innerWidth - 50;
             box.style.width = this.xSize + "px";
-            Game.wall1.style.width = (this.xSize * 3) / 4 + "px";
-            Game.wall1.style.left = this.xSize / 8 + "px";
         } // update window size if it has changed
 
         const playersLeft = this.players.filter((player) => !player.isDead);
@@ -298,6 +317,7 @@ export class Game {
             if (player.momentumX < -5) player.momentumX = player.momentumX / -2;
             else if (player.momentumX < 0) player.momentumX = 0;
         }
+
         if (player.posY > this.ySize - this.config.playerSize) {
             // top and bottom walls
             player.posY = this.ySize - this.config.playerSize;
@@ -306,40 +326,9 @@ export class Game {
             player.posY = 0;
         }
 
-        if (
-            player.posX > this.xSize / 8 - this.config.playerSize &&
-            player.posX < (this.xSize * 7) / 8 &&
-            player.posY > (this.ySize * 3) / 4 - this.config.playerSize &&
-            player.posY < (this.ySize * 3) / 4 - this.config.playerSize / 2
-        ) {
-            player.standing = true;
-            player.posY = (this.ySize * 3) / 4 - this.config.playerSize; // top
-            player.momentumY = 0;
-        } else if (
-            player.posX > this.xSize / 8 - this.config.playerSize &&
-            player.posX < (this.xSize * 7) / 8 &&
-            player.posY > (this.ySize * 3) / 4 &&
-            player.posY < (this.ySize * 3) / 4 + 10
-        ) {
-            player.posY = (this.ySize * 3) / 4 + 10; // bottom
-            player.momentumY = 0;
-        } else if (
-            player.posX > this.xSize / 8 - this.config.playerSize &&
-            player.posX < (this.xSize * 7) / 8 &&
-            player.posY > (this.ySize * 3) / 4 &&
-            player.posY < (this.ySize * 3) / 4 + 10
-        ) {
-            //player.posY = (this.ySize * 3 / 4) + 10; // left
-            //player.momentumY = 0;
-        } else if (
-            player.posX > this.xSize / 8 - this.config.playerSize &&
-            player.posX < (this.xSize * 7) / 8 &&
-            player.posY > (this.ySize * 3) / 4 &&
-            player.posY < (this.ySize * 3) / 4 + 10
-        ) {
-            //player.posY = (this.ySize * 3 / 4) + 10; // right
-            //player.momentumY = 0;
-        }
+        this.platforms.forEach((platform) => {
+            player.checkCollisionWithPlatform(platform);
+        });
 
         if (player.momentumY === 0 && player.alreadyJumped > 0) {
             // update jump counter
