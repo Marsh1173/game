@@ -23,46 +23,72 @@ export class Game {
                 "KeyA",
                 "KeyD",
                 safeGetElementById("myAnimation1"),
-                "red",
+                "FireBrick",
             );
             this.players.push(player1);
         }
         if (config.playerCount > 1) {
             const player2 = new Player(
-                (this.xSize * 7) / 8 - config.playerSize,
+                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 1 / (config.playerCount - 1)),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "ArrowUp",
                 "ArrowDown",
                 "ArrowLeft",
                 "ArrowRight",
                 safeGetElementById("myAnimation2"),
-                "blue",
+                "Navy",
             );
             this.players.push(player2);
         }
         if (config.playerCount > 2) {
             const player3 = new Player(
-                ((this.xSize - config.playerSize) * (config.playerCount - 2)) / (config.playerCount - 1),
+                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 2 / (config.playerCount - 1)),
                 (this.ySize * 3) / 4 - config.playerSize,
-                "KeyI",
-                "KeyK",
-                "KeyJ",
+                "KeyP",
+                "Semicolon",
                 "KeyL",
+                "Quote",
                 safeGetElementById("myAnimation3"),
-                "green",
+                "OliveDrab",
             );
             this.players.push(player3);
         }
         if (config.playerCount > 3) {
             const player4 = new Player(
-                (this.xSize - config.playerSize) / 3,
+                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 3 / (config.playerCount - 1)),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "Numpad8",
                 "Numpad5",
                 "Numpad4",
                 "Numpad6",
                 safeGetElementById("myAnimation4"),
-                "purple",
+                "orchid   ",
+            );
+            this.players.push(player4);
+        }
+        if (config.playerCount > 4) {
+            const player4 = new Player(
+                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 4 / (config.playerCount - 1)),
+                (this.ySize * 3) / 4 - config.playerSize,
+                "Home",
+                "End",
+                "Delete",
+                "PageDown",
+                safeGetElementById("myAnimation5"),
+                "Turquoise",
+            );
+            this.players.push(player4);
+        }
+        if (config.playerCount > 5) {
+            const player4 = new Player(
+                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 5 / (config.playerCount - 1)),
+                (this.ySize * 3) / 4 - config.playerSize,
+                "KeyY",
+                "KeyH",
+                "KeyG",
+                "KeyJ",
+                safeGetElementById("myAnimation6"),
+                "Orange",
             );
             this.players.push(player4);
         }

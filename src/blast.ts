@@ -2,7 +2,7 @@ import { config } from "./config";
 import { box } from "./util";
 
 export class Blast {
-    public opacity = 1.0;
+    public opacity = 0.5;
     private elem: HTMLDivElement;
 
     constructor(public posX: number, public posY: number, public color: string, public size: number = config.playerSize) {
@@ -18,9 +18,9 @@ export class Blast {
 
     public update() {
         // reduce blast opacity
-        this.posX -= config.playerSize / 6;
-        this.posY -= config.playerSize / 6;
-        this.size += config.playerSize / 3;
+        this.posX -= config.playerSize / 4;
+        this.posY -= config.playerSize / 4;
+        this.size += config.playerSize / 2;
         this.opacity -= 0.05;
         this.updateStyle();
         if (this.opacity <= 0) {
