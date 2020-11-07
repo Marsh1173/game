@@ -1,18 +1,16 @@
 import { Blast } from "./blast";
 import { Player } from "./player";
-import { safeGetElementById } from "./util";
+import { box, safeGetElementById } from "./util";
 
 export class Game {
-    private static readonly box = safeGetElementById("myContainer");
     private static readonly menuDiv = safeGetElementById("menuDiv");
     private static readonly gameDiv = safeGetElementById("gameDiv");
-    private static readonly blastBox = safeGetElementById("blast1");
     private static readonly wall1 = safeGetElementById("wall1");
     private xSize = window.innerWidth - 50; // decides this.box width in pixels -- SET AUTOMATICALLY TO SCREEN SIZE
     private readonly ySize = 500; // decides this.box height in pixels
     private readonly keyState: Record<string, boolean> = {};
     private readonly players: Player[] = [];
-    private readonly blasts: Blast[] = [];
+    private blasts: Blast[] = [];
     private frameIntervalId?: NodeJS.Timeout; // higher number means slower game
 
     constructor(private readonly config: any) {
@@ -28,8 +26,6 @@ export class Game {
                 "red",
             );
             this.players.push(player1);
-            const blast1 = new Blast(0, 0, safeGetElementById("blast1"), "red", 0);
-            this.blasts.push(blast1);
         }
         if (config.playerCount > 1) {
             const player2 = new Player(
@@ -43,8 +39,6 @@ export class Game {
                 "blue",
             );
             this.players.push(player2);
-            const blast2 = new Blast(0, 0, safeGetElementById("blast2"), "blue", 0);
-            this.blasts.push(blast2);
         }
         if (config.playerCount > 2) {
             const player3 = new Player(
@@ -58,8 +52,6 @@ export class Game {
                 "green",
             );
             this.players.push(player3);
-            const blast3 = new Blast(0, 0, safeGetElementById("blast3"), "green", 0);
-            this.blasts.push(blast3);
         }
         if (config.playerCount > 3) {
             const player4 = new Player(
@@ -73,42 +65,34 @@ export class Game {
                 "purple",
             );
             this.players.push(player4);
-            const blast4 = new Blast(0, 0, safeGetElementById("blast4"), "purple", 0);
-            this.blasts.push(blast4);
         }
 
-        Game.box.style.width = this.xSize + "px";
-        Game.box.style.height = this.ySize + "px";
+        box.style.width = this.xSize + "px";
+        box.style.height = this.ySize + "px";
 
         Game.wall1.style.width = (this.xSize * 3) / 4 + "px";
         Game.wall1.style.top = (this.ySize * 3) / 4 + "px";
         Game.wall1.style.left = this.xSize / 8 + "px";
 
-        window.addEventListener(
-            "keydown",
-            (e) => {
-                this.keyState[e.code || e.which] = true;
-                this.players.forEach((player, index) => {
-                    if (player.isDead === false && e.code === player.keyDown && player.blastCounter <= 0) {
-                        this.blast(player.posX, player.posY, index);
-                        player.blastCounter = config.blastCooldown;
-                    }
-                });
-            },
-            true,
-        );
-        window.addEventListener(
-            "keyup",
-            (e) => {
-                this.keyState[e.code || e.which] = false;
-                this.players.forEach((player) => {
-                    if (e.code === player.keyUp) {
-                        player.canJump = true;
-                    }
-                });
-            },
-            true,
-        );
+        // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
+        // This would cause a bug where each time you press a key it creates multiple blasts or jumps
+        window.onkeydown = (e: KeyboardEvent) => {
+            this.keyState[e.code || e.which] = true;
+            this.players.forEach((player) => {
+                if (player.isDead === false && e.code === player.keyDown && player.blastCounter <= 0) {
+                    this.blast(player);
+                    player.blastCounter = config.blastCooldown;
+                }
+            });
+        };
+        window.onkeyup = (e: KeyboardEvent) => {
+            this.keyState[e.code || e.which] = false;
+            this.players.forEach((player) => {
+                if (e.code === player.keyUp) {
+                    player.canJump = true;
+                }
+            });
+        };
     }
 
     public start() {
@@ -122,6 +106,7 @@ export class Game {
     public end() {
         Game.gameDiv.style.display = "none";
         Game.menuDiv.style.display = "block";
+        this.blasts.forEach((blast) => blast.delete());
         if (this.frameIntervalId) {
             clearInterval(this.frameIntervalId);
         }
@@ -130,7 +115,7 @@ export class Game {
     private frame() {
         if (this.xSize != window.innerWidth - 50) {
             this.xSize = window.innerWidth - 50;
-            Game.box.style.width = this.xSize + "px";
+            box.style.width = this.xSize + "px";
             Game.wall1.style.width = (this.xSize * 3) / 4 + "px";
             Game.wall1.style.left = this.xSize / 8 + "px";
         } // update window size if it has changed
@@ -169,9 +154,8 @@ export class Game {
 
         this.updatePlayers(); // change the this.boxes' positions based on the variables' positions
 
-        this.blasts.forEach((blast, index) => {
-            this.updateBlasts(blast, index);
-        });
+        this.blasts.forEach((blast) => blast.update());
+        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
     }
 
     private updateMomentum() {
@@ -346,37 +330,20 @@ export class Game {
         this.players.forEach((player) => {
             player.elem.style.left = player.posX + "px";
             player.elem.style.top = player.posY + "px";
+            if (player.blastCounter > 0) {
+                player.blastCounter -= 1;
+            }
         });
     }
 
-    private updateBlasts(blast: Blast, num: number) {
-        if (blast.opacity > 0) {
-            // reduce blast opacity
-            blast.posX -= this.config.playerSize / 6;
-            blast.posY -= this.config.playerSize / 6;
-            blast.size += this.config.playerSize / 3;
-            blast.opacity -= 0.05;
-            blast.elem.style.opacity = blast.opacity.toString();
-            blast.elem.style.left = blast.posX + "px";
-            blast.elem.style.top = blast.posY + "px";
-            blast.elem.style.width = blast.size + "px";
-            blast.elem.style.height = blast.size + "px";
-        }
-        if (this.players[num].blastCounter > 0) {
-            this.players[num].blastCounter -= 1;
-        }
-    }
-
-    private blast(x: number, y: number, playerIndex: number) {
-        this.blasts[playerIndex].posX = x;
-        this.blasts[playerIndex].posY = y;
-        this.blasts[playerIndex].size = this.config.playerSize;
-        this.blasts[playerIndex].opacity = 0.5;
-        this.players.forEach((player) => {
-            const distance = Math.sqrt(Math.pow(x - player.posX, 2) + Math.pow(y - player.posY, 2));
+    private blast(player: Player) {
+        const blast = new Blast(player.posX, player.posY, player.color);
+        this.blasts.push(blast);
+        this.players.forEach((player2) => {
+            const distance = Math.sqrt(Math.pow(player.posX - player2.posX, 2) + Math.pow(player.posY - player2.posY, 2));
             if (distance < this.config.playerSize * 4 && distance != 0) {
-                player.momentumX = ((player.posX - x) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2);
-                player.momentumY = ((player.posY - y) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2) - 10;
+                player2.momentumX = ((player2.posX - player.posX) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2);
+                player2.momentumY = ((player2.posY - player.posY) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2) - 10;
             }
         });
     }

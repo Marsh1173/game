@@ -1,3 +1,5 @@
+export const box = safeGetElementById("myContainer");
+
 export function safeGetElementById(id: string): HTMLElement {
     const element = document.getElementById(id);
     if (element) {

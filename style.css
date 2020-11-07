@@ -47,38 +47,6 @@
     border-radius: 2px;
 }
 
-#blast1 {
-    background: red;
+.blast {
     position: absolute;
-    height: 200px;
-    width: 200px;
-    border-radius: 100px;
-    opacity: 0;
-  }
-
-#blast2 {
-  background: blue;
-  position: absolute;
-  height: 200px;
-  width: 200px;
-  border-radius: 100px;
-  opacity: 0;
-}
-
-#blast3 {
-  background: green;
-  position: absolute;
-  height: 200px;
-  width: 200px;
-  border-radius: 100px;
-  opacity: 0;
-}
-
-#blast4 {
-  background: purple;
-  position: absolute;
-  height: 200px;
-  width: 200px;
-  border-radius: 100px;
-  opacity: 0;
 }
