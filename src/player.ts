@@ -23,5 +23,6 @@ export class Player {
         this.elem.style.width = this.size + "px";
         this.elem.style.height = this.size + "px";
         this.elem.style.backgroundColor = color;
+        this.elem.style.opacity = "1";
     }
 }
