@@ -122,13 +122,13 @@ function frame() {
     setAllNotStanding();
 
     players.forEach((player1) => {
-      if(player1.isDead === false) {
-        players.forEach((player2) => {
-            if (player1 !== player2 && player2.isDead === false) {
-                playerPathfind(player1, player2);
-            }
-        });
-      }
+        if (player1.isDead === false) {
+            players.forEach((player2) => {
+                if (player1 !== player2 && player2.isDead === false) {
+                    playerPathfind(player1, player2);
+                }
+            });
+        }
     });
 
     players.forEach((player) => {
@@ -142,7 +142,7 @@ function frame() {
     updatePlayers(); // change the boxes' positions based on the variables' positions
 
     blasts.forEach((blast, index) => {
-      updateBlasts(blast, index);
+        updateBlasts(blast, index);
     });
 }
 
@@ -305,7 +305,7 @@ function positionCheck(player: Player) {
 
     if (!player.isDead && player.posY >= ySize - config.playerSize) {
         player.isDead = true;
-        player.elem.style.opacity = .2;
+        player.elem.style.opacity = "0.2";
     }
 }
 
@@ -317,21 +317,22 @@ function updatePlayers() {
 }
 
 function updateBlasts(blast: Blast, num: number) {
-      if (blast.opacity > 0) { // reduce blast opacity
+    if (blast.opacity > 0) {
+        // reduce blast opacity
         blast.posX -= config.playerSize / 6;
         blast.posY -= config.playerSize / 6;
         blast.size += config.playerSize / 3;
         blast.opacity -= 0.05;
-        blast.elem.style.opacity = blast.opacity;
-        blast.elem.style.left = blast.posX + 'px';
-        blast.elem.style.top = blast.posY + 'px';
-        blast.elem.style.width = blast.size + 'px';
-        blast.elem.style.height = blast.size + 'px';
-      }
-      if (players[num].blastCounter > 0) {
-        players[num].blastCounter -= 1;
-      }
+        blast.elem.style.opacity = blast.opacity.toString();
+        blast.elem.style.left = blast.posX + "px";
+        blast.elem.style.top = blast.posY + "px";
+        blast.elem.style.width = blast.size + "px";
+        blast.elem.style.height = blast.size + "px";
     }
+    if (players[num].blastCounter > 0) {
+        players[num].blastCounter -= 1;
+    }
+}
 
 function blast(x: number, y: number, playerIndex: number) {
     blasts[playerIndex].posX = x;
