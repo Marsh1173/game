@@ -1,4 +1,5 @@
-export const box = safeGetElementById("myContainer");
+export const slider = safeGetElementById("slider");
+export const box = safeGetElementById("slideContainer");
 
 export function safeGetElementById(id: string): HTMLElement {
     const element = document.getElementById(id);

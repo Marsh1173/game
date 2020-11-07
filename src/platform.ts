@@ -1,6 +1,6 @@
 import { Player } from "./player";
 import { Size } from "./size";
-import { box } from "./util";
+import { slider } from "./util";
 import { Vector } from "./vector";
 
 export class Platform {
@@ -10,7 +10,7 @@ export class Platform {
         this.elem = document.createElement("div");
         this.elem.classList.add("platform");
         this.render();
-        box.appendChild(this.elem);
+        slider.appendChild(this.elem);
     }
 
     public delete() {

@@ -1,5 +1,5 @@
 import { config } from "./config";
-import { box } from "./util";
+import { slider } from "./util";
 
 export class Blast {
     public opacity = 0.5;
@@ -9,7 +9,7 @@ export class Blast {
         this.elem = document.createElement("div");
         this.elem.classList.add("blast");
         this.updateStyle();
-        box.appendChild(this.elem);
+        slider.appendChild(this.elem);
     }
 
     public delete() {

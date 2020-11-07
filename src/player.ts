@@ -86,6 +86,46 @@ export class Player {
         }
     }
 
+    public playerPathfind( player2: Player) {
+
+        let distanceX = player2.posX - (this.posX + this.momentumX);
+        let distanceY = player2.posY - (this.posY + this.momentumY);
+
+        if (
+            distanceX <= config.playerSize &&
+            distanceX >= -config.playerSize &&
+            distanceY <= config.playerSize &&
+            distanceY >= -config.playerSize
+        ) {
+            if (Math.abs(distanceX) <= Math.abs(distanceY)) {
+                if (distanceY < 0) {
+                    //hitting someone from beneath
+                    this.posY = player2.posY + config.playerSize;
+                    if (this.momentumY <= 0) {
+                        this.momentumY = 0;
+                    }
+                } else if (distanceY > 0) {
+                    //hitting someone from above
+                    this.standing = true;
+                    this.posY = player2.posY - config.playerSize;
+                    if (this.momentumY > 0) {
+                        this.momentumY = 0;
+                    }
+                }
+            } else {
+                if (distanceX > 0) {
+                    //hitting someone from their left?
+                    this.posX = player2.posX - config.playerSize;
+                    this.momentumX = 0;
+                } else {
+                    //hitting someone from their right?
+                    this.posX = player2.posX + config.playerSize;
+                    this.momentumX = 0;
+                }
+            }
+        }
+    }
+
     public render() {
         this.elem.style.width = this.size + "px";
         this.elem.style.height = this.size + "px";

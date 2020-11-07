@@ -1,10 +1,14 @@
-#myContainer {
-    width: 400px;
-    height: 400px;
+#slideContainer {
+    max-width: 99%;
     position: relative;
     border: 3px solid darkgray;
     border-bottom: 3px solid orange;
     border-radius: 5px;
+    overflow: hidden;
+}
+#slider {
+    position: absolute;
+    border: none;
     overflow: hidden;
 }
 

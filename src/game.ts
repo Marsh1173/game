@@ -1,21 +1,23 @@
 import { Blast } from "./blast";
 import { Platform } from "./platform";
 import { Player } from "./player";
+import { slider, safeGetElementById } from "./util";
 import { box, safeGetElementById } from "./util";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
     private static readonly gameDiv = safeGetElementById("gameDiv");
-    private xSize = window.innerWidth - 50; // decides this.box width in pixels -- SET AUTOMATICALLY TO SCREEN SIZE
+    private xSize = 1000; // decides this.box width in pixels -- SET AUTOMATICALLY TO SCREEN SIZE
     private readonly ySize = 500; // decides this.box height in pixels
     private readonly keyState: Record<string, boolean> = {};
     private readonly players: Player[] = [];
     private blasts: Blast[] = [];
     private platforms: Platform[] = [];
     private frameIntervalId?: NodeJS.Timeout; // higher number means slower game
+    private avgPlayerPos = 0;
 
     constructor(private readonly config: any) {
-        if (this.config.playerCount > 0) {
+        if (config.playerCount > 0) {
             const player1 = new Player(
                 this.xSize / 8,
                 (this.ySize * 3) / 4 - config.playerSize,
@@ -96,6 +98,7 @@ export class Game {
 
         box.style.width = this.xSize + "px";
         box.style.height = this.ySize + "px";
+        slider.style.height = this.ySize + "px";
 
         this.platforms.push(
             new Platform(
@@ -142,6 +145,8 @@ export class Game {
     }
 
     public start() {
+        slider.style.width = this.xSize + "px";
+        slider.style.height = this.ySize + "px";
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
         this.frameIntervalId = setInterval(() => {
@@ -160,10 +165,8 @@ export class Game {
     }
 
     private frame() {
-        if (this.xSize != window.innerWidth - 50) {
-            this.xSize = window.innerWidth - 50;
-            box.style.width = this.xSize + "px";
-        } // update window size if it has changed
+
+        this.updateSlider();
 
         const playersLeft = this.players.filter((player) => !player.isDead);
         if (playersLeft.length === 1) {
@@ -183,7 +186,7 @@ export class Game {
             if (player1.isDead === false) {
                 this.players.forEach((player2) => {
                     if (player1 !== player2 && player2.isDead === false) {
-                        this.playerPathfind(player1, player2);
+                        player1.playerPathfind(player2);
                     }
                 });
             }
@@ -201,6 +204,24 @@ export class Game {
 
         this.blasts.forEach((blast) => blast.update());
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
+    }
+
+    private updateSlider() {
+        let avgPlayerPos = this.players.reduce((result, elem) => result -= elem.posX, 0) / this.players.length;
+        if (window.innerWidth - 35 > this.xSize) {
+          avgPlayerPos = 0;
+        }
+        // go off the slider screen if the window is bigger
+        else {// else go off the window
+          avgPlayerPos += window.innerWidth / 2 - 35;
+          if (avgPlayerPos > 0) avgPlayerPos = 0;
+          else if (avgPlayerPos * -1 > this.xSize - window.innerWidth + 20) {
+            avgPlayerPos = (this.xSize - window.innerWidth + 20) * -1;
+          }
+        }
+
+        slider.style.left = avgPlayerPos + 'px';
+
     }
 
     private updateMomentum() {
@@ -256,49 +277,6 @@ export class Game {
                 player.wasStanding = false;
             }
         });
-    }
-
-    private playerPathfind(player1: Player, player2: Player) {
-        if (player1.momentumX === 0 && player1.posY === this.ySize - this.config.playerSize) {
-            //return;
-        }
-
-        let distanceX = player2.posX - (player1.posX + player1.momentumX);
-        let distanceY = player2.posY - (player1.posY + player1.momentumY);
-
-        if (
-            distanceX <= this.config.playerSize &&
-            distanceX >= -this.config.playerSize &&
-            distanceY <= this.config.playerSize &&
-            distanceY >= -this.config.playerSize
-        ) {
-            if (Math.abs(distanceX) <= Math.abs(distanceY)) {
-                if (distanceY < 0 && player1.wasStanding === false) {
-                    //hitting someone from beneath
-                    player1.posY = player2.posY + this.config.playerSize;
-                    if (player1.momentumY <= 0) {
-                        player1.momentumY = 0;
-                    }
-                } else if (distanceY > 0) {
-                    //hitting someone from above
-                    player1.standing = true;
-                    player1.posY = player2.posY - this.config.playerSize;
-                    if (player1.momentumY > 0) {
-                        player1.momentumY = 0;
-                    }
-                }
-            } else {
-                if (distanceX > 0) {
-                    //hitting someone from their left?
-                    player1.posX = player2.posX - this.config.playerSize;
-                    player1.momentumX = 0;
-                } else {
-                    //hitting someone from their right?
-                    player1.posX = player2.posX + this.config.playerSize;
-                    player1.momentumX = 0;
-                }
-            }
-        }
     }
 
     private updatePosition(player: Player) {
