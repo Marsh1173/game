@@ -49,9 +49,9 @@ export class Player {
                     y: this.posY,
                 },
                 {
-                    // above
-                    x: this.posX,
-                    y: platform.position.x + platform.size.width,
+                    // right
+                    x: platform.position.x + platform.size.width,
+                    y: this.posY,
                 },
             ];
 
