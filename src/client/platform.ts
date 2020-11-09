@@ -1,7 +1,6 @@
-import { Player } from "./player";
-import { Size } from "./size";
+import { Size } from "../size";
 import { slider } from "./util";
-import { Vector } from "./vector";
+import { Vector } from "../vector";
 
 export class Platform {
     private readonly elem: HTMLDivElement;

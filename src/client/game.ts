@@ -1,8 +1,8 @@
 import { Blast } from "./blast";
 import { Platform } from "./platform";
 import { Player } from "./player";
-import { slider, safeGetElementById } from "./util";
-import { box, safeGetElementById } from "./util";
+import { ServerTalker } from "./servertalker";
+import { slider, box, safeGetElementById } from "./util";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
@@ -15,6 +15,7 @@ export class Game {
     private platforms: Platform[] = [];
     private frameIntervalId?: NodeJS.Timeout; // higher number means slower game
     private avgPlayerPos = 0;
+    private serverTalker = new ServerTalker();
 
     constructor(private readonly config: any) {
         if (config.playerCount > 0) {
@@ -32,7 +33,7 @@ export class Game {
         }
         if (config.playerCount > 1) {
             const player2 = new Player(
-                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 1 / (config.playerCount - 1)),
+                this.xSize / 8 + (((this.xSize * 3) / 4 - config.playerSize) * 1) / (config.playerCount - 1),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "ArrowUp",
                 "ArrowDown",
@@ -45,7 +46,7 @@ export class Game {
         }
         if (config.playerCount > 2) {
             const player3 = new Player(
-                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 2 / (config.playerCount - 1)),
+                this.xSize / 8 + (((this.xSize * 3) / 4 - config.playerSize) * 2) / (config.playerCount - 1),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "KeyP",
                 "Semicolon",
@@ -58,7 +59,7 @@ export class Game {
         }
         if (config.playerCount > 3) {
             const player4 = new Player(
-                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 3 / (config.playerCount - 1)),
+                this.xSize / 8 + (((this.xSize * 3) / 4 - config.playerSize) * 3) / (config.playerCount - 1),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "Numpad8",
                 "Numpad5",
@@ -71,7 +72,7 @@ export class Game {
         }
         if (config.playerCount > 4) {
             const player4 = new Player(
-                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 4 / (config.playerCount - 1)),
+                this.xSize / 8 + (((this.xSize * 3) / 4 - config.playerSize) * 4) / (config.playerCount - 1),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "Home",
                 "End",
@@ -84,7 +85,7 @@ export class Game {
         }
         if (config.playerCount > 5) {
             const player4 = new Player(
-                (this.xSize / 8) + ((this.xSize * 3 / 4 - config.playerSize) * 5 / (config.playerCount - 1)),
+                this.xSize / 8 + (((this.xSize * 3) / 4 - config.playerSize) * 5) / (config.playerCount - 1),
                 (this.ySize * 3) / 4 - config.playerSize,
                 "KeyY",
                 "KeyH",
@@ -118,27 +119,27 @@ export class Game {
                 },
                 {
                     x: this.xSize / 8 + (this.xSize * 3) / 4 / 4,
-                    y: (this.ySize) / 2,
+                    y: this.ySize / 2,
                 },
             ),
             new Platform(
                 {
                     height: 20,
-                    width: (this.xSize) / 4,
+                    width: this.xSize / 4,
                 },
                 {
-                    x: this.xSize * 3 / 4,
-                    y: (this.ySize) / 4,
+                    x: (this.xSize * 3) / 4,
+                    y: this.ySize / 4,
                 },
             ),
             new Platform(
                 {
                     height: 20,
-                    width: (this.xSize) / 4,
+                    width: this.xSize / 4,
                 },
                 {
                     x: 0,
-                    y: (this.ySize) / 4,
+                    y: this.ySize / 4,
                 },
             ),
         );
@@ -173,6 +174,7 @@ export class Game {
         this.frameIntervalId = setInterval(() => {
             this.frame();
         }, 16);
+        this.serverTalker.getAllInfo().then((val) => console.log(val));
     }
 
     public end() {
@@ -180,14 +182,10 @@ export class Game {
         Game.menuDiv.style.display = "block";
         this.blasts.forEach((blast) => blast.delete());
         this.platforms.forEach((platform) => platform.delete());
-        const Blasts = document.getElementsByClassName('blast');
-        for (let i = 0; i < Blasts.length; i++) {
-          Blasts[i].parentNode.removeChild(Blasts[i]);
-        }
         for (let i = 0; i < this.players.length; i++) {
-          this.players[i].elem.style.top = 0;
-          this.players[i].elem.style.left = 0;
-          this.players[i].elem.style.background = "white";
+            this.players[i].elem.style.top = "0px";
+            this.players[i].elem.style.left = "0px";
+            this.players[i].elem.style.background = "white";
         }
         if (this.frameIntervalId) {
             clearInterval(this.frameIntervalId);
@@ -195,7 +193,6 @@ export class Game {
     }
 
     private frame() {
-
         this.updateSlider();
 
         /*const playersLeft = this.players.filter((player) => !player.isDead);
@@ -234,16 +231,16 @@ export class Game {
         });
 
         this.players.forEach((player) => {
-          if (player.isDead) {
-            player.deathCooldown--;
-            if (player.deathCooldown <= 0) {
-              player.isDead = false;
-              player.posX = this.xSize / 2 - this.config.playerSize / 2;
-              player.posY = 200;
-              player.deathCooldown = 150;
-              player.elem.style.opacity = "1";
+            if (player.isDead) {
+                player.deathCooldown--;
+                if (player.deathCooldown <= 0) {
+                    player.isDead = false;
+                    player.posX = this.xSize / 2 - this.config.playerSize / 2;
+                    player.posY = 200;
+                    player.deathCooldown = 150;
+                    player.elem.style.opacity = "1";
+                }
             }
-          }
         });
 
         this.updatePlayers(); // change the this.boxes' positions based on the variables' positions
@@ -256,19 +253,19 @@ export class Game {
         let playersArray = this.players.filter((player) => !player.isDead)
         let avgPlayerPos = playersArray.reduce((result, elem) => result -= elem.posX, 0) / playersArray.length;
         if (window.innerWidth - 35 > this.xSize) {
-          avgPlayerPos = 0;
+            avgPlayerPos = 0;
         }
         // go off the slider screen if the window is bigger
-        else {// else go off the window
-          avgPlayerPos += window.innerWidth / 2 - 35;
-          if (avgPlayerPos > 0) avgPlayerPos = 0;
-          else if (avgPlayerPos * -1 > this.xSize - window.innerWidth + 20) {
-            avgPlayerPos = (this.xSize - window.innerWidth + 20) * -1;
-          }
+        else {
+            // else go off the window
+            avgPlayerPos += window.innerWidth / 2 - 35;
+            if (avgPlayerPos > 0) avgPlayerPos = 0;
+            else if (avgPlayerPos * -1 > this.xSize - window.innerWidth + 20) {
+                avgPlayerPos = (this.xSize - window.innerWidth + 20) * -1;
+            }
         }
 
-        slider.style.left = avgPlayerPos + 'px';
-
+        slider.style.left = avgPlayerPos + "px";
     }
 
     private updateMomentum() {
@@ -378,7 +375,7 @@ export class Game {
                 player.blastCounter -= 1;
             }
             if (player.health <= 0) {
-              //player.playerDie();
+                //player.playerDie();
             }
         });
     }
@@ -390,7 +387,9 @@ export class Game {
             const distance = Math.sqrt(Math.pow(player.posX - player2.posX, 2) + Math.pow(player.posY - player2.posY, 2));
             if (distance < this.config.playerSize * 4 && distance != 0) {
                 player2.momentumX = ((player2.posX - player.posX) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2);
-                player2.momentumY = ((player2.posY - player.posY) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2) - (this.config.playerSize * 4 - distance) / 13;
+                player2.momentumY =
+                    ((player2.posY - player.posY) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2) -
+                    (this.config.playerSize * 4 - distance) / 13;
                 //player2.health -= 5;
             }
         });
