@@ -253,7 +253,8 @@ export class Game {
     }
 
     private updateSlider() {
-        let avgPlayerPos = this.players.filter((player) => !player.isDead).reduce((result, elem) => result -= elem.posX, 0) / this.players.length;
+        let playersArray = this.players.filter((player) => !player.isDead)
+        let avgPlayerPos = playersArray.reduce((result, elem) => result -= elem.posX, 0) / playersArray.length;
         if (window.innerWidth - 35 > this.xSize) {
           avgPlayerPos = 0;
         }
