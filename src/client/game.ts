@@ -1,6 +1,7 @@
 import { Blast } from "./blast";
 import { Platform } from "./platform";
 import { Player } from "./player";
+import { ServerTalker } from "./servertalker";
 import { slider, box, safeGetElementById } from "./util";
 
 export class Game {
@@ -14,6 +15,7 @@ export class Game {
     private platforms: Platform[] = [];
     private frameIntervalId?: NodeJS.Timeout; // higher number means slower game
     private avgPlayerPos = 0;
+    private serverTalker = new ServerTalker();
 
     constructor(private readonly config: any) {
         if (config.playerCount > 0) {
@@ -172,6 +174,7 @@ export class Game {
         this.frameIntervalId = setInterval(() => {
             this.frame();
         }, 16);
+        this.serverTalker.getAllInfo().then((val) => console.log(val));
     }
 
     public end() {

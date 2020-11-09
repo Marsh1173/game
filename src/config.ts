@@ -4,4 +4,5 @@ export const config = {
     playerCount: 2, // from 1-4, decides # of players
     blastCooldown: 20, // Cooldown of player blast ability
     xSize: 800,
+    hostname: "http://localhost:3000/",
 };

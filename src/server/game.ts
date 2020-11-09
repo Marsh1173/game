@@ -26,12 +26,12 @@ export class Game {
         }
     }
 
-    public allInfo(): string {
-        return JSON.stringify({
+    public allInfo() {
+        return {
             players: this.players.map((player) => player.serialize()),
             blasts: this.blasts.map((blast) => blast.serialize()),
             platforms: this.platforms.map((platform) => platform.serialize()),
-        });
+        };
     }
 
     public frame() {

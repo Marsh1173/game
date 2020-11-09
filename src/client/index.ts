@@ -1,4 +1,4 @@
-import { config } from "./config";
+import { config } from "../config";
 import { Game } from "./game";
 import { safeGetElementById } from "./util";
 
