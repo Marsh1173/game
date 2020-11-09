@@ -1,6 +1,6 @@
-import { config } from "./config";
+import { config } from "../config";
 import { Platform } from "./platform";
-import { Vector } from "./vector";
+import { Vector } from "../vector";
 
 export class Player {
     constructor(
@@ -88,17 +88,11 @@ export class Player {
         }
     }
 
-    public playerPathfind( player2: Player) {
-
+    public playerPathfind(player2: Player) {
         let distanceX = player2.posX - (this.posX + this.momentumX);
         let distanceY = player2.posY - (this.posY + this.momentumY);
 
-        if (
-            distanceX <= config.playerSize &&
-            distanceX >= -config.playerSize &&
-            distanceY <= config.playerSize &&
-            distanceY >= -config.playerSize
-        ) {
+        if (distanceX <= config.playerSize && distanceX >= -config.playerSize && distanceY <= config.playerSize && distanceY >= -config.playerSize) {
             if (Math.abs(distanceX) <= Math.abs(distanceY)) {
                 if (distanceY < 0) {
                     //hitting someone from beneath
@@ -129,8 +123,8 @@ export class Player {
     }
 
     public playerDie() {
-      this.isDead = true;
-      this.elem.style.opacity = "0.2";
+        this.isDead = true;
+        this.elem.style.opacity = "0.2";
     }
 
     public render() {
