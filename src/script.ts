@@ -2,16 +2,16 @@ import { config } from "./config";
 import { Game } from "./game";
 import { safeGetElementById } from "./util";
 
-const instructionDiv = safeGetElementById('instructionMenu');
-const instructionButton = safeGetElementById('instructions');
+const instructionDiv = safeGetElementById("instructionMenu");
+const instructionButton = safeGetElementById("instructions");
 
-var width = document.getElementById("width");
+var width = safeGetElementById("width") as HTMLInputElement;
 width.step = "50";
-var widthOutput = document.getElementById("widthOutput");
-width.oninput = function() {
-    config.xSize = this.value;
-    widthOutput.innerHTML = "Width: " + this.value + "px";
-}
+var widthOutput = safeGetElementById("widthOutput");
+width.oninput = function () {
+    config.xSize = parseInt(width.value);
+    widthOutput.innerHTML = "Width: " + config.xSize + "px";
+};
 
 safeGetElementById("gameDiv").style.display = "none";
 instructionDiv.style.display = "none";
@@ -40,20 +40,20 @@ safeGetElementById("start").onclick = () => {
 };
 instructionButton.onclick = () => {
     if (instructionDiv.style.display === "none") {
-    instructionDiv.style.display = "block";
-    instructionButton.classList.add('selected');
-  } else {
-    instructionDiv.style.display = "none";
-    instructionButton.classList.remove('selected');
-  }
+        instructionDiv.style.display = "block";
+        instructionButton.classList.add("selected");
+    } else {
+        instructionDiv.style.display = "none";
+        instructionButton.classList.remove("selected");
+    }
 };
 
-function selectPlayers(num) {
-  config.playerCount = num;
-  let elems = document.getElementsByClassName('small selected');
-  for (let i = 0; i < elems.length; i++) {
-    elems[i].classList.remove('selected');
-  }
-  const id = num + "player";
-  safeGetElementById(id).classList.add('selected');
+function selectPlayers(num: number) {
+    config.playerCount = num;
+    let elems = document.getElementsByClassName("small selected");
+    for (let i = 0; i < elems.length; i++) {
+        elems[i].classList.remove("selected");
+    }
+    const id = num + "player";
+    safeGetElementById(id).classList.add("selected");
 }
