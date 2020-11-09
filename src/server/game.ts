@@ -1,3 +1,4 @@
+import { AllInfo } from "../api/allinfo";
 import { Blast } from "./blast";
 import { Platform } from "./platform";
 import { Player } from "./player";
@@ -26,7 +27,7 @@ export class Game {
         }
     }
 
-    public allInfo() {
+    public allInfo(): AllInfo {
         return {
             players: this.players.map((player) => player.serialize()),
             blasts: this.blasts.map((blast) => blast.serialize()),
