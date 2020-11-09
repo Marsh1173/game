@@ -7,8 +7,8 @@ import { box, safeGetElementById } from "./util";
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
     private static readonly gameDiv = safeGetElementById("gameDiv");
-    private xSize = 1000; // decides this.box width in pixels -- SET AUTOMATICALLY TO SCREEN SIZE
-    private readonly ySize = 500; // decides this.box height in pixels
+    private xSize = this.config.xSize; // decides this.box width in pixels -- SET AUTOMATICALLY TO SCREEN SIZE
+    private readonly ySize = 600; // decides this.box height in pixels
     private readonly keyState: Record<string, boolean> = {};
     private readonly players: Player[] = [];
     private blasts: Blast[] = [];
@@ -103,7 +103,7 @@ export class Game {
         this.platforms.push(
             new Platform(
                 {
-                    height: 10,
+                    height: 20,
                     width: (this.xSize * 3) / 4,
                 },
                 {
@@ -113,12 +113,32 @@ export class Game {
             ),
             new Platform(
                 {
-                    height: 10,
+                    height: 20,
                     width: (this.xSize * 3) / 8,
                 },
                 {
                     x: this.xSize / 8 + (this.xSize * 3) / 4 / 4,
-                    y: (this.ySize * 3) / 8,
+                    y: (this.ySize) / 2,
+                },
+            ),
+            new Platform(
+                {
+                    height: 20,
+                    width: (this.xSize) / 4,
+                },
+                {
+                    x: this.xSize * 3 / 4,
+                    y: (this.ySize) / 4,
+                },
+            ),
+            new Platform(
+                {
+                    height: 20,
+                    width: (this.xSize) / 4,
+                },
+                {
+                    x: 0,
+                    y: (this.ySize) / 4,
                 },
             ),
         );
@@ -127,6 +147,7 @@ export class Game {
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
         window.onkeydown = (e: KeyboardEvent) => {
             this.keyState[e.code || e.which] = true;
+            //console.log(e.code);
             this.players.forEach((player) => {
                 if (player.isDead === false && e.code === player.keyDown && player.blastCounter <= 0) {
                     this.blast(player);
@@ -159,6 +180,15 @@ export class Game {
         Game.menuDiv.style.display = "block";
         this.blasts.forEach((blast) => blast.delete());
         this.platforms.forEach((platform) => platform.delete());
+        const Blasts = document.getElementsByClassName('blast');
+        for (let i = 0; i < Blasts.length; i++) {
+          Blasts[i].parentNode.removeChild(Blasts[i]);
+        }
+        for (let i = 0; i < this.players.length; i++) {
+          this.players[i].elem.style.top = 0;
+          this.players[i].elem.style.left = 0;
+          this.players[i].elem.style.background = "white";
+        }
         if (this.frameIntervalId) {
             clearInterval(this.frameIntervalId);
         }
@@ -168,11 +198,14 @@ export class Game {
 
         this.updateSlider();
 
-        const playersLeft = this.players.filter((player) => !player.isDead);
+        /*const playersLeft = this.players.filter((player) => !player.isDead);
         if (playersLeft.length === 1) {
-            alert(`${playersLeft[0].color} won!!`);
+            alert(`${playersLeft[0].color} won!!!!`);
             this.end();
-        }
+        } else if (playersLeft.length < 1) {
+            alert(`Everyone Died!`);
+            this.end();
+        }*/
 
         this.updateMomentum(); // update momentum based on keys pressed
 
@@ -198,6 +231,19 @@ export class Game {
 
         this.players.forEach((player) => {
             this.positionCheck(player);
+        });
+
+        this.players.forEach((player) => {
+          if (player.isDead) {
+            player.deathCooldown--;
+            if (player.deathCooldown <= 0) {
+              player.isDead = false;
+              player.posX = this.xSize / 2 - this.config.playerSize / 2;
+              player.posY = 200;
+              player.deathCooldown = 150;
+              player.elem.style.opacity = "1";
+            }
+          }
         });
 
         this.updatePlayers(); // change the this.boxes' positions based on the variables' positions
@@ -231,11 +277,15 @@ export class Game {
                 player.alreadyJumped = 2;
                 player.canJump = false;
             }
-            if (!player.isDead && this.keyState[player.keyLeft] && player.momentumX > -10) {
+            if (!player.isDead && this.keyState[player.keyLeft] && player.momentumX > -10 && player.standing) {
                 player.momentumX -= 3;
+            } else if (!player.isDead && this.keyState[player.keyLeft] && player.momentumX > -10) {
+                player.momentumX -= 1;
             }
-            if (!player.isDead && this.keyState[player.keyRight] && player.momentumX < 10) {
+            if (!player.isDead && this.keyState[player.keyRight] && player.momentumX < 10 && player.standing) {
                 player.momentumX += 3;
+            } else if (!player.isDead && this.keyState[player.keyRight] && player.momentumX < 10) {
+                player.momentumX += 1;
             }
         });
     }
@@ -314,8 +364,7 @@ export class Game {
         }
 
         if (!player.isDead && player.posY >= this.ySize - this.config.playerSize) {
-            player.isDead = true;
-            player.elem.style.opacity = "0.2";
+            player.playerDie();
         }
     }
 
@@ -323,8 +372,12 @@ export class Game {
         this.players.forEach((player) => {
             player.elem.style.left = player.posX + "px";
             player.elem.style.top = player.posY + "px";
+            //player.elem.innerHTML = player.health; -- PLACEHOLDER
             if (player.blastCounter > 0) {
                 player.blastCounter -= 1;
+            }
+            if (player.health <= 0) {
+              //player.playerDie();
             }
         });
     }
@@ -336,7 +389,8 @@ export class Game {
             const distance = Math.sqrt(Math.pow(player.posX - player2.posX, 2) + Math.pow(player.posY - player2.posY, 2));
             if (distance < this.config.playerSize * 4 && distance != 0) {
                 player2.momentumX = ((player2.posX - player.posX) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2);
-                player2.momentumY = ((player2.posY - player.posY) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2) - 10;
+                player2.momentumY = ((player2.posY - player.posY) * Math.pow(this.config.playerSize, 1.9)) / Math.pow(distance, 2) - (this.config.playerSize * 4 - distance) / 13;
+                //player2.health -= 5;
             }
         });
     }

@@ -2,23 +2,58 @@ import { config } from "./config";
 import { Game } from "./game";
 import { safeGetElementById } from "./util";
 
+const instructionDiv = safeGetElementById('instructionMenu');
+const instructionButton = safeGetElementById('instructions');
+
+var width = document.getElementById("width");
+width.step = "50";
+var widthOutput = document.getElementById("widthOutput");
+width.oninput = function() {
+    config.xSize = this.value;
+    widthOutput.innerHTML = "Width: " + this.value + "px";
+}
+
 safeGetElementById("gameDiv").style.display = "none";
+instructionDiv.style.display = "none";
 safeGetElementById("2player").onclick = () => {
-    config.playerCount = 2;
+    selectPlayers(2);
 };
 safeGetElementById("3player").onclick = () => {
-    config.playerCount = 3;
+    selectPlayers(3);
 };
 safeGetElementById("4player").onclick = () => {
-    config.playerCount = 4;
+    selectPlayers(4);
 };
 safeGetElementById("5player").onclick = () => {
-    config.playerCount = 5;
+    selectPlayers(5);
 };
 safeGetElementById("6player").onclick = () => {
-    config.playerCount = 6;
+    selectPlayers(6);
 };
 safeGetElementById("start").onclick = () => {
     const game = new Game(config);
     game.start();
+    instructionDiv.style.display = "none";
+    safeGetElementById("end").onclick = () => {
+        game.end();
+    };
 };
+instructionButton.onclick = () => {
+    if (instructionDiv.style.display === "none") {
+    instructionDiv.style.display = "block";
+    instructionButton.classList.add('selected');
+  } else {
+    instructionDiv.style.display = "none";
+    instructionButton.classList.remove('selected');
+  }
+};
+
+function selectPlayers(num) {
+  config.playerCount = num;
+  let elems = document.getElementsByClassName('small selected');
+  for (let i = 0; i < elems.length; i++) {
+    elems[i].classList.remove('selected');
+  }
+  const id = num + "player";
+  safeGetElementById(id).classList.add('selected');
+}

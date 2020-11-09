@@ -21,6 +21,8 @@ export class Player {
         public standing: boolean = false,
         public wasStanding: boolean = false,
         public isDead: boolean = false,
+        public health: number = 100,
+        public deathCooldown = 150,
     ) {
         this.render();
     }
@@ -124,6 +126,11 @@ export class Player {
                 }
             }
         }
+    }
+
+    public playerDie() {
+      this.isDead = true;
+      this.elem.style.opacity = "0.2";
     }
 
     public render() {
