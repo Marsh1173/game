@@ -1,13 +1,15 @@
+import { JoinMessage, ServerMessage } from "../api/message";
 import { config } from "../config";
 import { Game } from "./game";
+import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
 
 const instructionDiv = safeGetElementById("instructionMenu");
 const instructionButton = safeGetElementById("instructions");
 
-var width = safeGetElementById("width") as HTMLInputElement;
+const width = safeGetElementById("width") as HTMLInputElement;
 width.step = "50";
-var widthOutput = safeGetElementById("widthOutput");
+const widthOutput = safeGetElementById("widthOutput");
 width.oninput = function () {
     config.xSize = parseInt(width.value);
     widthOutput.innerHTML = "Width: " + config.xSize + "px";
@@ -30,8 +32,20 @@ safeGetElementById("5player").onclick = () => {
 safeGetElementById("6player").onclick = () => {
     selectPlayers(6);
 };
-safeGetElementById("start").onclick = () => {
-    const game = new Game(config);
+
+safeGetElementById("start").onclick = async () => {
+    const serverTalker = new ServerTalker();
+    const joinPromise = new Promise<JoinMessage>((resolve, reject) => {
+        serverTalker.messageHandler = (msg: ServerMessage) => {
+            if (msg.type === "join") {
+                resolve(msg);
+            } else {
+                reject();
+            }
+        };
+    });
+    const info = await joinPromise;
+    const game = new Game(info.info, info.id, serverTalker);
     game.start();
     instructionDiv.style.display = "none";
     safeGetElementById("end").onclick = () => {

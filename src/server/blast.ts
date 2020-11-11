@@ -1,9 +1,8 @@
-export class Blast {
-    constructor() {}
+import { Blast } from "../objects/blast";
+import { SerializedBlast } from "../serialized/blast";
 
-    public serialize(): string {
-        return "";
+export class ServerBlast extends Blast {
+    constructor(info: SerializedBlast) {
+        super(info.position, info.color, info.size, info.opacity);
     }
-
-    public update() {}
 }
