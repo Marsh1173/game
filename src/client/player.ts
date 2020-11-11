@@ -40,8 +40,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public moveLeft() {
-        super.moveLeft();
+    public moveLeft(elapsedTime: number) {
+        super.moveLeft(elapsedTime);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "moveLeft",
@@ -49,8 +49,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public moveRight() {
-        super.moveLeft();
+    public moveRight(elapsedTime: number) {
+        super.moveLeft(elapsedTime);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "moveRight",

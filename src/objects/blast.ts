@@ -14,10 +14,10 @@ export abstract class Blast {
         };
     }
 
-    public update() {
-        this.position.x -= config.blastSize / 4;
-        this.position.y -= config.blastSize / 4;
-        this.size += config.blastSize / 2;
-        this.opacity -= 0.05;
+    public update(elapsedTime: number) {
+        this.position.x -= (config.blastSize / 4) * elapsedTime;
+        this.position.y -= (config.blastSize / 4) * elapsedTime;
+        this.size += (config.blastSize / 2) * elapsedTime;
+        this.opacity -= 1 * elapsedTime;
     }
 }

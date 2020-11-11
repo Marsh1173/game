@@ -20,7 +20,7 @@ export class Game {
 
     public start() {
         this.intervalId = setInterval(() => {
-            this.frame();
+            this.loop(Date.now());
         }, Game.REFRESH_RATE);
     }
 
@@ -40,8 +40,25 @@ export class Game {
         };
     }
 
-    public frame() {
-        this.players.forEach((player) => player.update());
+    private lastFrame?: number;
+    public loop(timestamp: number) {
+        if (!this.lastFrame) {
+            this.lastFrame = timestamp;
+        }
+        const elapsedTime = (timestamp - this.lastFrame) / 1000;
+        this.lastFrame = timestamp;
+        this.update(elapsedTime);
+        const data: InfoMessage = {
+            type: "info",
+            info: this.allInfo(),
+        };
+        Object.values(this.clientMap).forEach((client) => {
+            client.send(JSON.stringify(data));
+        });
+    }
+
+    public update(elapsedTime: number) {
+        this.players.forEach((player) => player.update(elapsedTime));
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {
             if (player1.isDead === false) {
@@ -55,17 +72,9 @@ export class Game {
                 });
             }
         });
-        this.blasts.forEach((blast) => blast.update());
+        this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
         this.platforms.forEach((platform) => platform.update());
-
-        const data: InfoMessage = {
-            type: "info",
-            info: this.allInfo(),
-        };
-        Object.values(this.clientMap).forEach((client) => {
-            client.send(JSON.stringify(data));
-        });
     }
 
     public newPlayer() {

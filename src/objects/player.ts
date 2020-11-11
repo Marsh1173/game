@@ -121,28 +121,28 @@ export abstract class Player {
         this.canJump = false;
     }
 
-    public attemptMoveLeft() {
-        if (!this.isDead && this.momentum.x > -10) {
-            this.moveLeft();
+    public attemptMoveLeft(elapsedTime: number) {
+        if (!this.isDead && this.momentum.x > -config.maxSidewaysMomentum) {
+            this.moveLeft(elapsedTime);
         }
     }
-    public moveLeft() {
+    public moveLeft(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x -= 4;
+            this.momentum.x -= config.standingSidewaysAcceleration * elapsedTime;
         } else {
-            this.momentum.x -= 1;
+            this.momentum.x -= config.nonStandingSidewaysAcceleration * elapsedTime;
         }
     }
-    public attemptMoveRight() {
-        if (!this.isDead && this.momentum.x < 10) {
-            this.moveRight();
+    public attemptMoveRight(elapsedTime: number) {
+        if (!this.isDead && this.momentum.x < config.maxSidewaysMomentum) {
+            this.moveRight(elapsedTime);
         }
     }
-    public moveRight() {
+    public moveRight(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x += 4;
+            this.momentum.x += config.standingSidewaysAcceleration * elapsedTime;
         } else {
-            this.momentum.x += 1;
+            this.momentum.x += config.nonStandingSidewaysAcceleration * elapsedTime;
         }
     }
 
@@ -160,7 +160,7 @@ export abstract class Player {
         this.isDead = true;
     }
 
-    public update() {
+    public update(elapsedTime: number) {
         // Action handling
         if (this.actionsNextFrame.jump) {
             this.attemptJump();
@@ -170,10 +170,10 @@ export abstract class Player {
             }
         }
         if (this.actionsNextFrame.moveLeft) {
-            this.attemptMoveLeft();
+            this.attemptMoveLeft(elapsedTime);
         }
         if (this.actionsNextFrame.moveRight) {
-            this.attemptMoveRight();
+            this.attemptMoveRight(elapsedTime);
         }
         if (this.actionsNextFrame.blast) {
             this.attemptBlast();
@@ -181,7 +181,7 @@ export abstract class Player {
 
         // Falling speed
         if (!this.standing) {
-            this.momentum.y += 1;
+            this.momentum.y += config.fallingAcceleration * elapsedTime;
         }
 
         // Movement dampening
@@ -189,9 +189,9 @@ export abstract class Player {
             this.momentum.x = 0;
         } else {
             if (this.standing) {
-                this.momentum.x *= 0.8;
+                this.momentum.x *= 0.8 ** (elapsedTime * 60);
             } else {
-                this.momentum.x *= 0.98;
+                this.momentum.x *= 0.98 ** (elapsedTime * 60);
             }
         }
 
@@ -204,8 +204,8 @@ export abstract class Player {
         }
 
         // Update position based on momentum
-        this.position.x += this.momentum.x;
-        this.position.y += this.momentum.y;
+        this.position.x += this.momentum.x * elapsedTime;
+        this.position.y += this.momentum.y * elapsedTime;
 
         // Check collision with sides of area
         if (this.position.y < 0) {
@@ -226,7 +226,7 @@ export abstract class Player {
 
         // update jump counter
         if (this.momentum.y === 0 && this.alreadyJumped > 0) {
-            this.alreadyJumped--;
+            this.alreadyJumped -= elapsedTime * 60;
         }
 
         // Die if you hit the bottom of the screen
@@ -236,7 +236,7 @@ export abstract class Player {
 
         // Respawn timer
         if (this.isDead) {
-            this.deathCooldown--;
+            this.deathCooldown -= elapsedTime * 60;
             if (this.deathCooldown <= 0) {
                 this.isDead = false;
                 this.position.x = config.xSize / 2 - this.size.height / 2;
@@ -247,7 +247,7 @@ export abstract class Player {
 
         // Blast cooldown timer
         if (this.blastCounter > 0) {
-            this.blastCounter -= 1;
+            this.blastCounter -= elapsedTime * 60;
         }
 
         // Die if you run out of health?

@@ -1,3 +1,4 @@
+import { time } from "console";
 import { AllInfo } from "../api/allinfo";
 import { ServerMessage } from "../api/message";
 import { config } from "../config";
@@ -62,9 +63,7 @@ export class Game {
     public start() {
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
-        this.frameIntervalId = setInterval(() => {
-            this.frame();
-        }, 16);
+        window.requestAnimationFrame((timestamp) => this.loop(timestamp));
     }
 
     public end() {
@@ -78,7 +77,19 @@ export class Game {
         this.serverTalker.leave();
     }
 
-    private frame() {
+    private lastFrame?: number;
+    public loop(timestamp: number) {
+        if (!this.lastFrame) {
+            this.lastFrame = timestamp;
+        }
+        const elapsedTime = (timestamp - this.lastFrame) / 1000;
+        this.lastFrame = timestamp;
+        this.update(elapsedTime);
+        this.render();
+        window.requestAnimationFrame((timestamp) => this.loop(timestamp));
+    }
+
+    private update(elapsedTime: number) {
         // this.updateSlider();
 
         const playerWithId = this.players.find((player) => player.id === this.id);
@@ -89,10 +100,10 @@ export class Game {
             playerWithId.attemptJump();
         }
         if (this.keyState[config.playerKeys.left]) {
-            playerWithId.attemptMoveLeft();
+            playerWithId.attemptMoveLeft(elapsedTime);
         }
         if (this.keyState[config.playerKeys.right]) {
-            playerWithId.attemptMoveRight();
+            playerWithId.attemptMoveRight(elapsedTime);
         }
         if (this.keyState[config.playerKeys.down]) {
             playerWithId.attemptBlast();
@@ -112,9 +123,9 @@ export class Game {
             }
         });
 
-        this.players.forEach((player) => player.update());
+        this.players.forEach((player) => player.update(elapsedTime));
 
-        this.blasts.forEach((blast) => blast.update());
+        this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.render();
