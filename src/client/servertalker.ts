@@ -3,9 +3,6 @@ import { config } from "../config";
 
 export class ServerTalker {
     constructor(public messageHandler: (data: ServerMessage) => void = () => {}, private readonly websocket = new WebSocket(config.websocketHostname)) {
-        websocket.onopen = (ev) => {
-            console.log(ev);
-        };
         websocket.onmessage = (ev) => {
             const data = JSON.parse(ev.data);
             this.messageHandler(data);

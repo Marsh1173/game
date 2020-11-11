@@ -58,8 +58,6 @@ export class Game {
     }
 
     public update(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime));
-        // Collision detection with other players or platforms
         this.players.forEach((player1) => {
             if (player1.isDead === false) {
                 this.players.forEach((player2) => {
@@ -72,6 +70,8 @@ export class Game {
                 });
             }
         });
+        this.players.forEach((player) => player.update(elapsedTime));
+        // Collision detection with other players or platforms
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
         this.platforms.forEach((platform) => platform.update());
@@ -99,17 +99,25 @@ export class Game {
     public handleMessage(id: number, data: ClientMessage) {
         switch (data.type) {
             case "action":
-                if (data.actionType === "jump") {
-                    this.players.find((player) => player.id === id)!.actionsNextFrame.jump = true;
-                } else if (data.actionType === "moveLeft") {
-                    this.players.find((player) => player.id === id)!.actionsNextFrame.moveLeft = true;
-                } else if (data.actionType === "moveRight") {
-                    this.players.find((player) => player.id === id)!.actionsNextFrame.moveRight = true;
+                switch (data.actionType) {
+                    case "jump":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.jump = true;
+                        break;
+                    case "moveLeft":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.moveLeft = true;
+                        break;
+                    case "moveRight":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.moveRight = true;
+                        break;
+                    case "blast":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.blast = true;
+                        break;
+                    default:
+                        throw new Error(`Invalid client message actionType: ${data.actionType}`);
                 }
                 break;
             default:
                 throw new Error(`Invalid client message type: ${data.type}`);
-                break;
         }
     }
 
@@ -117,18 +125,12 @@ export class Game {
         const blast = new ServerBlast({
             position,
             color,
-            size: config.blastSize,
             opacity: 1,
+            size: 0,
         });
         this.blasts.push(blast);
-        this.players.forEach((player2) => {
-            const distance = Math.sqrt(Math.pow(position.x - player2.position.x, 2) + Math.pow(position.y - player2.position.y, 2));
-            if (distance < config.playerSize * 4 && distance != 0) {
-                player2.momentum.x = ((player2.position.x - position.x) * Math.pow(config.playerSize, 1.9)) / Math.pow(distance, 2);
-                player2.momentum.y =
-                    ((player2.position.y - position.y) * Math.pow(config.playerSize, 1.9)) / Math.pow(distance, 2) - (config.playerSize * 4 - distance) / 13;
-                //player2.health -= 5;
-            }
+        this.players.forEach((player) => {
+            blast.blastPlayer(player);
         });
     }
 }

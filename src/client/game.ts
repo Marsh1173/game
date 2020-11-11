@@ -18,10 +18,9 @@ export class Game {
     private players: ClientPlayer[] = [];
     private blasts: ClientBlast[] = [];
     private platforms: ClientPlatform[] = [];
-    private frameIntervalId?: NodeJS.Timeout; // higher number means slower game
-    private avgPlayerPos = 0;
+    private going: boolean = false;
 
-    private constructGame(info: AllInfo, id: number) {
+    private constructGame(info: AllInfo) {
         this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(platformInfo));
         this.blasts = info.blasts.map((blastInfo) => new ClientBlast(blastInfo));
         this.players = info.players.map(
@@ -42,11 +41,11 @@ export class Game {
         Game.canvas.width = config.xSize;
         Game.canvas.height = config.ySize;
 
-        this.constructGame(info, id);
+        this.constructGame(info);
 
         this.serverTalker.messageHandler = (msg: ServerMessage) => {
             if (msg.type === "info") {
-                this.constructGame(msg.info, id);
+                this.constructGame(msg.info);
             }
         };
 
@@ -63,17 +62,14 @@ export class Game {
     public start() {
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
+        this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
     }
 
     public end() {
         Game.gameDiv.style.display = "none";
         Game.menuDiv.style.display = "block";
-        if (this.frameIntervalId) {
-            clearInterval(this.frameIntervalId);
-        } else {
-            throw new Error("Tried to stop a game that wasn't in progress?");
-        }
+        this.going = false;
         this.serverTalker.leave();
     }
 
@@ -86,7 +82,9 @@ export class Game {
         this.lastFrame = timestamp;
         this.update(elapsedTime);
         this.render();
-        window.requestAnimationFrame((timestamp) => this.loop(timestamp));
+        if (this.going) {
+            window.requestAnimationFrame((timestamp) => this.loop(timestamp));
+        }
     }
 
     private update(elapsedTime: number) {
@@ -162,18 +160,12 @@ export class Game {
         const blast = new ClientBlast({
             position,
             color,
-            size: config.blastSize,
             opacity: 1,
+            size: 0,
         });
         this.blasts.push(blast);
-        this.players.forEach((player2) => {
-            const distance = Math.sqrt(Math.pow(position.x - player2.position.x, 2) + Math.pow(position.y - player2.position.y, 2));
-            if (distance < config.playerSize * 4 && distance != 0) {
-                player2.momentum.x = ((player2.position.x - position.x) * Math.pow(config.playerSize, 1.9)) / Math.pow(distance, 2);
-                player2.momentum.y =
-                    ((player2.position.y - position.y) * Math.pow(config.playerSize, 1.9)) / Math.pow(distance, 2) - (config.playerSize * 4 - distance) / 13;
-                //player2.health -= 5;
-            }
+        this.players.forEach((player) => {
+            blast.blastPlayer(player);
         });
     }
 }

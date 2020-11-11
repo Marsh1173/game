@@ -1,6 +1,7 @@
 import { config } from "../config";
 import { SerializedBlast } from "../serialized/blast";
 import { Vector } from "../vector";
+import { Player } from "./player";
 
 export abstract class Blast {
     constructor(public readonly position: Vector, public color: string, public size: number, public opacity: number) {}
@@ -15,9 +16,25 @@ export abstract class Blast {
     }
 
     public update(elapsedTime: number) {
-        this.position.x -= (config.blastSize / 4) * elapsedTime;
-        this.position.y -= (config.blastSize / 4) * elapsedTime;
-        this.size += (config.blastSize / 2) * elapsedTime;
-        this.opacity -= 1 * elapsedTime;
+        this.size += (config.blastSize * elapsedTime) / config.blastDuration;
+        this.opacity -= elapsedTime / config.blastDuration;
+    }
+
+    public blastPlayer(player: Player) {
+        const x1 = this.position.x;
+        const y1 = this.position.y;
+        const x2 = player.position.x + player.size.width / 2;
+        const y2 = player.position.y + player.size.height / 2;
+        const distanceVector = {
+            x: x1 - x2,
+            y: y1 - y2,
+        };
+        const distance = Math.sqrt(Math.pow(distanceVector.x, 2) + Math.pow(distanceVector.y, 2));
+        if (distance < config.blastSize && distance !== 0) {
+            const angle = Math.atan2(distanceVector.x, distanceVector.y);
+            player.momentum.x -= (Math.sin(angle) * config.blastPower) / Math.pow(distance, 2);
+            player.momentum.y -= (Math.cos(angle) * config.blastPower) / Math.pow(distance, 2);
+            //player.health -= 5;
+        }
     }
 }

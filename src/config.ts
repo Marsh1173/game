@@ -1,6 +1,8 @@
 export const config = {
     playerSize: 50, // Decides player height and width
-    blastSize: 50, // Decides blast radius
+    blastSize: 200, // Decides blast radius
+    blastDuration: 0.5, // Decides blast radius
+    blastPower: 5000000, // Decides blast radius
     jumpSize: 800, // Decides player jump height
     playerCount: 2, // from 1-4, decides # of players
     blastCooldown: 20, // Cooldown of player blast ability

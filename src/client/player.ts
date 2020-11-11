@@ -57,4 +57,13 @@ export class ClientPlayer extends Player {
             id: this.id,
         });
     }
+
+    public blast() {
+        super.blast();
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "blast",
+            id: this.id,
+        });
+    }
 }

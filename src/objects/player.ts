@@ -153,7 +153,7 @@ export abstract class Player {
     }
     public blast() {
         this.blastCounter = config.blastCooldown;
-        this.doBlast({ x: this.position.x, y: this.position.y }, this.color);
+        this.doBlast({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, this.color);
     }
 
     public die() {
