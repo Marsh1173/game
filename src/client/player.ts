@@ -20,6 +20,7 @@ export class ClientPlayer extends Player {
             info.health,
             info.deathCooldown,
             info.lastHitBy,
+            info.killCount,
             doBlast,
         );
     }

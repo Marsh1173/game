@@ -60,6 +60,7 @@ export class ServerPlayer extends Player {
             100,
             150,
             -1,
+            0,
             doBlast,
         );
         ServerPlayer.nextId++;

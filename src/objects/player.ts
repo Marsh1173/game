@@ -28,6 +28,7 @@ export abstract class Player {
         public health: number,
         public deathCooldown: number,
         public lastHitBy: number,
+        public killCount: number,
         public doBlast: (position: Vector, color: string, id: number) => void,
     ) {}
 
@@ -47,6 +48,7 @@ export abstract class Player {
             health: this.health,
             deathCooldown: this.deathCooldown,
             lastHitBy: this.lastHitBy,
+            killCount: this.killCount,
         };
     }
 
