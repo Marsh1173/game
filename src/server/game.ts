@@ -5,7 +5,6 @@ import { ServerPlayer } from "./player";
 import * as wsWebsocket from "ws";
 import { ClientMessage, InfoMessage, PlayerLeavingMessage } from "../api/message";
 import { Vector } from "../vector";
-import { config } from "../config";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
