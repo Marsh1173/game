@@ -1,5 +1,12 @@
 * {
   font-family: 'Lato', sans-serif;
+  margin:0;
+  padding-right:4px;
+  cursor: crosshair;
+  user-select: none;
+}
+body {
+  background: #bfc6ca;
 }
 #menuDiv {
 
@@ -11,8 +18,8 @@
   width: 204px;
   padding: 10px;
   border-radius: 10px;
-  border: 2px solid #aaa;
-  background-color: #adb4b8;
+  border: 2px solid rgb(124, 125, 138);
+  background-color: #778288;
 }
 #instructionMenu {
   position: absolute;
@@ -27,17 +34,20 @@
   color: #33424d;
 }
 #slideContainer {
-    /*max-width: 99%;*/
+    width: 100%;
     position: relative;
     border: 3px solid darkgray;
     border-bottom: 10px solid orange;
     border-radius: 5px;
+    background-color: white;
     overflow: hidden;
 }
 #slider {
     position: absolute;
     border: none;
     overflow: hidden;
+    margin:0;
+    padding:0;
 }
 
 button {
@@ -52,7 +62,7 @@ button:hover {
     background-color: #c1c6c9;
 }
 button:active {
-    background-color: #bbb;
+    background-color: #b5bdc2;
 }
 button:focus {
   outline: 0;
@@ -69,17 +79,23 @@ button:focus {
   color: #33424d;
 }
 .selected {
-  background:#c8c8c8;
+  background:#c1c6c9;
 }
 #width {
   width: 98%;
 }
 #playerInformationBar {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 5px;
+  border-radius: 10px;
+  border: 2px solid rgb(124, 125, 138);
+  background-color: #778288;
 }
 #healthContainer {
   width: 300px;
-  height: 25px;
+  height: 35px;
   background-color: #33424d;
   border: 2px solid #33424d;
   border-radius: 5px;
@@ -91,29 +107,5 @@ button:focus {
   background-color: rgb(201, 0, 0);
   border-right: 2px solid #ebebeb;
   border-radius: 1px;
-}
-.range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 25px;
-  background: #d3d3d3;
-  outline: none;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.range::-webkit-slider-thumb {
-  -webkit-appearance: none; /* Override default look */
-  appearance: none;
-  width: 25px; /* Set a specific slider handle width */
-  height: 25px; /* Slider handle height */
-  background: #4CAF50; /* Green background */
-  cursor: pointer; /* Cursor on hover */
-}
-
-.range::-moz-range-thumb {
-  width: 25px; /* Set a specific slider handle width */
-  height: 25px; /* Slider handle height */
-  background: #4CAF50; /* Green background */
-  cursor: pointer; /* Cursor on hover */
+  transform: translateX(-6px);
 }

@@ -152,14 +152,14 @@ export abstract class Player {
         }
     }
 
-    public attemptBlast() {
+    public attemptBlast(elapsedTime: number) {
         if (!this.isDead && this.blastCounter <= 0) {
-            this.blast();
+            this.blast(elapsedTime);
         }
     }
-    public blast() {
+    public blast(elapsedTime: number) {
         this.blastCounter = config.blastCooldown;
-        this.doBlast({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, this.color, this.id);
+        this.doBlast({ x: (this.position.x + this.momentum.x * elapsedTime) + this.size.width / 2, y: (this.position.y + this.momentum.y * elapsedTime) + this.size.height / 2 }, this.color, this.id);
     }
 
     public healPlayer(quantity: number) {
@@ -180,6 +180,8 @@ export abstract class Player {
     }
 
     public die() {
+        console.log(this.id + " was killed by " + this.lastHitBy);
+        this.lastHitBy = -1;
         this.isDead = true;
     }
 
@@ -207,7 +209,7 @@ export abstract class Player {
             this.attemptMoveRight(elapsedTime);
         }
         if (this.actionsNextFrame.blast) {
-            this.attemptBlast();
+            this.attemptBlast(elapsedTime);
         }
 
         // Falling speed

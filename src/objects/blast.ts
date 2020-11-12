@@ -31,12 +31,13 @@ export abstract class Blast {
             y: y1 - y2,
         };
         const distance = Math.sqrt(Math.pow(distanceVector.x, 2) + Math.pow(distanceVector.y, 2));
-        if (distance < config.blastSize && distance !== 0) {
+        if (distance < config.blastSize && this.id !== player.id) {
             const angle = Math.atan2(distanceVector.x, distanceVector.y);
             player.momentum.x -= (Math.sin(angle) * config.blastPower) / Math.pow(distance, 1.3);
             player.momentum.y -= (Math.cos(angle) * config.blastPower) / Math.pow(distance, 1.4) + (100 * config.blastSize / distance);
-            if (player.damagePlayer(7)) {
-                console.log(player.id + " was killed by " + this.id)
+            if (!player.isDead) {
+                player.damagePlayer(7);
+                player.lastHitBy = this.id;
             }
         }
     }

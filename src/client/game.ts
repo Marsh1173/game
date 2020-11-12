@@ -2,6 +2,7 @@ import { time } from "console";
 import { AllInfo } from "../api/allinfo";
 import { ServerMessage } from "../api/message";
 import { config } from "../config";
+import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { ClientBlast } from "./blast";
 import { ClientPlatform } from "./platform";
@@ -15,10 +16,16 @@ export class Game {
     private static readonly canvas = safeGetElementById("canvas") as HTMLCanvasElement;
     private static readonly ctx = Game.canvas.getContext("2d")!;
     private readonly keyState: Record<string, boolean> = {};
+    private screenPos: number = 0;
     private players: ClientPlayer[] = [];
     private blasts: ClientBlast[] = [];
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
+
+    private mousePos: Vector = {x: 56, y: 0};
+    private isClicking: boolean = false;
+    private isCharging: number = 0;
+
 
     private constructGame(info: AllInfo) {
         this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(platformInfo));
@@ -51,6 +58,17 @@ export class Game {
 
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
+        safeGetElementById("slider").onmousedown = (e: MouseEvent) => {
+            this.isClicking = true;
+        };
+        window.onmouseup = (e: MouseEvent) => {
+            this.isClicking = false;
+            this.isCharging = 0;
+        };
+        window.onmousemove = (e: MouseEvent) => {
+            this.mousePos.x = e.clientX;
+            this.mousePos.y = e.clientY;
+        };
         window.onkeydown = (e: KeyboardEvent) => {
             this.keyState[e.code] = true;
         };
@@ -62,7 +80,11 @@ export class Game {
     public start() {
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
-        safeGetElementById("slideContainer").style.width = config.xSize + 'px';
+
+        safeGetElementById("slideContainer").style.height = config.ySize + 'px';
+        safeGetElementById("slider").style.width = config.xSize + 'px';
+        safeGetElementById('slider').style.left = this.screenPos + "px";
+
         this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
     }
@@ -89,7 +111,7 @@ export class Game {
     }
 
     private update(elapsedTime: number) {
-        // this.updateSlider();
+        this.updateSlider();
 
         const playerWithId = this.players.find((player) => player.id === this.id);
         if (!playerWithId) {
@@ -97,6 +119,7 @@ export class Game {
         }
         if (this.keyState[config.playerKeys.up]) {
             playerWithId.attemptJump();
+            this.keyState[config.playerKeys.up] = false;
         }
         if (this.keyState[config.playerKeys.left]) {
             playerWithId.attemptMoveLeft(elapsedTime);
@@ -105,11 +128,17 @@ export class Game {
             playerWithId.attemptMoveRight(elapsedTime);
         }
         if (this.keyState[config.playerKeys.down]) {
-            playerWithId.attemptBlast();
+            playerWithId.attemptBlast(elapsedTime);
+            this.keyState[config.playerKeys.down] = false;
         }
 
+
+        //update if player is charging, can be cleaned up
+        if (this.isClicking && this.isCharging < 1) this.isCharging += elapsedTime * 2;
+        else if (this.isCharging > 1) this.isCharging = 1;
+
         //update health bar
-        safeGetElementById("health").style.width = playerWithId.health + '%';
+        safeGetElementById("health").style.width = (playerWithId.health * 1.02) + '%';
 
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {
@@ -133,29 +162,43 @@ export class Game {
 
     private render() {
         Game.ctx.clearRect(0, 0, config.xSize, config.ySize);
-        this.players.forEach((player) => player.render(Game.ctx));
+        this.players.forEach((player) => player.render(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isClicking, (this.isCharging * 0.8 + 0.2)));
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.blasts.forEach((blast) => blast.render(Game.ctx));
     }
 
-    /**
-     * TODO: Make this work with the new canvas stuff
-     */
     private updateSlider() {
-        let playersArray = this.players.filter((player) => !player.isDead);
-        let avgPlayerPos = playersArray.reduce((result, elem) => (result -= elem.position.x), 0) / playersArray.length;
-        if (window.innerWidth - 35 > config.xSize) {
-            avgPlayerPos = 0;
+
+        const playerWithId = this.players.find((player) => player.id === this.id);
+        if (!playerWithId) {
+            throw new Error("Player with my id does not exist in data from server");
         }
-        // go off the slider screen if the window is bigger
-        else {
-            // else go off the window
-            avgPlayerPos += window.innerWidth / 2 - 35;
-            if (avgPlayerPos > 0) avgPlayerPos = 0;
-            else if (avgPlayerPos * -1 > config.xSize - window.innerWidth + 20) {
-                avgPlayerPos = (config.xSize - window.innerWidth + 20) * -1;
+
+        //check if screen is bigger than field
+        if (config.xSize < window.innerWidth - 20) {
+            this.screenPos = 0;
+        } else {
+
+            let temp = this.screenPos + (-playerWithId.position.x + (window.innerWidth / 2) - this.screenPos) / 10;
+            //make a temp position to check where it would be updated to
+            if (this.screenPos < temp + 1 && this.screenPos > temp - 1) {
+                return; //so it's not updating even while idle
+            }
+
+            if (temp > 0) { // if they're too close to the left wall
+                if (this.screenPos === 0) return;
+                this.screenPos = 0;
+            }else if (temp < -(config.xSize - window.innerWidth + 6)) { // or the right wall
+                if (this.screenPos === -(config.xSize - window.innerWidth + 6)) return;
+                this.screenPos = -(config.xSize - window.innerWidth + 6);
+            } else {
+                if (this.screenPos > temp + 1 || this.screenPos < temp - 1) {
+                    this.screenPos = temp; // otherwise the predicted position is fine
+                }
             }
         }
+
+        safeGetElementById('slider').style.left = this.screenPos + "px";
     }
 
     private blast(position: Vector, color: string, id: number) {
