@@ -4,7 +4,7 @@ import { Player } from "../objects/player";
 import { Vector } from "../vector";
 
 export class ClientPlayer extends Player {
-    constructor(info: SerializedPlayer, doBlast: (position: Vector, color: string) => void, private readonly serverTalker: ServerTalker) {
+    constructor(info: SerializedPlayer, doBlast: (position: Vector, color: string, id: number) => void, private readonly serverTalker: ServerTalker) {
         super(
             info.id,
             info.position,
@@ -19,6 +19,7 @@ export class ClientPlayer extends Player {
             info.isDead,
             info.health,
             info.deathCooldown,
+            info.lastHitBy,
             doBlast,
         );
     }

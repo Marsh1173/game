@@ -27,8 +27,8 @@ export class Game {
             (playerInfo) =>
                 new ClientPlayer(
                     playerInfo,
-                    (position: Vector, color: string) => {
-                        this.blast(position, color);
+                    (position: Vector, color: string, id: number) => {
+                        this.blast(position, color, id);
                     },
                     this.serverTalker,
                 ),
@@ -62,6 +62,7 @@ export class Game {
     public start() {
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
+        safeGetElementById("slideContainer").style.width = config.xSize + 'px';
         this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
     }
@@ -107,18 +108,19 @@ export class Game {
             playerWithId.attemptBlast();
         }
 
+        //update health bar
+        safeGetElementById("health").style.width = playerWithId.health + '%';
+
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {
-            if (player1.isDead === false) {
-                this.players.forEach((player2) => {
-                    if (player1 !== player2 && player2.isDead === false) {
-                        player1.checkCollisionWithRectantularObject(player2);
-                    }
-                });
-                this.platforms.forEach((platform) => {
-                    player1.checkCollisionWithRectantularObject(platform);
-                });
-            }
+            this.players.forEach((player2) => {
+                if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
+                    player1.checkCollisionWithRectangularObject(player2, elapsedTime);
+                }
+            });
+            this.platforms.forEach((platform) => {
+                player1.checkCollisionWithRectangularObject(platform, elapsedTime);
+            });
         });
 
         this.players.forEach((player) => player.update(elapsedTime));
@@ -156,10 +158,11 @@ export class Game {
         }
     }
 
-    private blast(position: Vector, color: string) {
+    private blast(position: Vector, color: string, id: number) {
         const blast = new ClientBlast({
             position,
             color,
+            id,
             opacity: 1,
             size: 0,
         });

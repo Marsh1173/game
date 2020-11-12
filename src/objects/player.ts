@@ -14,7 +14,7 @@ export abstract class Player {
     };
 
     constructor(
-        public readonly id: number,
+        public id: number,
         public position: Vector,
         public momentum: Vector,
         public color: string,
@@ -27,7 +27,8 @@ export abstract class Player {
         public isDead: boolean,
         public health: number,
         public deathCooldown: number,
-        public doBlast: (position: Vector, color: string) => void,
+        public lastHitBy: number,
+        public doBlast: (position: Vector, color: string, id: number) => void,
     ) {}
 
     public serialize(): SerializedPlayer {
@@ -45,15 +46,18 @@ export abstract class Player {
             isDead: this.isDead,
             health: this.health,
             deathCooldown: this.deathCooldown,
+            lastHitBy: this.lastHitBy,
         };
     }
 
-    public checkCollisionWithRectantularObject(object: { size: Size; position: Vector }) {
+    public checkCollisionWithRectangularObject(object: { size: Size; position: Vector }, elapsedTime: number) {
+        let futurePosX = this.position.x + this.momentum.x * elapsedTime;
+        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
-            this.position.x < object.position.x + object.size.width &&
-            this.position.x + this.size.width > object.position.x &&
-            this.position.y < object.position.y + object.size.height &&
-            this.position.y + this.size.height > object.position.y
+            futurePosX < object.position.x + object.size.width &&
+            futurePosX + this.size.width > object.position.x &&
+            futurePosY < object.position.y + object.size.height &&
+            futurePosY + this.size.height > object.position.y
         ) {
             const points: Vector[] = [
                 {
@@ -93,17 +97,17 @@ export abstract class Player {
             this.position.y = points[smallestIndex].y;
             switch (smallestIndex) {
                 case 0: // above
-                    this.momentum.y = 0;
+                    if (this.momentum.y > 0) this.momentum.y = 0;
                     this.standing = true;
                     break;
                 case 1: // below
-                    this.momentum.y = 0;
+                    if (this.momentum.y < 0) this.momentum.y = 0;
                     break;
                 case 2: // left
-                    this.momentum.x = 0;
+                    if (this.momentum.x > 0) this.momentum.x = 0;
                     break;
                 case 3: // right
-                    this.momentum.x = 0;
+                    if (this.momentum.x < 0) this.momentum.x = 0;
                     break;
             }
         }
@@ -116,7 +120,7 @@ export abstract class Player {
     }
 
     public jump() {
-        this.momentum.y -= config.jumpSize;
+        this.momentum.y = -config.jumpSize;
         this.alreadyJumped = 2;
         this.canJump = false;
     }
@@ -153,11 +157,36 @@ export abstract class Player {
     }
     public blast() {
         this.blastCounter = config.blastCooldown;
-        this.doBlast({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, this.color);
+        this.doBlast({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, this.color, this.id);
+    }
+
+    public healPlayer(quantity: number) {
+        this.health += quantity;
+        if (this.health > 100) {
+            this.health = 100;
+        }
+    }
+
+    public damagePlayer(quantity: number): boolean {
+        this.health -= quantity;
+        if (this.health <= 0) {
+            this.die();
+            this.health = 0;
+            return true;
+        }
+        return false;
     }
 
     public die() {
         this.isDead = true;
+    }
+
+    public resurrect() {
+        this.isDead = false;
+        this.position.x = config.xSize / 2 - this.size.height / 2;
+        this.position.y = 200;
+        this.deathCooldown = 150;
+        this.health = 100;
     }
 
     public update(elapsedTime: number) {
@@ -185,13 +214,13 @@ export abstract class Player {
         }
 
         // Movement dampening
-        if (Math.abs(this.momentum.x) < 1) {
+        if (Math.abs(this.momentum.x) < 30) {
             this.momentum.x = 0;
         } else {
             if (this.standing) {
-                this.momentum.x *= 0.8 ** (elapsedTime * 60);
+                this.momentum.x *= 0.65 ** (elapsedTime * 60);
             } else {
-                this.momentum.x *= 0.98 ** (elapsedTime * 60);
+                this.momentum.x *= 0.97 ** (elapsedTime * 60);
             }
         }
 
@@ -218,10 +247,18 @@ export abstract class Player {
         }
         if (this.position.x < 0) {
             this.position.x = 0;
-            this.momentum.x = Math.max(this.momentum.x, 0);
+            if (this.momentum.x < -config.maxSidewaysMomentum / 3) {
+                this.momentum.x /= -2;
+            } else {
+                this.momentum.x = 0;
+            }
         } else if (this.position.x + this.size.width > config.xSize) {
             this.position.x = config.xSize - this.size.width;
-            this.momentum.x = Math.min(this.momentum.x, 0);
+            if (this.momentum.x > config.maxSidewaysMomentum / 3) {
+                this.momentum.x /= -2;
+            } else {
+                this.momentum.x = 0;
+            }
         }
 
         // update jump counter
@@ -229,30 +266,24 @@ export abstract class Player {
             this.alreadyJumped -= elapsedTime * 60;
         }
 
-        // Die if you hit the bottom of the screen
+        // get damaged if you hit the bottom of the screen
         if (!this.isDead && this.position.y >= config.ySize - this.size.height) {
-            this.die();
+            this.damagePlayer(elapsedTime * 120);
+        } else if (!this.isDead) {
+            this.healPlayer(elapsedTime * 2);
         }
 
         // Respawn timer
         if (this.isDead) {
             this.deathCooldown -= elapsedTime * 60;
             if (this.deathCooldown <= 0) {
-                this.isDead = false;
-                this.position.x = config.xSize / 2 - this.size.height / 2;
-                this.position.y = 200;
-                this.deathCooldown = 150;
+                this.resurrect();
             }
         }
 
         // Blast cooldown timer
         if (this.blastCounter > 0) {
             this.blastCounter -= elapsedTime * 60;
-        }
-
-        // Die if you run out of health?
-        if (this.health <= 0) {
-            //this.die();
         }
 
         Object.keys(this.actionsNextFrame).forEach((key) => (this.actionsNextFrame[key as PlayerActions] = false));

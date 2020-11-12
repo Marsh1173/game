@@ -15,4 +15,5 @@ export interface SerializedPlayer {
     isDead: boolean;
     health: number;
     deathCooldown: number;
+    lastHitBy: number;
 }

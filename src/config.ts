@@ -1,15 +1,15 @@
 export const config = {
     playerSize: 50, // Decides player height and width
-    blastSize: 200, // Decides blast radius
-    blastDuration: 0.5, // Decides blast radius
-    blastPower: 5000000, // Decides blast radius
-    jumpSize: 800, // Decides player jump height
+    blastSize: 180, // Decides blast radius
+    blastDuration: 0.15, // Decides blast radius
+    blastPower: 300000, // Decides blast radius
+    jumpSize: 1000, // Decides player jump height
     playerCount: 2, // from 1-4, decides # of players
     blastCooldown: 20, // Cooldown of player blast ability
-    xSize: 800,
-    ySize: 500,
-    hostname: "http://localhost:3000/",
-    websocketHostname: "ws://localhost:3000/",
+    xSize: 1000,
+    ySize: 600,
+    hostname: "http://192.168.1.6:3000/",
+    websocketHostname: "ws://192.168.1.6:3000/",
     playerKeys: {
         up: "KeyW",
         down: "KeyS",
@@ -17,8 +17,8 @@ export const config = {
         right: "KeyD",
     },
     platformColor: "grey",
-    fallingAcceleration: 2000, // momentum per second
-    standingSidewaysAcceleration: 10000, // momentum per second
-    nonStandingSidewaysAcceleration: 2500, // momentum per second
-    maxSidewaysMomentum: 600,
+    fallingAcceleration: 3000, // momentum per second
+    standingSidewaysAcceleration: 13000, // momentum per second
+    nonStandingSidewaysAcceleration: 2200, // momentum per second
+    maxSidewaysMomentum: 800,
 };

@@ -3,7 +3,7 @@ import { SerializedBlast } from "../serialized/blast";
 
 export class ClientBlast extends Blast {
     constructor(info: SerializedBlast) {
-        super(info.position, info.color, info.size, info.opacity);
+        super(info.position, info.color, info.id, info.size, info.opacity);
     }
 
     public render(ctx: CanvasRenderingContext2D) {

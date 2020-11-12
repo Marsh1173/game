@@ -27,7 +27,7 @@
   color: #33424d;
 }
 #slideContainer {
-    max-width: 99%;
+    /*max-width: 99%;*/
     position: relative;
     border: 3px solid darkgray;
     border-bottom: 10px solid orange;
@@ -38,69 +38,6 @@
     position: absolute;
     border: none;
     overflow: hidden;
-}
-
-#myAnimation1 {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    background-color: none;
-    border-radius: 2px;
-    color: white;
-}
-
-#myAnimation2 {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    background-color: none;
-    border-radius: 2px;
-    color: white;
-}
-
-#myAnimation3 {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    background-color: inherit;
-    border-radius: 2px;
-}
-
-#myAnimation4 {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    background-color: inherit;
-    border-radius: 2px;
-}
-#myAnimation5 {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    background-color: inherit;
-    border-radius: 2px;
-}
-#myAnimation6 {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    background-color: inherit;
-    border-radius: 2px;
-}
-
-.platform {
-    background: darkgrey;
-    position: absolute;
-    border-radius: 2px;
-}
-
-.blast {
-    background: red;
-    position: absolute;
-    height: 200px;
-    width: 200px;
-    border-radius: 100px;
-    opacity: 0;
 }
 
 button {
@@ -136,6 +73,24 @@ button:focus {
 }
 #width {
   width: 98%;
+}
+#playerInformationBar {
+  display: flex;
+}
+#healthContainer {
+  width: 300px;
+  height: 25px;
+  background-color: #33424d;
+  border: 2px solid #33424d;
+  border-radius: 5px;
+  overflow: hidden;
+}
+#health {
+  width: 100%;
+  height: 100%;
+  background-color: rgb(201, 0, 0);
+  border-right: 2px solid #ebebeb;
+  border-radius: 1px;
 }
 .range {
   -webkit-appearance: none;

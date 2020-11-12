@@ -59,16 +59,14 @@ export class Game {
 
     public update(elapsedTime: number) {
         this.players.forEach((player1) => {
-            if (player1.isDead === false) {
-                this.players.forEach((player2) => {
-                    if (player1 !== player2 && player2.isDead === false) {
-                        player1.checkCollisionWithRectantularObject(player2);
-                    }
-                });
-                this.platforms.forEach((platform) => {
-                    player1.checkCollisionWithRectantularObject(platform);
-                });
-            }
+            this.players.forEach((player2) => {
+                if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
+                    player1.checkCollisionWithRectangularObject(player2, elapsedTime);
+                }
+            });
+            this.platforms.forEach((platform) => {
+                player1.checkCollisionWithRectangularObject(platform, elapsedTime);
+            });
         });
         this.players.forEach((player) => player.update(elapsedTime));
         // Collision detection with other players or platforms
@@ -78,8 +76,8 @@ export class Game {
     }
 
     public newPlayer() {
-        const newPlayer = new ServerPlayer((position: Vector, color: string) => {
-            this.blast(position, color);
+        const newPlayer = new ServerPlayer((position: Vector, color: string, id: number) => {
+            this.blast(position, color, id);
         });
         this.players.push(newPlayer);
         return newPlayer.id;
@@ -121,10 +119,11 @@ export class Game {
         }
     }
 
-    private blast(position: Vector, color: string) {
+    private blast(position: Vector, color: string, id: number) {
         const blast = new ServerBlast({
             position,
             color,
+            id,
             opacity: 1,
             size: 0,
         });

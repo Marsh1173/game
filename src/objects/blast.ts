@@ -4,12 +4,13 @@ import { Vector } from "../vector";
 import { Player } from "./player";
 
 export abstract class Blast {
-    constructor(public readonly position: Vector, public color: string, public size: number, public opacity: number) {}
+    constructor(public readonly position: Vector, public color: string, public id: number, public size: number, public opacity: number) {}
 
     public serialize(): SerializedBlast {
         return {
             position: this.position,
             color: this.color,
+            id: this.id,
             size: this.size,
             opacity: this.opacity,
         };
@@ -32,9 +33,11 @@ export abstract class Blast {
         const distance = Math.sqrt(Math.pow(distanceVector.x, 2) + Math.pow(distanceVector.y, 2));
         if (distance < config.blastSize && distance !== 0) {
             const angle = Math.atan2(distanceVector.x, distanceVector.y);
-            player.momentum.x -= (Math.sin(angle) * config.blastPower) / Math.pow(distance, 2);
-            player.momentum.y -= (Math.cos(angle) * config.blastPower) / Math.pow(distance, 2);
-            //player.health -= 5;
+            player.momentum.x -= (Math.sin(angle) * config.blastPower) / Math.pow(distance, 1.3);
+            player.momentum.y -= (Math.cos(angle) * config.blastPower) / Math.pow(distance, 1.4) + (100 * config.blastSize / distance);
+            if (player.damagePlayer(7)) {
+                console.log(player.id + " was killed by ?")
+            }
         }
     }
 }
