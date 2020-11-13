@@ -92,11 +92,12 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public arrow(x: number, y: number) {
-        super.arrow(x, y);
+    public arrow() {
+        super.arrow();
         this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "arrow",
+            type: "arrow",
+            direction: {x: this.mousePos.x, y: this.mousePos.y},
+            position: {x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2,},
             id: this.id,
         });
     }

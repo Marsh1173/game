@@ -168,19 +168,22 @@ export abstract class Player {
         this.doBlast({ x: (this.position.x + this.momentum.x * elapsedTime) + this.size.width / 2, y: (this.position.y + this.momentum.y * elapsedTime) + this.size.height / 2 }, this.color, this.id);
     }
 
-    public attemptArrow(x: number, y: number) {
-        this.arrow(x, y);
+    public attemptArrow() {
+        this.arrow();
     }
-    public arrow(x1: number, y1: number) {
-        let test: number = -600;
-        let test2: number = this.mousePos.x;
+    public arrow() {
+
+        const power: number = 100;
+
+        let newX = Math.sqrt(power - Math.pow(this.mousePos.y, 2));
+        let newY = Math.sqrt(power - Math.pow(this.mousePos.x, 2));
+
+        if (this.mousePos.x < 0) newX *= -1;
+        if (this.mousePos.y < 0) newY *= -1;
+
         this.doArrow(
             { x: (this.position.x) + this.size.width / 2, y: (this.position.y) + this.size.height / 2 },
-            {x: 1000, y: test},
-            this.id);
-        this.doArrow(
-            { x: (this.position.x) + this.size.width / 2, y: (this.position.y) + this.size.height / 2 },
-            {x: this.mousePos.x, y: this.mousePos.y},
+            {x: newX, y: newY},
             this.id);
     }
 
@@ -236,7 +239,7 @@ export abstract class Player {
             this.attemptBlast(elapsedTime);
         }
         if (this.actionsNextFrame.arrow) {
-            this.attemptArrow(this.mousePos.x, this.mousePos.y);
+            this.attemptArrow();
         }
 
         // Falling speed

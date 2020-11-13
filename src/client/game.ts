@@ -24,7 +24,7 @@ export class Game {
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
 
-    private mousePos: Vector = {x: 56, y: 0};
+    private mousePos: Vector = {x: 0, y: 0};
     private isClicking: boolean = false;
     private isCharging: number = 0;
 
@@ -70,14 +70,14 @@ export class Game {
         window.onmouseup = (e: MouseEvent) => {
             this.isClicking = false;
             if (this.isCharging === 1) {
-                const playerWithId = this.players.find((player) => player.id === this.id);
-                if (!playerWithId) {
-                   throw new Error("Player with my id does not exist in data from server");
-                }
+
+                const playerWithId = this.findPlayer();
+
                 playerWithId.mousePos.x = (this.mousePos.x - this.screenPos - playerWithId.position.x - config.playerSize / 2) * 5;
                 playerWithId.mousePos.y = (this.mousePos.y - playerWithId.position.y - config.playerSize / 2) * 5;
+
                 //console.log(playerWithId.mousePos);
-                if (playerWithId.isDead === false) playerWithId.attemptArrow(playerWithId.mousePos.x, playerWithId.mousePos.y);
+                if (playerWithId.isDead === false) playerWithId.attemptArrow();
             }
             this.isCharging = 0;
         };
@@ -129,10 +129,7 @@ export class Game {
     private update(elapsedTime: number) {
         this.updateSlider();
 
-        const playerWithId = this.players.find((player) => player.id === this.id);
-        if (!playerWithId) {
-            throw new Error("Player with my id does not exist in data from server");
-        }
+        const playerWithId = this.findPlayer()
         if (this.keyState[config.playerKeys.up]) {
             playerWithId.attemptJump();
             this.keyState[config.playerKeys.up] = false;
@@ -188,6 +185,14 @@ export class Game {
         this.render();
     }
 
+    private findPlayer() {
+        const playerWithId = this.players.find((player) => player.id === this.id);
+        if (!playerWithId) {
+           throw new Error("Player with my id does not exist in data from server");
+        }
+        return playerWithId;
+    }
+
     private render() {
         Game.ctx.clearRect(0, 0, config.xSize, config.ySize);
         this.players.forEach((player) => {
@@ -202,10 +207,7 @@ export class Game {
 
     private updateSlider() {
 
-        const playerWithId = this.players.find((player) => player.id === this.id);
-        if (!playerWithId) {
-            throw new Error("Player with my id does not exist in data from server");
-        }
+        const playerWithId = this.findPlayer();
 
         //check if screen is bigger than field
         if (config.xSize < window.innerWidth - 20) {

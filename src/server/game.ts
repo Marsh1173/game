@@ -129,15 +129,15 @@ export class Game {
                     case "blast":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.blast = true;
                         break;
-                    case "arrow":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.arrow = true;
-                        break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
                 }
                 break;
+            case "arrow" :
+                this.arrows.push(new ServerArrow({position: data.position, momentum: data.direction, id, inGround: false}))
+                break;
             default:
-                throw new Error(`Invalid client message type: ${data.type}`);
+                throw new Error(`Invalid client message type`);
         }
     }
 

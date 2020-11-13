@@ -1,5 +1,6 @@
-import { PlayerActions } from "../objects/player";
+import { Player, PlayerActions } from "../objects/player";
 import { SerializedPlayer } from "../serialized/player";
+import { Vector } from "../vector";
 import { AllInfo } from "./allinfo";
 
 export interface JoinMessage {
@@ -32,4 +33,11 @@ export interface ActionMessage {
     id: number;
 }
 
-export type ClientMessage = ActionMessage;
+export interface ArrowMessage {
+    type: "arrow";
+    position: Vector;
+    direction: Vector;
+    id: number;
+}
+
+export type ClientMessage = ActionMessage | ArrowMessage;
