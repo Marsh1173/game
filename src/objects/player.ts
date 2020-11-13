@@ -3,7 +3,7 @@ import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow";
 
 export abstract class Player {
     public readonly actionsNextFrame: Record<PlayerActions, boolean> = {
@@ -11,6 +11,7 @@ export abstract class Player {
         moveLeft: false,
         moveRight: false,
         blast: false,
+        arrow: false,
     };
 
     constructor(
@@ -29,7 +30,10 @@ export abstract class Player {
         public deathCooldown: number,
         public lastHitBy: number,
         public killCount: number,
+        public mousePos: Vector,
+        public isCharging: number,
         public doBlast: (position: Vector, color: string, id: number) => void,
+        public doArrow: (position: Vector, momentum: Vector, id: number) => void,
     ) {}
 
     public serialize(): SerializedPlayer {
@@ -49,6 +53,8 @@ export abstract class Player {
             deathCooldown: this.deathCooldown,
             lastHitBy: this.lastHitBy,
             killCount: this.killCount,
+            mousePos: this.mousePos,
+            isCharging: this.isCharging,
         };
     }
 
@@ -162,6 +168,22 @@ export abstract class Player {
         this.doBlast({ x: (this.position.x + this.momentum.x * elapsedTime) + this.size.width / 2, y: (this.position.y + this.momentum.y * elapsedTime) + this.size.height / 2 }, this.color, this.id);
     }
 
+    public attemptArrow(x: number, y: number) {
+        this.arrow(x, y);
+    }
+    public arrow(x1: number, y1: number) {
+        let test: number = -600;
+        let test2: number = this.mousePos.x;
+        this.doArrow(
+            { x: (this.position.x) + this.size.width / 2, y: (this.position.y) + this.size.height / 2 },
+            {x: 1000, y: test},
+            this.id);
+        this.doArrow(
+            { x: (this.position.x) + this.size.width / 2, y: (this.position.y) + this.size.height / 2 },
+            {x: this.mousePos.x, y: this.mousePos.y},
+            this.id);
+    }
+
     public healPlayer(quantity: number) {
         this.health += quantity;
         if (this.health > 100) {
@@ -191,6 +213,8 @@ export abstract class Player {
         this.position.y = 200;
         this.deathCooldown = 150;
         this.health = 100;
+        this.momentum.x = 0;
+        this.momentum.y = 0;
     }
 
     public update(elapsedTime: number) {
@@ -210,6 +234,9 @@ export abstract class Player {
         }
         if (this.actionsNextFrame.blast) {
             this.attemptBlast(elapsedTime);
+        }
+        if (this.actionsNextFrame.arrow) {
+            this.attemptArrow(this.mousePos.x, this.mousePos.y);
         }
 
         // Falling speed

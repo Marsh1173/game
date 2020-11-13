@@ -17,4 +17,6 @@ export interface SerializedPlayer {
     deathCooldown: number;
     lastHitBy: number;
     killCount: number;
+    mousePos: Vector;
+    isCharging: number;
 }

@@ -4,7 +4,7 @@ import { Player } from "../objects/player";
 import { Vector } from "../vector";
 
 export class ClientPlayer extends Player {
-    constructor(info: SerializedPlayer, doBlast: (position: Vector, color: string, id: number) => void, private readonly serverTalker: ServerTalker) {
+    constructor(info: SerializedPlayer, doBlast: (position: Vector, color: string, id: number) => void, doArrow: (position: Vector, mometum: Vector, id: number) => void, private readonly serverTalker: ServerTalker) {
         super(
             info.id,
             info.position,
@@ -21,7 +21,10 @@ export class ClientPlayer extends Player {
             info.deathCooldown,
             info.lastHitBy,
             info.killCount,
+            info.mousePos,
+            info.isCharging,
             doBlast,
+            doArrow,
         );
     }
 
@@ -29,9 +32,10 @@ export class ClientPlayer extends Player {
         xMousePos: number,
         yMousePos: number,
         isClicking: boolean,
-        isCharging: number) {
+        isCharging: number,
+        isPlayer: boolean) {
 
-            if (isClicking && !this.isDead) {
+            if (isClicking && !this.isDead && isPlayer) {
 
                 let xComputed = (isCharging * xMousePos) + (this.position.x + this.size.width / 2) * (1 - isCharging) - 4;
                 let yComputed = (isCharging * yMousePos) + (this.position.y + this.size.height / 2) * (1 - isCharging) - 4;
@@ -84,6 +88,15 @@ export class ClientPlayer extends Player {
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "blast",
+            id: this.id,
+        });
+    }
+
+    public arrow(x: number, y: number) {
+        super.arrow(x, y);
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "arrow",
             id: this.id,
         });
     }

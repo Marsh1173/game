@@ -41,7 +41,7 @@ export class ServerPlayer extends Player {
 
     public actionList: PlayerActions[] = [];
 
-    constructor(doBlast: (position: Vector, color: string, id: number) => void) {
+    constructor(doBlast: (position: Vector, color: string, id: number) => void, doArrow: (position: Vector, momentum: Vector, id: number) => void) {
         super(
             ServerPlayer.nextId,
             {
@@ -61,7 +61,13 @@ export class ServerPlayer extends Player {
             150,
             -1,
             0,
+            {
+                x: 0,
+                y: 0,
+            },
+            0,
             doBlast,
+            doArrow,
         );
         ServerPlayer.nextId++;
     }

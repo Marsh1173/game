@@ -5,6 +5,7 @@ import { config } from "../config";
 import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { ClientBlast } from "./blast";
+import { ClientArrow } from "./arrow";
 import { ClientPlatform } from "./platform";
 import { ClientPlayer } from "./player";
 import { ServerTalker } from "./servertalker";
@@ -19,6 +20,7 @@ export class Game {
     private screenPos: number = 0;
     private players: ClientPlayer[] = [];
     private blasts: ClientBlast[] = [];
+    private arrows: ClientArrow[] = [];
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
 
@@ -30,12 +32,16 @@ export class Game {
     private constructGame(info: AllInfo) {
         this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(platformInfo));
         this.blasts = info.blasts.map((blastInfo) => new ClientBlast(blastInfo));
+        this.arrows = info.arrows.map((arrowInfo) => new ClientArrow(arrowInfo));
         this.players = info.players.map(
             (playerInfo) =>
                 new ClientPlayer(
                     playerInfo,
                     (position: Vector, color: string, id: number) => {
                         this.blast(position, color, id);
+                    },
+                    (position: Vector, momentum: Vector, id: number) => {
+                        this.arrow(position, momentum, id);
                     },
                     this.serverTalker,
                 ),
@@ -63,6 +69,16 @@ export class Game {
         };
         window.onmouseup = (e: MouseEvent) => {
             this.isClicking = false;
+            if (this.isCharging === 1) {
+                const playerWithId = this.players.find((player) => player.id === this.id);
+                if (!playerWithId) {
+                   throw new Error("Player with my id does not exist in data from server");
+                }
+                playerWithId.mousePos.x = (this.mousePos.x - this.screenPos - playerWithId.position.x - config.playerSize / 2) * 5;
+                playerWithId.mousePos.y = (this.mousePos.y - playerWithId.position.y - config.playerSize / 2) * 5;
+                //console.log(playerWithId.mousePos);
+                if (playerWithId.isDead === false) playerWithId.attemptArrow(playerWithId.mousePos.x, playerWithId.mousePos.y);
+            }
             this.isCharging = 0;
         };
         window.onmousemove = (e: MouseEvent) => {
@@ -134,7 +150,7 @@ export class Game {
 
 
         //update if player is charging, can be cleaned up
-        if (this.isClicking && this.isCharging < 1) this.isCharging += elapsedTime * 2;
+        if (this.isClicking && this.isCharging < 1 && playerWithId.isDead === false) this.isCharging += elapsedTime * 2;
         else if (this.isCharging > 1) this.isCharging = 1;
 
         //update health bar
@@ -152,19 +168,36 @@ export class Game {
             });
         });
 
+        this.arrows.forEach((arrow) => {
+            this.players.forEach((player) => {
+                arrow.checkCollisionWithPlayer(player, elapsedTime);
+            });
+            this.platforms.forEach((platform) => {
+                arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
+            });
+        });
+
         this.players.forEach((player) => player.update(elapsedTime));
 
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
+
+        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
+        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
 
         this.render();
     }
 
     private render() {
         Game.ctx.clearRect(0, 0, config.xSize, config.ySize);
-        this.players.forEach((player) => player.render(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isClicking, (this.isCharging * 0.8 + 0.2)));
+        this.players.forEach((player) => {
+            let temp: boolean = false;
+            if (player.id === this.id) temp = true;
+            player.render(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isClicking, (this.isCharging * 0.8 + 0.2), temp)
+        });
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.blasts.forEach((blast) => blast.render(Game.ctx));
+        this.arrows.forEach((arrow) => arrow.render(Game.ctx));
     }
 
     private updateSlider() {
@@ -213,5 +246,15 @@ export class Game {
         this.players.forEach((player) => {
             blast.blastPlayer(player);
         });
+    }
+
+    private arrow(position: Vector, momentum: Vector, id: number) {
+        const arrow = new ClientArrow({
+            position,
+            momentum,
+            id,
+            inGround: false,
+        });
+        this.arrows.push(arrow);
     }
 }

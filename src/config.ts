@@ -11,8 +11,8 @@ export const config = {
     hostname: "http://192.168.1.6:3000/",
     websocketHostname: "ws://192.168.1.6:3000/",
     playerKeys: {
-        up: "KeyW",
-        down: "Space",
+        up: "Space",
+        down: "KeyW",
         left: "KeyA",
         right: "KeyD",
     },
