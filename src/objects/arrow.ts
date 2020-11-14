@@ -99,7 +99,7 @@ export abstract class Arrow {
             this.id != player.id
         ) {
             if (!player.isDead) {
-                if (!player.isShielded) player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 2)) / 6, this.id);
+                if (!player.isShielded) player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 1.7)) / 6, this.id);
                 this.inGround = true;
                 player.momentum.x += this.momentum.x / 2;
                 player.momentum.y += this.momentum.y / 2;

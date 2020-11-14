@@ -8,6 +8,7 @@ export class ServerPlayer extends Player {
     constructor(
         config: Config,
         id: number,
+        name: string,
         color: string,
         doBlast: (position: Vector, color: string, id: number) => void,
         doArrow: (position: Vector, momentum: Vector, id: number) => void,
@@ -15,7 +16,7 @@ export class ServerPlayer extends Player {
         super(
             config,
             id,
-            "Player " + (id + 1),
+            name,
             0,
             0,
             {

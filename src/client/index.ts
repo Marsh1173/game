@@ -14,7 +14,12 @@ instructionDiv.style.display = "none";
 
 safeGetElementById("start").onclick = async () => {
     //config.playerName = safeGetElementById("name").value; // shows an error but it works?
+
+    let name: string = (safeGetElementById("name") as HTMLInputElement).value;
+    if (name === "") name = "Player";
+
     const serverTalker = new ServerTalker({
+        name,
         color: (safeGetElementById("color") as HTMLInputElement).value,
     });
     const { id, info, config } = await serverTalker.serverTalkerReady;

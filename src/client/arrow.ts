@@ -8,15 +8,15 @@ export class ClientArrow extends Arrow {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
-        ctx.shadowColor = "white";
+        ctx.shadowBlur = 0;
 
         ctx.beginPath();
-        ctx.moveTo(this.position.x - this.momentum.x / 50, this.position.y - this.momentum.y / 50); // from player position
+        ctx.moveTo(this.position.x - this.momentum.x / 70, this.position.y - this.momentum.y / 70); // from player position
         ctx.lineTo(this.position.x + this.momentum.x / 100, this.position.y + this.momentum.y / 100); // pointing towards cursor, based on percentage of charge
-        ctx.strokeStyle = "lightgray";
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = "gray";
+        ctx.lineWidth = 3;
         ctx.stroke();
 
-        ctx.shadowColor = "gray";
+        ctx.shadowBlur = 3;
     }
 }

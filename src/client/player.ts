@@ -47,8 +47,8 @@ export class ClientPlayer extends Player {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
         } else if (this.health === 100) {
-            ctx.shadowBlur = 3;
-            ctx.shadowColor = "gray";
+            ctx.shadowBlur = 7;
+            ctx.shadowColor = this.color;
         } else if (!this.isDead) {
             ctx.shadowBlur = (100 - this.health) / 7;
             ctx.shadowColor = "red";
@@ -88,6 +88,7 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 5;
         ctx.stroke();
 
+        //reset
         ctx.globalAlpha = 1.0;
 
         ctx.shadowBlur = 2;
@@ -95,14 +96,14 @@ export class ClientPlayer extends Player {
 
         //name
         ctx.fillStyle = "white";
-        ctx.fillText(this.name, this.position.x, this.position.y - 10);
+        ctx.fillText(this.name, this.position.x + (this.size.width / 2) - (this.name.length * 2.2) - 1, this.position.y - 10);
     }
 
     public renderMouseCharge(ctx: CanvasRenderingContext2D, xMousePos: number, yMousePos: number, isCharging: number) {
         let xComputed = isCharging * xMousePos + (this.position.x + this.size.width / 2) * (1 - isCharging) - 3;
         let yComputed = isCharging * yMousePos + (this.position.y + this.size.height / 2) * (1 - isCharging) - 3;
 
-        ctx.shadowColor = "white";
+        ctx.shadowBlur = 0;
 
         ctx.beginPath();
         ctx.moveTo(this.position.x + this.size.width / 2 - 3, this.position.y + this.size.height / 2 - 3); // from player position
@@ -113,6 +114,7 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 5;
         ctx.stroke();
 
+        ctx.shadowBlur = 3;
         ctx.shadowColor = "gray";
     }
 

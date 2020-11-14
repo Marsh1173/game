@@ -94,10 +94,11 @@ export class Game {
         this.platforms.forEach((platform) => platform.update());
     }
 
-    public newPlayer(id: number, color: string) {
+    public newPlayer(id: number, name: string, color: string) {
         const newPlayer = new ServerPlayer(
             this.config,
             id,
+            name,
             color,
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
