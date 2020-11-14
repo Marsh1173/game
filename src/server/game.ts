@@ -4,7 +4,7 @@ import { ServerArrow } from "./arrow";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
 import * as wsWebsocket from "ws";
-import { ClientMessage, InfoMessage, PlayerLeavingMessage } from "../api/message";
+import { ClientMessage, InfoMessage, PlayerLeavingMessage, ServerMessage } from "../api/message";
 import { Vector } from "../vector";
 import { Config } from "../config";
 
@@ -16,7 +16,7 @@ export class Game {
     private blasts: ServerBlast[] = [];
     private arrows: ServerArrow[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
-    public readonly clientMap: Record<number, wsWebsocket> = {};
+    public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
 
     constructor(public readonly config: Config) {}
 
@@ -55,8 +55,8 @@ export class Game {
             type: "info",
             info: this.allInfo(),
         };
-        Object.values(this.clientMap).forEach((client) => {
-            client.send(JSON.stringify(data));
+        Object.values(this.clientMap).forEach((sendFunction) => {
+            sendFunction(data);
         });
     }
 
@@ -115,8 +115,8 @@ export class Game {
             type: "playerLeaving",
             id,
         };
-        Object.values(this.clientMap).forEach((ws) => {
-            ws.send(JSON.stringify(leavingMessage));
+        Object.values(this.clientMap).forEach((sendFunction) => {
+            sendFunction(leavingMessage);
         });
     }
 
