@@ -69,15 +69,8 @@ export class Game {
         };
         window.onmouseup = (e: MouseEvent) => {
             this.isClicking = false;
-            if (this.isCharging === 1) {
-
-                const playerWithId = this.findPlayer();
-
-                playerWithId.mousePos.x = (this.mousePos.x - this.screenPos - playerWithId.position.x - config.playerSize / 2) * 5;
-                playerWithId.mousePos.y = (this.mousePos.y - playerWithId.position.y - config.playerSize / 2) * 5;
-
-                //console.log(playerWithId.mousePos);
-                if (playerWithId.isDead === false) playerWithId.attemptArrow();
+            if (this.isCharging >= 0.4) {
+                this.calculateArrow();
             }
             this.isCharging = 0;
         };
@@ -170,7 +163,9 @@ export class Game {
                 arrow.checkCollisionWithPlayer(player, elapsedTime);
             });
             this.platforms.forEach((platform) => {
+                arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
                 arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
+                //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
             });
         });
 
@@ -195,14 +190,15 @@ export class Game {
 
     private render() {
         Game.ctx.clearRect(0, 0, config.xSize, config.ySize);
-        this.players.forEach((player) => {
-            let temp: boolean = false;
-            if (player.id === this.id) temp = true;
-            player.render(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isClicking, (this.isCharging * 0.8 + 0.2), temp)
-        });
         this.platforms.forEach((platform) => platform.render(Game.ctx));
+        this.players.forEach((player) => {
+            if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isClicking) {
+                player.renderMouseCharge(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, (this.isCharging));
+            }
+            player.render(Game.ctx);
+        });
         this.blasts.forEach((blast) => blast.render(Game.ctx));
-        this.arrows.forEach((arrow) => arrow.render(Game.ctx));
+        this.arrows.forEach((arrow) => {if(!arrow.inGround) arrow.render(Game.ctx)});
     }
 
     private updateSlider() {
@@ -234,6 +230,29 @@ export class Game {
         }
 
         safeGetElementById('slider').style.left = this.screenPos + "px";
+    }
+
+    private calculateArrow() {
+        const playerWithId = this.findPlayer();
+
+        let newX: number = (this.mousePos.x - this.screenPos - playerWithId.position.x - config.playerSize / 2);
+        let newY: number = (this.mousePos.y - playerWithId.position.y - config.playerSize / 2);
+        //changes the player's mouse positions based on their location
+
+        const angle: number = Math.atan(newX / newY);
+
+        newX = Math.sin(angle)*config.arrowPower*this.isCharging;
+        newY = Math.cos(angle)*config.arrowPower*this.isCharging;
+
+        if ((this.mousePos.y - playerWithId.position.y - config.playerSize / 2) < 0) {
+            newX *= -1;
+            newY *= -1;
+        }
+
+        playerWithId.mousePos.x = newX;
+        playerWithId.mousePos.y = newY;
+
+        if (playerWithId.isDead === false) playerWithId.attemptArrow();
     }
 
     private blast(position: Vector, color: string, id: number) {

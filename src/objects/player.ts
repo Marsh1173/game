@@ -32,6 +32,7 @@ export abstract class Player {
         public killCount: number,
         public mousePos: Vector,
         public isCharging: number,
+        public isHit: boolean,
         public doBlast: (position: Vector, color: string, id: number) => void,
         public doArrow: (position: Vector, momentum: Vector, id: number) => void,
     ) {}
@@ -55,6 +56,7 @@ export abstract class Player {
             killCount: this.killCount,
             mousePos: this.mousePos,
             isCharging: this.isCharging,
+            isHit: this.isHit,
         };
     }
 
@@ -187,6 +189,11 @@ export abstract class Player {
             this.id);
     }
 
+    public wasHit() {
+        this.isHit = true;
+        setTimeout(() => { this.isHit = false; }, 20);
+    }
+
     public healPlayer(quantity: number) {
         this.health += quantity;
         if (this.health > 100) {
@@ -196,6 +203,7 @@ export abstract class Player {
 
     public damagePlayer(quantity: number): boolean {
         this.health -= quantity;
+        this.wasHit();
         if (this.health <= 0) {
             this.die();
             this.health = 0;

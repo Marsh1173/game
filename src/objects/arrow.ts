@@ -63,20 +63,24 @@ export abstract class Arrow {
             this.position.y = points[smallestIndex].y;
             switch (smallestIndex) {
                 case 0: // above
-                    if (this.momentum.y > 500) {
-                        this.momentum.y /= -2;
+                    if ((Math.pow(this.momentum.y, 2) + Math.pow(this.momentum.x, 2)) > 100000 && this.momentum.y > 200) {
+                        this.momentum.y /= -1.5;
                     } else {
                         this.inGround = true;
                     }
                     break;
                 case 1: // below
-                    if (this.momentum.y < 0) this.momentum.y /= -2;
+                    if (this.momentum.y < 0) {
+                        this.momentum.y /= -1.5;
+                    }
                     break;
                 case 2: // left
-                    if (this.momentum.x > 0) this.momentum.x /= -2;
+                    if (this.momentum.x > 0){
+                        this.momentum.x /= -1.5
+                    };
                     break;
                 case 3: // right
-                    if (this.momentum.x < 0) this.momentum.x /= -2;
+                    if (this.momentum.x < 0) this.momentum.x /= -1.5;
                     break;
             }
         }
@@ -89,11 +93,10 @@ export abstract class Arrow {
             futurePosX < player.position.x + player.size.width &&
             futurePosX > player.position.x &&
             futurePosY < player.position.y + player.size.height &&
-            futurePosY > player.position.y &&
-            this.id != player.id
+            futurePosY > player.position.y  && this.id != player.id
         ) {
             if (!player.isDead) {
-                player.damagePlayer(30);
+                player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 2)) / 6);
                 player.lastHitBy = this.id;
                 this.inGround = true;
             }
@@ -101,24 +104,27 @@ export abstract class Arrow {
     }
 
     public update(elapsedTime: number) {
-        this.momentum.y += config.fallingAcceleration * elapsedTime / 1.5;
+        this.momentum.y += config.fallingAcceleration * elapsedTime / 3;
+        this.momentum.x *= 0.995;
 
-        if (this.position.y < 0) {
-            this.momentum.y /= -2;
+        if (this.position.y < 5) {
+            this.momentum.y /= -1.5;
+            this.position.y += this.momentum.y * elapsedTime;
         } else if (this.position.y > config.ySize) {
-            if (this.momentum.y > 200) {
-                this.momentum.y /= -3;
+            if ((Math.pow(this.momentum.y, 2) + Math.pow(this.momentum.x, 2)) > 100000 && this.momentum.y > 200) {
+                this.momentum.y /= -2;
+                this.position.y += this.momentum.y * elapsedTime;
             } else {
                 this.inGround = true;
             }
         }
         if (this.position.x < 0) {
             this.position.x = 0;
-            this.momentum.x /= -2;
+            this.momentum.x /= -1.5;
 
         } else if (this.position.x > config.xSize) {
             this.position.x = config.xSize;
-            this.momentum.x /= -2;
+            this.momentum.x /= -1.5;
         }
 
         this.position.x += this.momentum.x * elapsedTime;

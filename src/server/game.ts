@@ -77,7 +77,9 @@ export class Game {
                 
             });
             this.platforms.forEach((platform) => {
+                arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
                 arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
+                //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
             });
         });
 

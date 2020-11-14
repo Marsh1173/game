@@ -19,4 +19,5 @@ export interface SerializedPlayer {
     killCount: number;
     mousePos: Vector;
     isCharging: number;
+    isHit: boolean;
 }

@@ -14,7 +14,7 @@ export class ServerPlatform extends Platform {
 export const defaultPlatformList = [
     new ServerPlatform(
         {
-            height: 20,
+            height: 25,
             width: (config.xSize * 3) / 4,
         },
         {
@@ -24,7 +24,7 @@ export const defaultPlatformList = [
     ),
     new ServerPlatform(
         {
-            height: 20,
+            height: 25,
             width: (config.xSize * 3) / 8,
         },
         {
@@ -34,8 +34,8 @@ export const defaultPlatformList = [
     ),
     new ServerPlatform(
         {
-            height: 20,
-            width: config.xSize / 4,
+            height: 25,
+            width: config.xSize * 3 / 8,
         },
         {
             x: (config.xSize * 3) / 4,
@@ -44,11 +44,11 @@ export const defaultPlatformList = [
     ),
     new ServerPlatform(
         {
-            height: 20,
-            width: config.xSize / 4,
+            height: 25,
+            width: config.xSize * 3 / 8,
         },
         {
-            x: 0,
+            x: (config.xSize * -1) / 8,
             y: config.ySize / 4,
         },
     ),

@@ -36,7 +36,7 @@ export abstract class Blast {
             player.momentum.x -= (Math.sin(angle) * config.blastPower) / Math.pow(distance, 1.3);
             player.momentum.y -= (Math.cos(angle) * config.blastPower) / Math.pow(distance, 1.4) + (100 * config.blastSize / distance);
             if (!player.isDead) {
-                player.damagePlayer(7);
+                player.damagePlayer(15);
                 player.lastHitBy = this.id;
             }
         }

@@ -11,8 +11,8 @@ export const config = {
     hostname: "http://192.168.1.6:3000/",
     websocketHostname: "ws://192.168.1.6:3000/",
     playerKeys: {
-        up: "Space",
-        down: "KeyW",
+        up: "KeyW",
+        down: "KeyS",
         left: "KeyA",
         right: "KeyD",
     },
@@ -21,4 +21,5 @@ export const config = {
     standingSidewaysAcceleration: 13000, // momentum per second
     nonStandingSidewaysAcceleration: 2200, // momentum per second
     maxSidewaysMomentum: 800,
+    arrowPower: 1500,
 };
