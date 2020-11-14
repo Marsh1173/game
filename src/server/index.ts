@@ -5,7 +5,7 @@ import * as bodyParser from "body-parser";
 import * as expressWs from "express-ws";
 import { defaultConfig } from "../config";
 import { JoinRequest, JoinResponse } from "../api/join";
-import { ClientMessage } from "../api/message";
+import { ClientMessage, ServerMessage } from "../api/message";
 
 const game = new Game(defaultConfig);
 game.start();
@@ -34,7 +34,13 @@ app.post("/join", (request, response) => {
 
 app.ws("/:id", (ws, request) => {
     const clientId = parseInt(request.params.id);
-    game.clientMap[clientId] = ws;
+    game.clientMap[clientId] = (message: ServerMessage) => {
+        if (ws.OPEN) {
+            ws.send(JSON.stringify(message));
+        } else {
+            console.log("Tried to send to a closed websocket");
+        }
+    };
 
     ws.on("message", (msg) => {
         const data: ClientMessage = JSON.parse(msg.toString());
