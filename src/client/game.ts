@@ -145,6 +145,8 @@ export class Game {
 
         //update health bar
         safeGetElementById("health").style.width = (playerWithId.health * 1.02) + '%';
+        if (playerWithId.isShielded) safeGetElementById("health").style.background = 'cyan';
+        else safeGetElementById("health").style.background = 'rgb(201, 0, 0)';
 
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {

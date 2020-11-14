@@ -3,6 +3,9 @@ import { Vector } from "../vector";
 
 export interface SerializedPlayer {
     id: number;
+    name: string;
+    classType: number;
+    weaponEquipped: number;
     position: Vector;
     momentum: Vector;
     color: string;
@@ -20,4 +23,6 @@ export interface SerializedPlayer {
     mousePos: Vector;
     isCharging: number;
     isHit: boolean;
+    isShielded: boolean;
+    facing: boolean;
 }

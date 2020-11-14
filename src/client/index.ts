@@ -7,10 +7,15 @@ import { safeGetElementById } from "./util";
 const instructionDiv = safeGetElementById("instructionMenu");
 const instructionButton = safeGetElementById("instructions");
 
+const name = safeGetElementById("name");
+const color = safeGetElementById("color");
+
 safeGetElementById("gameDiv").style.display = "none";
 instructionDiv.style.display = "none";
 
 safeGetElementById("start").onclick = async () => {
+    //config.playerName = safeGetElementById("name").value; // shows an error but it works?
+    //config.playerColor = safeGetElementById("color").value;
     const serverTalker = new ServerTalker();
     const joinPromise = new Promise<JoinMessage>((resolve, reject) => {
         serverTalker.messageHandler = (msg: ServerMessage) => {

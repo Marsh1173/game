@@ -8,8 +8,8 @@
 body {
   background: #bfc6ca;
 }
-#menuDiv {
-
+#canvas {
+  background: #2e3133;
 }
 #menu {
   position: absolute;
@@ -69,9 +69,36 @@ button:focus {
 }
 .big {
   width: 100%;
+  
 }
 .small {
   width: 38px;
+}
+#color {
+  width: 30%;
+  height: 30px;
+  padding: 0px;
+  border: none;
+  background: content-box;
+  overflow: hidden;
+}
+#color:focus, #name:focus{
+  outline: none;
+}
+#colorPicker, #name {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin: 5px;
+  font-size: 13pt;
+  border-radius: 10px;
+  border: 2px solid #aaa;
+  background-color: rgb(221, 221, 221);
+}
+#name {
+  width: 92%;
+  font-size: 16pt;
+  text-align: center;
 }
 #menuDiv h1, p {
   text-align: center;

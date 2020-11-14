@@ -18,11 +18,15 @@ export class ServerPlayer extends Player {
     constructor(doBlast: (position: Vector, color: string, id: number) => void, doArrow: (position: Vector, momentum: Vector, id: number) => void) {
         super(
             ServerPlayer.nextId,
+            "Player " + (ServerPlayer.nextId + 1),
+            0,
+            0,
             {
                 x: config.xSize / 8,
                 y: (config.ySize * 3) / 4 - config.playerSize,
             },
             { x: 0, y: 0 },
+            //config.playerColor,
             getRandomColor(),
             { width: config.playerSize, height: config.playerSize },
             0,
@@ -41,9 +45,12 @@ export class ServerPlayer extends Player {
             },
             0,
             false,
+            false,
+            true,
             doBlast,
             doArrow,
         );
         ServerPlayer.nextId++;
+        //config.playerName = "Player " + (ServerPlayer.nextId + 1);
     }
 }

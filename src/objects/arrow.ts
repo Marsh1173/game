@@ -63,8 +63,10 @@ export abstract class Arrow {
             this.position.y = points[smallestIndex].y;
             switch (smallestIndex) {
                 case 0: // above
-                    if ((Math.pow(this.momentum.y, 2) + Math.pow(this.momentum.x, 2)) > 100000 && this.momentum.y > 200) {
-                        this.momentum.y /= -1.5;
+                    if (this.momentum.x > 700 || this.momentum.x < -700) {
+                        this.momentum.y /= -2;
+                        this.momentum.x /= 1.3;
+                        this.position.y += this.momentum.y * elapsedTime;
                     } else {
                         this.inGround = true;
                     }
@@ -96,23 +98,25 @@ export abstract class Arrow {
             futurePosY > player.position.y  && this.id != player.id
         ) {
             if (!player.isDead) {
-                player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 2)) / 6);
-                player.lastHitBy = this.id;
+                if (!player.isShielded) player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 2)) / 6, this.id);
                 this.inGround = true;
+                player.momentum.x += this.momentum.x / 2;
+                player.momentum.y += this.momentum.y / 2;
             }
         }
     }
 
     public update(elapsedTime: number) {
-        this.momentum.y += config.fallingAcceleration * elapsedTime / 3;
+        this.momentum.y += config.fallingAcceleration * elapsedTime / 4;
         this.momentum.x *= 0.995;
 
         if (this.position.y < 5) {
             this.momentum.y /= -1.5;
             this.position.y += this.momentum.y * elapsedTime;
         } else if (this.position.y > config.ySize) {
-            if ((Math.pow(this.momentum.y, 2) + Math.pow(this.momentum.x, 2)) > 100000 && this.momentum.y > 200) {
+            if (this.momentum.x > 700 || this.momentum.x < -700) {
                 this.momentum.y /= -2;
+                this.momentum.x /= 1.3;
                 this.position.y += this.momentum.y * elapsedTime;
             } else {
                 this.inGround = true;

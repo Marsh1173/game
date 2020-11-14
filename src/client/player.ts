@@ -7,6 +7,9 @@ export class ClientPlayer extends Player {
     constructor(info: SerializedPlayer, doBlast: (position: Vector, color: string, id: number) => void, doArrow: (position: Vector, mometum: Vector, id: number) => void, private readonly serverTalker: ServerTalker) {
         super(
             info.id,
+            info.name,
+            info.classType,
+            info.weaponEquipped,
             info.position,
             info.momentum,
             info.color,
@@ -24,6 +27,8 @@ export class ClientPlayer extends Player {
             info.mousePos,
             info.isCharging,
             info.isHit,
+            info.isShielded,
+            info.facing,
             doBlast,
             doArrow,
         );
@@ -31,9 +36,12 @@ export class ClientPlayer extends Player {
 
     public render(ctx: CanvasRenderingContext2D) {
 
-            if (this.health === 100){
+            if (this.isShielded) {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = "white";
+            } else if (this.health === 100){
                 ctx.shadowBlur = 3;
-                ctx.shadowColor = "gray";//this.color;
+                ctx.shadowColor = "gray";
             } else if (!this.isDead){
                 ctx.shadowBlur = (100 - this.health) / 7;
                 ctx.shadowColor = "red";
@@ -41,18 +49,50 @@ export class ClientPlayer extends Player {
 
             if (this.isHit === true) {
                 ctx.fillStyle = "red";
-                ctx.shadowColor = "red";
             } else {
-                ctx.fillStyle = this.color;
+                if (this.isShielded) ctx.fillStyle = 'white';
+                else if (this.isDead) ctx.fillStyle = 'black';
+                else ctx.fillStyle = this.color;
             }
 
+
+            //square
             const opacity = this.isDead ? 0.2 : 1.0;
             ctx.globalAlpha = opacity;
             ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
+            if (this.isShielded || this.isDead) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.position.x + 5, this.position.y + 5, this.size.width - 10, this.size.height - 10);
+            }
+            
+
+            //headband
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "black";
+            ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
+
+            //loose headband piece
+            let xStart: number;
+            if (this.facing) xStart = this.position.x;
+            else xStart = this.position.x + this.size.width;
+
+            ctx.beginPath();
+            ctx.moveTo(xStart, this.position.y + 7);
+            ctx.lineTo(xStart - (this.momentum.x / 16), this.position.y + 20 - (this.momentum.y / 30));
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+
+
             ctx.globalAlpha = 1.0;
 
             ctx.shadowBlur = 2;
             ctx.shadowColor = "gray";
+
+            //name
+            ctx.fillStyle = "white";
+            ctx.fillText(this.name, this.position.x, this.position.y - 10); 
     }
 
     public renderMouseCharge(ctx: CanvasRenderingContext2D,

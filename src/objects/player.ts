@@ -16,6 +16,9 @@ export abstract class Player {
 
     constructor(
         public id: number,
+        public name: string,
+        public classType: number,
+        public weaponEquipped: number,
         public position: Vector,
         public momentum: Vector,
         public color: string,
@@ -33,6 +36,8 @@ export abstract class Player {
         public mousePos: Vector,
         public isCharging: number,
         public isHit: boolean,
+        public isShielded: boolean,
+        public facing: boolean,
         public doBlast: (position: Vector, color: string, id: number) => void,
         public doArrow: (position: Vector, momentum: Vector, id: number) => void,
     ) {}
@@ -40,6 +45,9 @@ export abstract class Player {
     public serialize(): SerializedPlayer {
         return {
             id: this.id,
+            name: this.name,
+            classType: this.classType,
+            weaponEquipped: this.weaponEquipped,
             position: this.position,
             momentum: this.momentum,
             color: this.color,
@@ -57,6 +65,8 @@ export abstract class Player {
             mousePos: this.mousePos,
             isCharging: this.isCharging,
             isHit: this.isHit,
+            isShielded: this.isShielded,
+            facing: this.facing,
         };
     }
 
@@ -138,6 +148,7 @@ export abstract class Player {
     public attemptMoveLeft(elapsedTime: number) {
         if (!this.isDead && this.momentum.x > -config.maxSidewaysMomentum) {
             this.moveLeft(elapsedTime);
+            this.facing = false;
         }
     }
     public moveLeft(elapsedTime: number) {
@@ -150,6 +161,7 @@ export abstract class Player {
     public attemptMoveRight(elapsedTime: number) {
         if (!this.isDead && this.momentum.x < config.maxSidewaysMomentum) {
             this.moveRight(elapsedTime);
+            this.facing = true;
         }
     }
     public moveRight(elapsedTime: number) {
@@ -201,7 +213,8 @@ export abstract class Player {
         }
     }
 
-    public damagePlayer(quantity: number): boolean {
+    public damagePlayer(quantity: number, id: number): boolean {
+        if (id != -1) this.lastHitBy = id;
         this.health -= quantity;
         this.wasHit();
         if (this.health <= 0) {
@@ -226,6 +239,8 @@ export abstract class Player {
         this.health = 100;
         this.momentum.x = 0;
         this.momentum.y = 0;
+        this.isShielded = true;
+        setTimeout(() => { this.isShielded = false; }, 2000);
     }
 
     public update(elapsedTime: number) {
@@ -310,7 +325,7 @@ export abstract class Player {
 
         // get damaged if you hit the bottom of the screen
         if (!this.isDead && this.position.y >= config.ySize - this.size.height) {
-            this.damagePlayer(elapsedTime * 120);
+            this.damagePlayer(elapsedTime * 120, -1);
         } else if (!this.isDead) {
             this.healPlayer(elapsedTime * 2);
         }
