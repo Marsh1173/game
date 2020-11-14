@@ -3,12 +3,6 @@ import { SerializedPlayer } from "../serialized/player";
 import { Vector } from "../vector";
 import { AllInfo } from "./allinfo";
 
-export interface JoinMessage {
-    type: "join";
-    id: number;
-    info: AllInfo;
-}
-
 export interface PlayerInfoMessage {
     type: "playerInfo";
     id: number;
@@ -25,7 +19,7 @@ export interface InfoMessage {
     info: AllInfo;
 }
 
-export type ServerMessage = JoinMessage | PlayerInfoMessage | PlayerLeavingMessage | InfoMessage;
+export type ServerMessage = PlayerInfoMessage | PlayerLeavingMessage | InfoMessage;
 
 export interface ActionMessage {
     type: "action";

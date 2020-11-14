@@ -1,7 +1,7 @@
 import { time } from "console";
 import { AllInfo } from "../api/allinfo";
 import { ServerMessage } from "../api/message";
-import { config } from "../config";
+import { Config } from "../config";
 import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { ClientBlast } from "./blast";
@@ -24,18 +24,18 @@ export class Game {
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
 
-    private mousePos: Vector = {x: 0, y: 0};
+    private mousePos: Vector = { x: 0, y: 0 };
     private isClicking: boolean = false;
     private isCharging: number = 0;
 
-
     private constructGame(info: AllInfo) {
-        this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(platformInfo));
-        this.blasts = info.blasts.map((blastInfo) => new ClientBlast(blastInfo));
-        this.arrows = info.arrows.map((arrowInfo) => new ClientArrow(arrowInfo));
+        this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(this.config, platformInfo));
+        this.blasts = info.blasts.map((blastInfo) => new ClientBlast(this.config, blastInfo));
+        this.arrows = info.arrows.map((arrowInfo) => new ClientArrow(this.config, arrowInfo));
         this.players = info.players.map(
             (playerInfo) =>
                 new ClientPlayer(
+                    this.config,
                     playerInfo,
                     (position: Vector, color: string, id: number) => {
                         this.blast(position, color, id);
@@ -48,11 +48,11 @@ export class Game {
         );
     }
 
-    constructor(info: AllInfo, private readonly id: number, private readonly serverTalker: ServerTalker) {
-        Game.canvas.style.width = config.xSize + "px";
-        Game.canvas.style.height = config.ySize + "px";
-        Game.canvas.width = config.xSize;
-        Game.canvas.height = config.ySize;
+    constructor(info: AllInfo, private readonly config: Config, private readonly id: number, private readonly serverTalker: ServerTalker) {
+        Game.canvas.style.width = this.config.xSize + "px";
+        Game.canvas.style.height = this.config.ySize + "px";
+        Game.canvas.width = this.config.xSize;
+        Game.canvas.height = this.config.ySize;
 
         this.constructGame(info);
 
@@ -90,9 +90,9 @@ export class Game {
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
 
-        safeGetElementById("slideContainer").style.height = config.ySize + 'px';
-        safeGetElementById("slider").style.width = config.xSize + 'px';
-        safeGetElementById('slider').style.left = this.screenPos + "px";
+        safeGetElementById("slideContainer").style.height = this.config.ySize + "px";
+        safeGetElementById("slider").style.width = this.config.xSize + "px";
+        safeGetElementById("slider").style.left = this.screenPos + "px";
 
         this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
@@ -122,31 +122,30 @@ export class Game {
     private update(elapsedTime: number) {
         this.updateSlider();
 
-        const playerWithId = this.findPlayer()
-        if (this.keyState[config.playerKeys.up]) {
+        const playerWithId = this.findPlayer();
+        if (this.keyState[this.config.playerKeys.up]) {
             playerWithId.attemptJump();
-            this.keyState[config.playerKeys.up] = false;
+            this.keyState[this.config.playerKeys.up] = false;
         }
-        if (this.keyState[config.playerKeys.left]) {
+        if (this.keyState[this.config.playerKeys.left]) {
             playerWithId.attemptMoveLeft(elapsedTime);
         }
-        if (this.keyState[config.playerKeys.right]) {
+        if (this.keyState[this.config.playerKeys.right]) {
             playerWithId.attemptMoveRight(elapsedTime);
         }
-        if (this.keyState[config.playerKeys.down]) {
+        if (this.keyState[this.config.playerKeys.down]) {
             playerWithId.attemptBlast(elapsedTime);
-            this.keyState[config.playerKeys.down] = false;
+            this.keyState[this.config.playerKeys.down] = false;
         }
-
 
         //update if player is charging, can be cleaned up
         if (this.isClicking && this.isCharging < 1 && playerWithId.isDead === false) this.isCharging += elapsedTime * 2;
         else if (this.isCharging > 1) this.isCharging = 1;
 
         //update health bar
-        safeGetElementById("health").style.width = (playerWithId.health * 1.02) + '%';
-        if (playerWithId.isShielded) safeGetElementById("health").style.background = 'cyan';
-        else safeGetElementById("health").style.background = 'rgb(201, 0, 0)';
+        safeGetElementById("health").style.width = playerWithId.health * 1.02 + "%";
+        if (playerWithId.isShielded) safeGetElementById("health").style.background = "cyan";
+        else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
 
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {
@@ -185,45 +184,47 @@ export class Game {
     private findPlayer() {
         const playerWithId = this.players.find((player) => player.id === this.id);
         if (!playerWithId) {
-           throw new Error("Player with my id does not exist in data from server");
+            throw new Error("Player with my id does not exist in data from server");
         }
         return playerWithId;
     }
 
     private render() {
-        Game.ctx.clearRect(0, 0, config.xSize, config.ySize);
+        Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.players.forEach((player) => {
             if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isClicking) {
-                player.renderMouseCharge(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, (this.isCharging));
+                player.renderMouseCharge(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isCharging);
             }
             player.render(Game.ctx);
         });
         this.blasts.forEach((blast) => blast.render(Game.ctx));
-        this.arrows.forEach((arrow) => {if(!arrow.inGround) arrow.render(Game.ctx)});
+        this.arrows.forEach((arrow) => {
+            if (!arrow.inGround) arrow.render(Game.ctx);
+        });
     }
 
     private updateSlider() {
-
         const playerWithId = this.findPlayer();
 
         //check if screen is bigger than field
-        if (config.xSize < window.innerWidth - 20) {
+        if (this.config.xSize < window.innerWidth - 20) {
             this.screenPos = 0;
         } else {
-
-            let temp = this.screenPos + (-playerWithId.position.x + (window.innerWidth / 2) - this.screenPos) / 10;
+            let temp = this.screenPos + (-playerWithId.position.x + window.innerWidth / 2 - this.screenPos) / 10;
             //make a temp position to check where it would be updated to
             if (this.screenPos < temp + 1 && this.screenPos > temp - 1) {
                 return; //so it's not updating even while idle
             }
 
-            if (temp > 0) { // if they're too close to the left wall
+            if (temp > 0) {
+                // if they're too close to the left wall
                 if (this.screenPos === 0) return;
                 this.screenPos = 0;
-            }else if (temp < -(config.xSize - window.innerWidth + 6)) { // or the right wall
-                if (this.screenPos === -(config.xSize - window.innerWidth + 6)) return;
-                this.screenPos = -(config.xSize - window.innerWidth + 6);
+            } else if (temp < -(this.config.xSize - window.innerWidth + 6)) {
+                // or the right wall
+                if (this.screenPos === -(this.config.xSize - window.innerWidth + 6)) return;
+                this.screenPos = -(this.config.xSize - window.innerWidth + 6);
             } else {
                 if (this.screenPos > temp + 1 || this.screenPos < temp - 1) {
                     this.screenPos = temp; // otherwise the predicted position is fine
@@ -231,22 +232,22 @@ export class Game {
             }
         }
 
-        safeGetElementById('slider').style.left = this.screenPos + "px";
+        safeGetElementById("slider").style.left = this.screenPos + "px";
     }
 
     private calculateArrow() {
         const playerWithId = this.findPlayer();
 
-        let newX: number = (this.mousePos.x - this.screenPos - playerWithId.position.x - config.playerSize / 2);
-        let newY: number = (this.mousePos.y - playerWithId.position.y - config.playerSize / 2);
+        let newX: number = this.mousePos.x - this.screenPos - playerWithId.position.x - this.config.playerSize / 2;
+        let newY: number = this.mousePos.y - playerWithId.position.y - this.config.playerSize / 2;
         //changes the player's mouse positions based on their location
 
         const angle: number = Math.atan(newX / newY);
 
-        newX = Math.sin(angle)*config.arrowPower*this.isCharging;
-        newY = Math.cos(angle)*config.arrowPower*this.isCharging;
+        newX = Math.sin(angle) * this.config.arrowPower * this.isCharging;
+        newY = Math.cos(angle) * this.config.arrowPower * this.isCharging;
 
-        if ((this.mousePos.y - playerWithId.position.y - config.playerSize / 2) < 0) {
+        if (this.mousePos.y - playerWithId.position.y - this.config.playerSize / 2 < 0) {
             newX *= -1;
             newY *= -1;
         }
@@ -258,7 +259,7 @@ export class Game {
     }
 
     private blast(position: Vector, color: string, id: number) {
-        const blast = new ClientBlast({
+        const blast = new ClientBlast(this.config, {
             position,
             color,
             id,
@@ -272,7 +273,7 @@ export class Game {
     }
 
     private arrow(position: Vector, momentum: Vector, id: number) {
-        const arrow = new ClientArrow({
+        const arrow = new ClientArrow(this.config, {
             position,
             momentum,
             id,

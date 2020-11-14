@@ -1,10 +1,17 @@
-import { config } from "../config";
+import { Config } from "../config";
 import { SerializedBlast } from "../serialized/blast";
 import { Vector } from "../vector";
 import { Player } from "./player";
 
 export abstract class Blast {
-    constructor(public readonly position: Vector, public color: string, public id: number, public size: number, public opacity: number) {}
+    constructor(
+        private readonly config: Config,
+        public readonly position: Vector,
+        public color: string,
+        public id: number,
+        public size: number,
+        public opacity: number,
+    ) {}
 
     public serialize(): SerializedBlast {
         return {
@@ -17,8 +24,8 @@ export abstract class Blast {
     }
 
     public update(elapsedTime: number) {
-        this.size += (config.blastSize * elapsedTime) / config.blastDuration;
-        this.opacity -= elapsedTime / config.blastDuration;
+        this.size += (this.config.blastRadius * elapsedTime) / this.config.blastDuration;
+        this.opacity -= elapsedTime / this.config.blastDuration;
     }
 
     public blastPlayer(player: Player) {
@@ -31,10 +38,10 @@ export abstract class Blast {
             y: y1 - y2,
         };
         const distance = Math.sqrt(Math.pow(distanceVector.x, 2) + Math.pow(distanceVector.y, 2));
-        if (distance < config.blastSize && this.id !== player.id) {
+        if (distance < this.config.blastRadius && this.id !== player.id) {
             const angle = Math.atan2(distanceVector.x, distanceVector.y);
-            player.momentum.x -= (Math.sin(angle) * config.blastPower) / Math.pow(distance, 1.3);
-            player.momentum.y -= (Math.cos(angle) * config.blastPower) / Math.pow(distance, 1.4) + (100 * config.blastSize / distance);
+            player.momentum.x -= (Math.sin(angle) * this.config.blastPower) / Math.pow(distance, 1.3);
+            player.momentum.y -= (Math.cos(angle) * this.config.blastPower) / Math.pow(distance, 1.4) + (100 * this.config.blastRadius) / distance;
             if (!player.isDead && !player.isShielded) {
                 player.damagePlayer(15, this.id);
             }
