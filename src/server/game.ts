@@ -61,6 +61,16 @@ export class Game {
     }
 
     public update(elapsedTime: number) {
+        this.players.forEach((player) => player.update(elapsedTime));
+        // Collision detection with other players or platforms
+        this.blasts.forEach((blast) => blast.update(elapsedTime));
+        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
+
+        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
+        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
+
+        this.platforms.forEach((platform) => platform.update());
+
         this.players.forEach((player1) => {
             this.players.forEach((player2) => {
                 if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
@@ -82,16 +92,6 @@ export class Game {
                 //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
             });
         });
-
-        this.players.forEach((player) => player.update(elapsedTime));
-        // Collision detection with other players or platforms
-        this.blasts.forEach((blast) => blast.update(elapsedTime));
-        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
-
-        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
-
-        this.platforms.forEach((platform) => platform.update());
     }
 
     public newPlayer(id: number, color: string) {
