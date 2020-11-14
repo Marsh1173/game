@@ -1,9 +1,10 @@
+import { Config } from "../config";
 import { Blast } from "../objects/blast";
 import { SerializedBlast } from "../serialized/blast";
 
 export class ClientBlast extends Blast {
-    constructor(info: SerializedBlast) {
-        super(info.position, info.color, info.id, info.size, info.opacity);
+    constructor(config: Config, info: SerializedBlast) {
+        super(config, info.position, info.color, info.id, info.size, info.opacity);
     }
 
     public render(ctx: CanvasRenderingContext2D) {

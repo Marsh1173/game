@@ -1,11 +1,12 @@
 import { AllInfo } from "../api/allinfo";
 import { ServerBlast } from "./blast";
 import { ServerArrow } from "./arrow";
-import { defaultPlatformList, ServerPlatform } from "./platform";
+import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
 import * as wsWebsocket from "ws";
 import { ClientMessage, InfoMessage, PlayerLeavingMessage } from "../api/message";
 import { Vector } from "../vector";
+import { Config } from "../config";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -14,10 +15,10 @@ export class Game {
     private players: ServerPlayer[] = [];
     private blasts: ServerBlast[] = [];
     private arrows: ServerArrow[] = [];
-    private readonly platforms: ServerPlatform[] = defaultPlatformList;
+    private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
     public readonly clientMap: Record<number, wsWebsocket> = {};
 
-    constructor() {}
+    constructor(public readonly config: Config) {}
 
     public start() {
         this.intervalId = setInterval(() => {
@@ -74,7 +75,6 @@ export class Game {
         this.arrows.forEach((arrow) => {
             this.players.forEach((player) => {
                 arrow.checkCollisionWithPlayer(player, elapsedTime);
-                
             });
             this.platforms.forEach((platform) => {
                 arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
@@ -94,14 +94,19 @@ export class Game {
         this.platforms.forEach((platform) => platform.update());
     }
 
-    public newPlayer() {
-        const newPlayer = new ServerPlayer((position: Vector, color: string, id: number) => {
-            this.blast(position, color, id);
-        },(position: Vector, momentum: Vector, id: number) => {
-            this.arrow(position, momentum, id);
-        });
+    public newPlayer(id: number, color: string) {
+        const newPlayer = new ServerPlayer(
+            this.config,
+            id,
+            color,
+            (position: Vector, color: string, id: number) => {
+                this.blast(position, color, id);
+            },
+            (position: Vector, momentum: Vector, id: number) => {
+                this.arrow(position, momentum, id);
+            },
+        );
         this.players.push(newPlayer);
-        return newPlayer.id;
     }
 
     public removePlayer(id: number) {
@@ -135,8 +140,8 @@ export class Game {
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
                 }
                 break;
-            case "arrow" :
-                this.arrows.push(new ServerArrow({position: data.position, momentum: data.direction, id, inGround: false}))
+            case "arrow":
+                this.arrows.push(new ServerArrow(this.config, { position: data.position, momentum: data.direction, id, inGround: false }));
                 break;
             default:
                 throw new Error(`Invalid client message type`);
@@ -144,7 +149,7 @@ export class Game {
     }
 
     private blast(position: Vector, color: string, id: number) {
-        const blast = new ServerBlast({
+        const blast = new ServerBlast(this.config, {
             position,
             color,
             id,
@@ -158,7 +163,7 @@ export class Game {
     }
 
     private arrow(position: Vector, momentum: Vector, id: number) {
-        const arrow = new ServerArrow({
+        const arrow = new ServerArrow(this.config, {
             position,
             momentum,
             id,

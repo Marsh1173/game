@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { Config } from "../config";
 import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
@@ -15,6 +15,7 @@ export abstract class Player {
     };
 
     constructor(
+        private readonly config: Config,
         public id: number,
         public name: string,
         public classType: number,
@@ -140,35 +141,35 @@ export abstract class Player {
     }
 
     public jump() {
-        this.momentum.y = -config.jumpSize;
+        this.momentum.y = -this.config.playerJumpHeight;
         this.alreadyJumped = 2;
         this.canJump = false;
     }
 
     public attemptMoveLeft(elapsedTime: number) {
-        if (!this.isDead && this.momentum.x > -config.maxSidewaysMomentum) {
+        if (!this.isDead && this.momentum.x > -this.config.maxSidewaysMomentum) {
             this.moveLeft(elapsedTime);
             this.facing = false;
         }
     }
     public moveLeft(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x -= config.standingSidewaysAcceleration * elapsedTime;
+            this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime;
         } else {
-            this.momentum.x -= config.nonStandingSidewaysAcceleration * elapsedTime;
+            this.momentum.x -= this.config.nonStandingSidewaysAcceleration * elapsedTime;
         }
     }
     public attemptMoveRight(elapsedTime: number) {
-        if (!this.isDead && this.momentum.x < config.maxSidewaysMomentum) {
+        if (!this.isDead && this.momentum.x < this.config.maxSidewaysMomentum) {
             this.moveRight(elapsedTime);
             this.facing = true;
         }
     }
     public moveRight(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x += config.standingSidewaysAcceleration * elapsedTime;
+            this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime;
         } else {
-            this.momentum.x += config.nonStandingSidewaysAcceleration * elapsedTime;
+            this.momentum.x += this.config.nonStandingSidewaysAcceleration * elapsedTime;
         }
     }
 
@@ -178,15 +179,21 @@ export abstract class Player {
         }
     }
     public blast(elapsedTime: number) {
-        this.blastCounter = config.blastCooldown;
-        this.doBlast({ x: (this.position.x + this.momentum.x * elapsedTime) + this.size.width / 2, y: (this.position.y + this.momentum.y * elapsedTime) + this.size.height / 2 }, this.color, this.id);
+        this.blastCounter = this.config.blastCooldown;
+        this.doBlast(
+            {
+                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
+                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
+            },
+            this.color,
+            this.id,
+        );
     }
 
     public attemptArrow() {
         this.arrow();
     }
     public arrow() {
-
         const power: number = 100;
 
         let newX = Math.sqrt(power - Math.pow(this.mousePos.y, 2));
@@ -195,15 +202,14 @@ export abstract class Player {
         if (this.mousePos.x < 0) newX *= -1;
         if (this.mousePos.y < 0) newY *= -1;
 
-        this.doArrow(
-            { x: (this.position.x) + this.size.width / 2, y: (this.position.y) + this.size.height / 2 },
-            {x: newX, y: newY},
-            this.id);
+        this.doArrow({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
     }
 
     public wasHit() {
         this.isHit = true;
-        setTimeout(() => { this.isHit = false; }, 20);
+        setTimeout(() => {
+            this.isHit = false;
+        }, 20);
     }
 
     public healPlayer(quantity: number) {
@@ -233,14 +239,16 @@ export abstract class Player {
 
     public resurrect() {
         this.isDead = false;
-        this.position.x = config.xSize / 2 - this.size.height / 2;
+        this.position.x = this.config.xSize / 2 - this.size.height / 2;
         this.position.y = 200;
         this.deathCooldown = 150;
         this.health = 100;
         this.momentum.x = 0;
         this.momentum.y = 0;
         this.isShielded = true;
-        setTimeout(() => { this.isShielded = false; }, 2000);
+        setTimeout(() => {
+            this.isShielded = false;
+        }, 2000);
     }
 
     public update(elapsedTime: number) {
@@ -267,7 +275,7 @@ export abstract class Player {
 
         // Falling speed
         if (!this.standing) {
-            this.momentum.y += config.fallingAcceleration * elapsedTime;
+            this.momentum.y += this.config.fallingAcceleration * elapsedTime;
         }
 
         // Movement dampening
@@ -297,21 +305,21 @@ export abstract class Player {
         if (this.position.y < 0) {
             this.position.y = 0;
             this.momentum.y = Math.max(this.momentum.y, 0);
-        } else if (this.position.y + this.size.height > config.ySize) {
-            this.position.y = config.ySize - this.size.height;
+        } else if (this.position.y + this.size.height > this.config.ySize) {
+            this.position.y = this.config.ySize - this.size.height;
             this.momentum.y = Math.min(this.momentum.y, 0);
             this.standing = true;
         }
         if (this.position.x < 0) {
             this.position.x = 0;
-            if (this.momentum.x < -config.maxSidewaysMomentum / 3) {
+            if (this.momentum.x < -this.config.maxSidewaysMomentum / 3) {
                 this.momentum.x /= -2;
             } else {
                 this.momentum.x = 0;
             }
-        } else if (this.position.x + this.size.width > config.xSize) {
-            this.position.x = config.xSize - this.size.width;
-            if (this.momentum.x > config.maxSidewaysMomentum / 3) {
+        } else if (this.position.x + this.size.width > this.config.xSize) {
+            this.position.x = this.config.xSize - this.size.width;
+            if (this.momentum.x > this.config.maxSidewaysMomentum / 3) {
                 this.momentum.x /= -2;
             } else {
                 this.momentum.x = 0;
@@ -324,7 +332,7 @@ export abstract class Player {
         }
 
         // get damaged if you hit the bottom of the screen
-        if (!this.isDead && this.position.y >= config.ySize - this.size.height) {
+        if (!this.isDead && this.position.y >= this.config.ySize - this.size.height) {
             this.damagePlayer(elapsedTime * 120, -1);
         } else if (!this.isDead) {
             this.healPlayer(elapsedTime * 2);

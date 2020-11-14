@@ -1,11 +1,11 @@
-import { config } from "../config";
+import { Config } from "../config";
 import { SerializedArrow } from "../serialized/arrow";
 import { Vector } from "../vector";
 import { Size } from "../size";
 import { Player } from "./player";
 
 export abstract class Arrow {
-    constructor(public readonly position: Vector, public momentum: Vector, public id: number, public inGround: boolean) {}
+    constructor(private readonly config: Config, public readonly position: Vector, public momentum: Vector, public id: number, public inGround: boolean) {}
 
     public serialize(): SerializedArrow {
         return {
@@ -77,9 +77,9 @@ export abstract class Arrow {
                     }
                     break;
                 case 2: // left
-                    if (this.momentum.x > 0){
-                        this.momentum.x /= -1.5
-                    };
+                    if (this.momentum.x > 0) {
+                        this.momentum.x /= -1.5;
+                    }
                     break;
                 case 3: // right
                     if (this.momentum.x < 0) this.momentum.x /= -1.5;
@@ -95,7 +95,8 @@ export abstract class Arrow {
             futurePosX < player.position.x + player.size.width &&
             futurePosX > player.position.x &&
             futurePosY < player.position.y + player.size.height &&
-            futurePosY > player.position.y  && this.id != player.id
+            futurePosY > player.position.y &&
+            this.id != player.id
         ) {
             if (!player.isDead) {
                 if (!player.isShielded) player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 2)) / 6, this.id);
@@ -107,13 +108,13 @@ export abstract class Arrow {
     }
 
     public update(elapsedTime: number) {
-        this.momentum.y += config.fallingAcceleration * elapsedTime / 4;
+        this.momentum.y += (this.config.fallingAcceleration * elapsedTime) / 4;
         this.momentum.x *= 0.995;
 
         if (this.position.y < 5) {
             this.momentum.y /= -1.5;
             this.position.y += this.momentum.y * elapsedTime;
-        } else if (this.position.y > config.ySize) {
+        } else if (this.position.y > this.config.ySize) {
             if (this.momentum.x > 700 || this.momentum.x < -700) {
                 this.momentum.y /= -2;
                 this.momentum.x /= 1.3;
@@ -125,9 +126,8 @@ export abstract class Arrow {
         if (this.position.x < 0) {
             this.position.x = 0;
             this.momentum.x /= -1.5;
-
-        } else if (this.position.x > config.xSize) {
-            this.position.x = config.xSize;
+        } else if (this.position.x > this.config.xSize) {
+            this.position.x = this.config.xSize;
             this.momentum.x /= -1.5;
         }
 

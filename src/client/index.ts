@@ -1,5 +1,4 @@
-import { JoinMessage, ServerMessage } from "../api/message";
-import { config } from "../config";
+import { getRandomColor } from "../getrandomcolor";
 import { Game } from "./game";
 import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
@@ -15,19 +14,11 @@ instructionDiv.style.display = "none";
 
 safeGetElementById("start").onclick = async () => {
     //config.playerName = safeGetElementById("name").value; // shows an error but it works?
-    //config.playerColor = safeGetElementById("color").value;
-    const serverTalker = new ServerTalker();
-    const joinPromise = new Promise<JoinMessage>((resolve, reject) => {
-        serverTalker.messageHandler = (msg: ServerMessage) => {
-            if (msg.type === "join") {
-                resolve(msg);
-            } else {
-                reject();
-            }
-        };
+    const serverTalker = new ServerTalker({
+        color: (safeGetElementById("color") as HTMLInputElement).value,
     });
-    const info = await joinPromise;
-    const game = new Game(info.info, info.id, serverTalker);
+    const { id, info, config } = await serverTalker.serverTalkerReady;
+    const game = new Game(info, config, id, serverTalker);
     game.start();
     instructionDiv.style.display = "none";
     safeGetElementById("end").onclick = () => {

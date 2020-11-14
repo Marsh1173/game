@@ -3,9 +3,11 @@ import { Game } from "./game";
 import * as path from "path";
 import * as bodyParser from "body-parser";
 import * as expressWs from "express-ws";
-import { JoinMessage } from "../api/message";
+import { defaultConfig } from "../config";
+import { JoinRequest, JoinResponse } from "../api/join";
+import { ClientMessage } from "../api/message";
 
-const game = new Game();
+const game = new Game(defaultConfig);
 game.start();
 
 const wsInstance = expressWs(express());
@@ -17,18 +19,25 @@ app.get("/bundle.js", (request, response) => {
     response.sendFile(path.join(__dirname, "../../dist/client/bundle.js"));
 });
 
-app.ws("/", (ws, request) => {
-    const clientId = game.newPlayer();
-    game.clientMap[clientId] = ws;
-    const responseJson: JoinMessage = {
-        type: "join",
-        id: clientId,
+let nextId = 0;
+app.post("/join", (request, response) => {
+    const joinRequest: JoinRequest = request.body;
+    const newId = nextId++;
+    game.newPlayer(newId, joinRequest.color);
+    const joinResponse: JoinResponse = {
+        id: newId,
+        config: game.config,
         info: game.allInfo(),
     };
-    ws.send(JSON.stringify(responseJson));
+    response.json(joinResponse);
+});
+
+app.ws("/:id", (ws, request) => {
+    const clientId = parseInt(request.params.id);
+    game.clientMap[clientId] = ws;
 
     ws.on("message", (msg) => {
-        const data = JSON.parse(msg.toString());
+        const data: ClientMessage = JSON.parse(msg.toString());
         game.handleMessage(clientId, data);
     });
     ws.on("close", () => {

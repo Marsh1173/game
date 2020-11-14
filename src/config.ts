@@ -1,15 +1,38 @@
-export const config = {
-    playerSize: 50, // Decides player height and width
-    blastSize: 180, // Decides blast radius
-    blastDuration: 0.15, // Decides blast radius
-    blastPower: 300000, // Decides blast radius
-    jumpSize: 1000, // Decides player jump height
-    playerCount: 2, // from 1-4, decides # of players
-    blastCooldown: 20, // Cooldown of player blast ability
+export interface Config {
+    /**
+     * Decides player height and width
+     */
+    playerSize: number;
+    blastRadius: number;
+    blastDuration: number;
+    blastPower: number;
+    playerJumpHeight: number;
+    blastCooldown: number;
+    xSize: number;
+    ySize: number;
+    playerKeys: {
+        up: string;
+        down: string;
+        left: string;
+        right: string;
+    };
+    platformColor: string;
+    fallingAcceleration: number;
+    standingSidewaysAcceleration: number;
+    nonStandingSidewaysAcceleration: number;
+    maxSidewaysMomentum: number;
+    arrowPower: number;
+}
+
+export const defaultConfig: Config = {
+    playerSize: 50,
+    blastRadius: 180,
+    blastDuration: 0.15,
+    blastPower: 300000,
+    playerJumpHeight: 1000,
+    blastCooldown: 20,
     xSize: 3000,
     ySize: 600,
-    hostname: "http://192.168.1.6:3000/",
-    websocketHostname: "ws://192.168.1.6:3000/",
     playerKeys: {
         up: "KeyW",
         down: "KeyS",
@@ -17,9 +40,9 @@ export const config = {
         right: "KeyD",
     },
     platformColor: "grey",
-    fallingAcceleration: 3000, // momentum per second
-    standingSidewaysAcceleration: 13000, // momentum per second
-    nonStandingSidewaysAcceleration: 2200, // momentum per second
+    fallingAcceleration: 3000,
+    standingSidewaysAcceleration: 13000,
+    nonStandingSidewaysAcceleration: 2200,
     maxSidewaysMomentum: 800,
     arrowPower: 1500,
 };
