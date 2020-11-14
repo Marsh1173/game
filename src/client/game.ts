@@ -147,6 +147,14 @@ export class Game {
         if (playerWithId.isShielded) safeGetElementById("health").style.background = "cyan";
         else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
 
+        this.players.forEach((player) => player.update(elapsedTime));
+
+        this.blasts.forEach((blast) => blast.update(elapsedTime));
+        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
+
+        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
+        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
+
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {
             this.players.forEach((player2) => {
@@ -169,14 +177,6 @@ export class Game {
                 //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
             });
         });
-
-        this.players.forEach((player) => player.update(elapsedTime));
-
-        this.blasts.forEach((blast) => blast.update(elapsedTime));
-        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
-
-        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
 
         this.render();
     }

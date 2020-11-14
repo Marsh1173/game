@@ -4,7 +4,7 @@ import { ServerArrow } from "./arrow";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
 import * as wsWebsocket from "ws";
-import { ClientMessage, InfoMessage, PlayerLeavingMessage } from "../api/message";
+import { ClientMessage, InfoMessage, PlayerLeavingMessage, ServerMessage } from "../api/message";
 import { Vector } from "../vector";
 import { Config } from "../config";
 
@@ -16,7 +16,7 @@ export class Game {
     private blasts: ServerBlast[] = [];
     private arrows: ServerArrow[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
-    public readonly clientMap: Record<number, wsWebsocket> = {};
+    public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
 
     constructor(public readonly config: Config) {}
 
@@ -55,12 +55,22 @@ export class Game {
             type: "info",
             info: this.allInfo(),
         };
-        Object.values(this.clientMap).forEach((client) => {
-            client.send(JSON.stringify(data));
+        Object.values(this.clientMap).forEach((sendFunction) => {
+            sendFunction(data);
         });
     }
 
     public update(elapsedTime: number) {
+        this.players.forEach((player) => player.update(elapsedTime));
+        // Collision detection with other players or platforms
+        this.blasts.forEach((blast) => blast.update(elapsedTime));
+        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
+
+        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
+        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
+
+        this.platforms.forEach((platform) => platform.update());
+
         this.players.forEach((player1) => {
             this.players.forEach((player2) => {
                 if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
@@ -82,16 +92,6 @@ export class Game {
                 //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
             });
         });
-
-        this.players.forEach((player) => player.update(elapsedTime));
-        // Collision detection with other players or platforms
-        this.blasts.forEach((blast) => blast.update(elapsedTime));
-        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
-
-        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
-
-        this.platforms.forEach((platform) => platform.update());
     }
 
     public newPlayer(id: number, name: string, color: string) {
@@ -116,8 +116,8 @@ export class Game {
             type: "playerLeaving",
             id,
         };
-        Object.values(this.clientMap).forEach((ws) => {
-            ws.send(JSON.stringify(leavingMessage));
+        Object.values(this.clientMap).forEach((sendFunction) => {
+            sendFunction(leavingMessage);
         });
     }
 
