@@ -125,10 +125,10 @@ export abstract class Arrow {
         }
         if (this.position.x < 0) {
             this.position.x = 0;
-            this.momentum.x /= -1.5;
+            this.momentum.x /= -1.2;
         } else if (this.position.x > this.config.xSize) {
             this.position.x = this.config.xSize;
-            this.momentum.x /= -1.5;
+            this.momentum.x /= -1.2;
         }
 
         this.position.x += this.momentum.x * elapsedTime;

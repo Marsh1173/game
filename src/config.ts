@@ -44,5 +44,5 @@ export const defaultConfig: Config = {
     standingSidewaysAcceleration: 13000,
     nonStandingSidewaysAcceleration: 2200,
     maxSidewaysMomentum: 800,
-    arrowPower: 1500,
+    arrowPower: 2000,
 };

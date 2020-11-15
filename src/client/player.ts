@@ -47,11 +47,11 @@ export class ClientPlayer extends Player {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
         } else if (this.health === 100) {
-            ctx.shadowBlur = 7;
+            ctx.shadowBlur = 10;
             ctx.shadowColor = this.color;
         } else if (!this.isDead) {
-            ctx.shadowBlur = (100 - this.health) / 7;
-            ctx.shadowColor = "red";
+            ctx.shadowBlur = this.health / 10;
+            //ctx.shadowColor = "red";
         }
 
         if (this.isHit === true) {
@@ -63,7 +63,7 @@ export class ClientPlayer extends Player {
         }
 
         //square
-        const opacity = this.isDead ? 0.2 : 1.0;
+        const opacity = this.isDead ? 0.2 : 0.9;
         ctx.globalAlpha = opacity;
         ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
         if (this.isShielded || this.isDead) {
@@ -93,6 +93,7 @@ export class ClientPlayer extends Player {
 
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
+
 
         //name
         ctx.fillStyle = "white";
