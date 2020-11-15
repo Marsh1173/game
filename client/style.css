@@ -1,37 +1,37 @@
 * {
-  font-family: 'Lato', sans-serif;
-  margin:0;
-  padding-right:4px;
-  cursor: crosshair;
-  user-select: none;
+    font-family: "Lato", sans-serif;
+    margin: 0;
+    padding-right: 4px;
+    cursor: crosshair;
+    user-select: none;
 }
 body {
-  background: #bfc6ca;
+    background: #bfc6ca;
 }
 #canvas {
-  background: #2e3133;
+    background: #2e3133;
 }
 #menu {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-102px) translateY(100px);
-  width: 204px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 2px solid rgb(124, 125, 138);
-  background-color: #778288;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-102px) translateY(100px);
+    width: 204px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid rgb(124, 125, 138);
+    background-color: #778288;
 }
 #instructionMenu {
-  position: absolute;
-  left: 50%;
-  transform: translateX(150px) translateY(50px);
-  width: 200px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 2px solid #aaa;
-  background-color: #eee;
-  text-align:center;
-  color: #33424d;
+    position: absolute;
+    left: 50%;
+    transform: translateX(150px) translateY(50px);
+    width: 200px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid #aaa;
+    background-color: #eee;
+    text-align: center;
+    color: #33424d;
 }
 #slideContainer {
     width: 100%;
@@ -46,15 +46,15 @@ body {
     position: absolute;
     border: none;
     overflow: hidden;
-    margin:0;
-    padding:0;
+    margin: 0;
+    padding: 0;
 }
 
 button {
     padding: 5px;
     font-size: 20pt;
     border-radius: 10px;
-    border: 2px solid #aaa;
+    border: 1px solid #aaa;
     background-color: #eee;
     color: #33424d;
 }
@@ -65,74 +65,94 @@ button:active {
     background-color: #b5bdc2;
 }
 button:focus {
-  outline: 0;
+    outline: 0;
 }
 .big {
-  width: 100%;
-  
+    width: 100%;
 }
 .small {
-  width: 38px;
+    width: 38px;
 }
 #color {
-  width: 30%;
-  height: 30px;
-  padding: 0px;
-  border: none;
-  background: content-box;
-  overflow: hidden;
+    width: 30px;
+    height: 30px;
+    padding: 0px;
+    border: none;
+    background: content-box;
+    overflow: hidden;
 }
-#color:focus, #name:focus{
-  outline: none;
+#color:focus,
+#name:focus {
+    outline: none;
 }
-#colorPicker, #name {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  margin: 5px;
-  font-size: 13pt;
-  border-radius: 10px;
-  border: 2px solid #aaa;
-  background-color: rgb(221, 221, 221);
+#colorPicker,
+#name {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin: 5px;
+    font-size: 13pt;
+    border-radius: 10px;
+    border: 1px solid #aaa;
+    background-color: rgb(221, 221, 221);
 }
 #name {
-  width: 92%;
-  font-size: 16pt;
-  text-align: center;
+    width: 92%;
+    font-size: 16pt;
+    text-align: center;
 }
-#menuDiv h1, p {
-  text-align: center;
-  margin: 0px;
-  color: #33424d;
+#menuDiv h1,
+p {
+    text-align: center;
+    margin: 0px;
+    color: #33424d;
 }
 .selected {
-  background:#c1c6c9;
+    background: #c1c6c9;
 }
 #width {
-  width: 98%;
+    width: 98%;
 }
+
+#classPicker {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+.classButton {
+    width: 33%;
+    border: none;
+    margin: 1px;
+    background-color: #929ca1;
+    overflow: hidden;
+    font-size: small;
+}
+.classSelected {
+    background-color: #eee;
+}
+
 #playerInformationBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 5px;
-  border-radius: 10px;
-  border: 2px solid rgb(124, 125, 138);
-  background-color: #778288;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 5px;
+    border-radius: 10px;
+    border: 2px solid rgb(124, 125, 138);
+    background-color: #778288;
 }
 #healthContainer {
-  width: 300px;
-  height: 35px;
-  background-color: #33424d;
-  border: 2px solid #33424d;
-  border-radius: 5px;
-  overflow: hidden;
+    width: 300px;
+    height: 35px;
+    background-color: #33424d;
+    border: 2px solid #33424d;
+    border-radius: 5px;
+    overflow: hidden;
 }
 #health {
-  width: 100%;
-  height: 100%;
-  background-color: rgb(201, 0, 0);
-  border-right: 2px solid #ebebeb;
-  border-radius: 1px;
-  transform: translateX(-6px);
+    width: 100%;
+    height: 100%;
+    background-color: rgb(201, 0, 0);
+    border-right: 2px solid #ebebeb;
+    border-radius: 1px;
+    transform: translateX(-6px);
 }

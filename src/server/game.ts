@@ -94,12 +94,13 @@ export class Game {
         });
     }
 
-    public newPlayer(id: number, name: string, color: string) {
+    public newPlayer(id: number, name: string, color: string, classType: number) {
         const newPlayer = new ServerPlayer(
             this.config,
             id,
             name,
             color,
+            classType,
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
             },

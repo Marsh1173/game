@@ -10,6 +10,7 @@ export class ServerPlayer extends Player {
         id: number,
         name: string,
         color: string,
+        classType: number,
         doBlast: (position: Vector, color: string, id: number) => void,
         doArrow: (position: Vector, momentum: Vector, id: number) => void,
     ) {
@@ -17,7 +18,7 @@ export class ServerPlayer extends Player {
             config,
             id,
             name,
-            0,
+            classType,
             0,
             {
                 x: config.xSize / 8,

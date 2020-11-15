@@ -47,10 +47,10 @@ export class ClientPlayer extends Player {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
         } else if (this.health === 100) {
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 16;
             ctx.shadowColor = this.color;
         } else if (!this.isDead) {
-            ctx.shadowBlur = this.health / 10;
+            ctx.shadowBlur = this.health / 6;
             //ctx.shadowColor = "red";
         }
 
@@ -71,22 +71,28 @@ export class ClientPlayer extends Player {
             ctx.fillRect(this.position.x + 5, this.position.y + 5, this.size.width - 10, this.size.height - 10);
         }
 
-        //headband
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "black";
-        ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
+        if(this.classType === 0){ // if rogue
+            //headband
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "black";
+            ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
 
-        //loose headband piece
-        let xStart: number;
-        if (this.facing) xStart = this.position.x;
-        else xStart = this.position.x + this.size.width;
+            //loose headband piece
+            let xStart: number;
+            if (this.facing) xStart = this.position.x + 2;
+            else xStart = this.position.x + this.size.width - 2;
 
-        ctx.beginPath();
-        ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 16, this.position.y + 20 - this.momentum.y / 30);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 5;
-        ctx.stroke();
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(xStart, this.position.y + 7);
+            ctx.lineTo(xStart - this.momentum.x / 16 + 2, this.position.y + 20 - this.momentum.y / 30);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(xStart, this.position.y + 7);
+            ctx.lineTo(xStart - this.momentum.x / 20 - 2, this.position.y + 30 - this.momentum.y / 30);
+            ctx.stroke();
+        }
 
         //reset
         ctx.globalAlpha = 1.0;

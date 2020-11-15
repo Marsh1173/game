@@ -23,7 +23,7 @@ let nextId = 0;
 app.post("/join", (request, response) => {
     const joinRequest: JoinRequest = request.body;
     const newId = nextId++;
-    game.newPlayer(newId, joinRequest.name, joinRequest.color);
+    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType);
     const joinResponse: JoinResponse = {
         id: newId,
         config: game.config,

@@ -8,6 +8,22 @@ const instructionButton = safeGetElementById("instructions");
 
 const name = safeGetElementById("name");
 const color = safeGetElementById("color");
+var classType: number = 0;
+
+
+safeGetElementById('rogue').onclick = () => {
+    classType = 0;
+    changeClass('rogue');
+};
+safeGetElementById('wizard').onclick = () => {
+    classType = 1;
+    changeClass('wizard');
+};
+safeGetElementById('templar').onclick = () => {
+    classType = 2;
+    changeClass('templar');
+};
+
 
 safeGetElementById("gameDiv").style.display = "none";
 instructionDiv.style.display = "none";
@@ -21,6 +37,7 @@ safeGetElementById("start").onclick = async () => {
     const serverTalker = new ServerTalker({
         name,
         color: (safeGetElementById("color") as HTMLInputElement).value,
+        classType: classType,
     });
     const { id, info, config } = await serverTalker.serverTalkerReady;
     const game = new Game(info, config, id, serverTalker);
@@ -39,3 +56,11 @@ instructionButton.onclick = () => {
         instructionButton.classList.remove("selected");
     }
 };
+
+function changeClass(id: string) {
+    let Array = document.getElementsByClassName('classSelected');
+    for (let i = 0; i < Array.length; i++) {
+        Array[i].classList.remove('classSelected');
+    }
+    safeGetElementById(id).classList.add('classSelected');
+}

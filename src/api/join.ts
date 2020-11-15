@@ -4,6 +4,7 @@ import { AllInfo } from "./allinfo";
 export interface JoinRequest {
     name: string;
     color: string;
+    classType: number;
 }
 
 export interface JoinResponse {
