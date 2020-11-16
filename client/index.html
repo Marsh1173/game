@@ -8,6 +8,7 @@
     <body oncontextmenu="return false;">
         <div id="gameDiv">
             <div id='slideContainer'><div id='slider'><canvas id="canvas"></canvas></div></div>
+            <img id='arrow' src="../src/client/images/ar_t_02.png" style="display:none; width:0px"/>
             <div id='playerInformationBar'>
                 <button id="end">End Game</button>
                 <div id='healthContainer'><div id='health'></div></div>
@@ -20,7 +21,7 @@
                 <div id='namePicker'><input type="text" id='name' placeholder="Name..." autocomplete="off"></input></div>
                 <div id='colorPicker'><p>Pick a color:</p><input type="color" id='color' value="#32a852"></input></div>
                 <div id='classPicker'>
-                    <button id='rogue' class='classButton classSelected'>Rogue</button>
+                    <button id='ninja' class='classButton classSelected'>Ninja</button>
                     <button id='wizard' class='classButton'>Wizard</button>
                     <button id='templar' class='classButton'>Templar</button>
                 </div>

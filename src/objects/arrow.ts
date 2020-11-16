@@ -5,7 +5,7 @@ import { Size } from "../size";
 import { Player } from "./player";
 
 export abstract class Arrow {
-    constructor(private readonly config: Config, public readonly position: Vector, public momentum: Vector, public id: number, public inGround: boolean) {}
+    constructor(private readonly config: Config, public readonly position: Vector, public momentum: Vector, public id: number, public inGround: boolean, public isDead: boolean) {}
 
     public serialize(): SerializedArrow {
         return {
@@ -13,6 +13,7 @@ export abstract class Arrow {
             momentum: this.momentum,
             id: this.id,
             inGround: this.inGround,
+            isDead: this.isDead,
         };
     }
 
@@ -25,7 +26,8 @@ export abstract class Arrow {
             futurePosY < object.position.y + object.size.height &&
             futurePosY > object.position.y
         ) {
-            const points: Vector[] = [
+            this.inGround = true;
+            /*const points: Vector[] = [
                 {
                     // above
                     x: this.position.x,
@@ -61,6 +63,7 @@ export abstract class Arrow {
 
             this.position.x = points[smallestIndex].x;
             this.position.y = points[smallestIndex].y;
+            
             switch (smallestIndex) {
                 case 0: // above
                     if (this.momentum.x > 700 || this.momentum.x < -700) {
@@ -68,6 +71,7 @@ export abstract class Arrow {
                         this.momentum.x /= 1.3;
                         this.position.y += this.momentum.y * elapsedTime;
                     } else {
+                        this.position.y -= Math.min(this.momentum.y / 20, 10);
                         this.inGround = true;
                     }
                     break;
@@ -84,7 +88,7 @@ export abstract class Arrow {
                 case 3: // right
                     if (this.momentum.x < 0) this.momentum.x /= -1.5;
                     break;
-            }
+            }*/
         }
     }
 
@@ -98,40 +102,66 @@ export abstract class Arrow {
             futurePosY > player.position.y &&
             this.id != player.id
         ) {
-            if (!player.isDead) {
-                if (!player.isShielded) player.damagePlayer(Math.cbrt(this.momentum.y + Math.pow(this.momentum.x, 1.7)) / 6, this.id);
-                this.inGround = true;
+            if (!player.isDead && !this.inGround) {
+                if (!player.isShielded) player.damagePlayer((Math.abs(this.momentum.y) + Math.abs(this.momentum.x)) / 100, this.id);
+                this.isDead = true;
                 player.momentum.x += this.momentum.x / 2;
                 player.momentum.y += this.momentum.y / 2;
             }
         }
     }
 
+    public checkSideCollision(elapsedTime: number) {
+        let futurePosX = this.position.x + this.momentum.x * elapsedTime;
+        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
+
+        if (futurePosY < 5 || futurePosY > this.config.ySize) {
+            this.inGround = true;
+        } else if (futurePosY > this.config.ySize) {
+            this.inGround = true;
+        }
+        if (futurePosX < 0) {
+            this.inGround = true;
+        } else if (futurePosX > this.config.xSize) {
+            this.inGround = true;
+        }
+    }
+
     public update(elapsedTime: number) {
-        this.momentum.y += (this.config.fallingAcceleration * elapsedTime) / 4;
-        this.momentum.x *= 0.995;
+        if (!this.inGround) {
+            this.momentum.y += (this.config.fallingAcceleration * elapsedTime) / 3;
+            this.momentum.x *= 0.995;
 
-        if (this.position.y < 5) {
-            this.momentum.y /= -1.5;
-            this.position.y += this.momentum.y * elapsedTime;
-        } else if (this.position.y > this.config.ySize) {
-            if (this.momentum.x > 700 || this.momentum.x < -700) {
-                this.momentum.y /= -2;
-                this.momentum.x /= 1.3;
+            /*if (this.position.y < 5) {
+                this.momentum.y /= -1.5;
                 this.position.y += this.momentum.y * elapsedTime;
-            } else {
-                this.inGround = true;
+            } else if (this.position.y > this.config.ySize) {
+                if (this.momentum.x > 700 || this.momentum.x < -700) {
+                    this.momentum.y /= -2;
+                    this.momentum.x /= 1.3;
+                    this.position.y += this.momentum.y * elapsedTime;
+                } else {
+                    this.inGround = true;
+                }
             }
-        }
-        if (this.position.x < 0) {
-            this.position.x = 0;
-            this.momentum.x /= -1.2;
-        } else if (this.position.x > this.config.xSize) {
-            this.position.x = this.config.xSize;
-            this.momentum.x /= -1.2;
-        }
+            if (this.position.x < 0) {
+                this.position.x = 0;
+                this.momentum.x /= -1.2;
+            } else if (this.position.x > this.config.xSize) {
+                this.position.x = this.config.xSize;
+                this.momentum.x /= -1.2;
+            }*/
 
-        this.position.x += this.momentum.x * elapsedTime;
-        this.position.y += this.momentum.y * elapsedTime;
+            this.checkSideCollision(elapsedTime);
+
+            if (!this.inGround){
+                this.position.x += this.momentum.x * elapsedTime;
+                this.position.y += this.momentum.y * elapsedTime;
+            }
+        } else {
+            setTimeout(() => {
+                this.isDead = true;
+            }, 2000);
+        }
     }
 }

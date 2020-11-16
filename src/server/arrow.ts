@@ -4,6 +4,6 @@ import { SerializedArrow } from "../serialized/arrow";
 
 export class ServerArrow extends Arrow {
     constructor(config: Config, info: SerializedArrow) {
-        super(config, info.position, info.momentum, info.id, info.inGround);
+        super(config, info.position, info.momentum, info.id, info.inGround, info.isDead);
     }
 }

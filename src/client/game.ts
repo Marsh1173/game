@@ -25,7 +25,7 @@ export class Game {
     private going: boolean = false;
 
     private mousePos: Vector = { x: 0, y: 0 };
-    private isClicking: boolean = false;
+    private isLeftClicking: boolean = false;
     private isCharging: number = 0;
 
     private constructGame(info: AllInfo) {
@@ -65,18 +65,22 @@ export class Game {
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
         safeGetElementById("slider").onmousedown = (e: MouseEvent) => {
-            this.isClicking = true;
+            if(e.button === 0) this.isLeftClicking = true;
+            
         };
         window.onmouseup = (e: MouseEvent) => {
-            this.isClicking = false;
-            if (this.isCharging >= 0.4) {
-                this.calculateArrow();
+            if(e.button === 0) { // leftClicking
+                this.isLeftClicking = false;
+                if (this.isCharging >= 0.4) {
+                    this.calculateArrow();
+                }
+                this.isCharging = 0;
             }
-            this.isCharging = 0;
         };
         window.onmousemove = (e: MouseEvent) => {
             this.mousePos.x = e.clientX;
             this.mousePos.y = e.clientY;
+            //this.findPlayer().attemptMoveMouse();
         };
         window.onkeydown = (e: KeyboardEvent) => {
             this.keyState[e.code] = true;
@@ -139,7 +143,7 @@ export class Game {
         }
 
         //update if player is charging, can be cleaned up
-        if (this.isClicking && this.isCharging < 1 && playerWithId.isDead === false) this.isCharging += elapsedTime * 2;
+        if (this.isLeftClicking && this.isCharging < 1 && playerWithId.isDead === false) this.isCharging += elapsedTime * 3;
         else if (this.isCharging > 1) this.isCharging = 1;
 
         //update health bar
@@ -147,13 +151,15 @@ export class Game {
         if (playerWithId.isShielded) safeGetElementById("health").style.background = "cyan";
         else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
 
+        //console.log(playerWithId.health);
+
         this.players.forEach((player) => player.update(elapsedTime));
 
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
+        this.arrows = this.arrows.filter((arrow) => arrow.isDead === false);
 
         // Collision detection with other players or platforms
         this.players.forEach((player1) => {
@@ -168,14 +174,16 @@ export class Game {
         });
 
         this.arrows.forEach((arrow) => {
-            this.players.forEach((player) => {
-                arrow.checkCollisionWithPlayer(player, elapsedTime);
-            });
-            this.platforms.forEach((platform) => {
-                arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
-                arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
-                //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
-            });
+            if (!arrow.inGround){
+                this.platforms.forEach((platform) => {
+                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
+                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
+                    //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
+                });
+                this.players.forEach((player) => {
+                    arrow.checkCollisionWithPlayer(player, elapsedTime);
+                });
+            }
         });
 
         this.render();
@@ -191,17 +199,15 @@ export class Game {
 
     private render() {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
+        this.arrows.forEach((arrow) => arrow.render(Game.ctx));
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.players.forEach((player) => {
-            if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isClicking) {
+            if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isLeftClicking) {
                 player.renderMouseCharge(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isCharging);
             }
             player.render(Game.ctx);
         });
         this.blasts.forEach((blast) => blast.render(Game.ctx));
-        this.arrows.forEach((arrow) => {
-            if (!arrow.inGround) arrow.render(Game.ctx);
-        });
     }
 
     private updateSlider() {
@@ -270,6 +276,9 @@ export class Game {
         this.players.forEach((player) => {
             blast.blastPlayer(player);
         });
+        this.arrows.forEach((arrow) => {
+            if (!arrow.inGround) blast.blastArrow(arrow);
+        });
     }
 
     private arrow(position: Vector, momentum: Vector, id: number) {
@@ -278,6 +287,7 @@ export class Game {
             momentum,
             id,
             inGround: false,
+            isDead: false,
         });
         this.arrows.push(arrow);
     }

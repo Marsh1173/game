@@ -3,15 +3,18 @@ import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow";// | "moveMouse";
 
 export abstract class Player {
+    public shieldCount = setTimeout(() => '', 1);
+
     public readonly actionsNextFrame: Record<PlayerActions, boolean> = {
         jump: false,
         moveLeft: false,
         moveRight: false,
         blast: false,
         arrow: false,
+        //moveMouse: false,
     };
 
     constructor(
@@ -205,11 +208,19 @@ export abstract class Player {
         this.doArrow({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
     }
 
+    /*public attemptMoveMouse() {
+        this.moveMouse();
+    }
+
+    public moveMouse() {
+
+    }*/
+
     public wasHit() {
         this.isHit = true;
         setTimeout(() => {
             this.isHit = false;
-        }, 20);
+        }, 30);
     }
 
     public healPlayer(quantity: number) {
@@ -246,9 +257,10 @@ export abstract class Player {
         this.momentum.x = 0;
         this.momentum.y = 0;
         this.isShielded = true;
-        setTimeout(() => {
+        clearTimeout(this.shieldCount);
+        this.shieldCount = setTimeout(() => {
             this.isShielded = false;
-        }, 2000);
+        }, 3000);
     }
 
     public update(elapsedTime: number) {
@@ -272,6 +284,9 @@ export abstract class Player {
         if (this.actionsNextFrame.arrow) {
             this.attemptArrow();
         }
+        /*if (this.actionsNextFrame.moveMouse) {
+            this.attemptMoveMouse();
+        }*/
 
         // Falling speed
         if (!this.standing) {
@@ -332,7 +347,7 @@ export abstract class Player {
         }
 
         // get damaged if you hit the bottom of the screen
-        if (!this.isDead && this.position.y >= this.config.ySize - this.size.height) {
+        if (!this.isShielded && !this.isDead && this.position.y >= this.config.ySize - this.size.height) {
             this.damagePlayer(elapsedTime * 120, -1);
         } else if (!this.isDead) {
             this.healPlayer(elapsedTime * 2);

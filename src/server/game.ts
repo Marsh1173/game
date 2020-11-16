@@ -67,7 +67,7 @@ export class Game {
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.inGround === false);
+        this.arrows = this.arrows.filter((arrow) => arrow.isDead === false);
 
         this.platforms.forEach((platform) => platform.update());
 
@@ -83,14 +83,16 @@ export class Game {
         });
 
         this.arrows.forEach((arrow) => {
-            this.players.forEach((player) => {
-                arrow.checkCollisionWithPlayer(player, elapsedTime);
-            });
-            this.platforms.forEach((platform) => {
-                arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
-                arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
-                //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
-            });
+            if (!arrow.inGround){
+                this.platforms.forEach((platform) => {
+                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
+                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
+                    //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
+                });
+                this.players.forEach((player) => {
+                    arrow.checkCollisionWithPlayer(player, elapsedTime);
+                });
+            }
         });
     }
 
@@ -143,8 +145,11 @@ export class Game {
                 }
                 break;
             case "arrow":
-                this.arrows.push(new ServerArrow(this.config, { position: data.position, momentum: data.direction, id, inGround: false }));
+                this.arrows.push(new ServerArrow(this.config, { position: data.position, momentum: {x: data.direction.x, y: data.direction.y - 100}, id, inGround: false, isDead: false }));
                 break;
+            /*case "moveMouse":
+                this.players.find((player) => player.id === id)!.actionsNextFrame.moveMouse = true;
+                break;*/
             default:
                 throw new Error(`Invalid client message type`);
         }
@@ -162,6 +167,9 @@ export class Game {
         this.players.forEach((player) => {
             blast.blastPlayer(player);
         });
+        this.arrows.forEach((arrow) => {
+            if (!arrow.inGround) blast.blastArrow(arrow);
+        });
     }
 
     private arrow(position: Vector, momentum: Vector, id: number) {
@@ -170,6 +178,7 @@ export class Game {
             momentum,
             id,
             inGround: false,
+            isDead: false,
         });
         this.arrows.push(arrow);
     }

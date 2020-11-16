@@ -6,14 +6,12 @@ import { safeGetElementById } from "./util";
 const instructionDiv = safeGetElementById("instructionMenu");
 const instructionButton = safeGetElementById("instructions");
 
-const name = safeGetElementById("name");
-const color = safeGetElementById("color");
 var classType: number = 0;
 
 
-safeGetElementById('rogue').onclick = () => {
+safeGetElementById('ninja').onclick = () => {
     classType = 0;
-    changeClass('rogue');
+    changeClass('ninja');
 };
 safeGetElementById('wizard').onclick = () => {
     classType = 1;

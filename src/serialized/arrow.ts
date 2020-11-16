@@ -5,4 +5,5 @@ export interface SerializedArrow {
     momentum: Vector;
     id: number;
     inGround: boolean;
+    isDead: boolean;
 }
