@@ -47,16 +47,16 @@ export class ClientPlayer extends Player {
 
     public render(ctx: CanvasRenderingContext2D) {
 
-        if(this.classType === 1) this.renderWizardWeapon(ctx);
+        //if(this.classType === 1) this.renderWizardWeapon(ctx);
 
         if (this.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
         } else if (this.health >= 100) {
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 16;
             ctx.shadowColor = this.color;
         } else if (!this.isDead) {
-            ctx.shadowBlur = this.health / 5;
+            ctx.shadowBlur = this.health / 6;
             ctx.shadowColor = this.color;//red?
         }
 
@@ -84,12 +84,14 @@ export class ClientPlayer extends Player {
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
 
-        if(this.classType === 0) this.renderNinja(ctx);
-        else if(this.classType === 1) {
+        if(this.classType === 0) {
+            this.renderNinja(ctx);
+            this.renderNinjaWeapon(ctx);
+        }else if(this.classType === 1) {
             this.renderWizard(ctx);
             //this.renderWizardWeapon(ctx, x, y);
         }
-        //else if(this.classType === 2) this.renderTemplar(ctx);
+        else if(this.classType === 2) this.renderTemplar(ctx);
 
         //name
         ctx.fillStyle = "white";
@@ -151,13 +153,13 @@ export class ClientPlayer extends Player {
         ctx.globalAlpha = opacity;
         ctx.shadowBlur = 0;
         
-        //hat triangle
+        /*hat triangle
         ctx.beginPath();
         ctx.moveTo(this.position.x, this.position.y);
         ctx.lineTo(this.position.x + this.size.width, this.position.y);
         ctx.lineTo(this.position.x + (this.size.width / 2), this.position.y - 50);
         ctx.fillStyle = "purple";
-        ctx.fill();
+        ctx.fill();*/
 
         //beard
         ctx.beginPath();
@@ -190,7 +192,7 @@ export class ClientPlayer extends Player {
 
 
 
-        //hat band
+        /*hat band
         ctx.beginPath();
         if (!this.facing){
             ctx.moveTo(this.position.x - 10, this.position.y - 3);
@@ -201,6 +203,34 @@ export class ClientPlayer extends Player {
         }
         ctx.strokeStyle = "purple";
         ctx.lineWidth = 7;
+        ctx.stroke();*/
+
+
+        //reset
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "gray";
+    }
+
+    public renderTemplar(ctx: CanvasRenderingContext2D) {
+        //scarf
+        const opacity = this.isDead ? 0.2 : 0.9;
+        ctx.globalAlpha = opacity;
+        ctx.shadowBlur = 1;
+        ctx.shadowColor = "darkgray";
+        ctx.fillStyle = "cornflowerblue";
+        ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
+
+        //loose scarf piece
+        let xStart: number;
+        if (this.facing) xStart = this.position.x + 2;
+        else xStart = this.position.x + this.size.width - 2;
+
+        ctx.strokeStyle = "cornflowerblue";
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(xStart, this.position.y + 7);
+        ctx.lineTo(xStart - this.momentum.x / 16 + 2, this.position.y + 20 - this.momentum.y / 30);
         ctx.stroke();
 
 
@@ -217,6 +247,23 @@ export class ClientPlayer extends Player {
         if (this.facing) scale *= -1;
         var imgStaff = new Image();
         imgStaff.src = 'images/staff.png';
+
+        if (this.facing) ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width + 15, this.position.y + 20);
+        else ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x - 15, this.position.y + 20);
+        ctx.rotate(Math.PI / 8);
+        ctx.drawImage(imgStaff, -imgStaff.width / 2, -imgStaff.height / 2);
+        ctx.resetTransform();
+
+        ctx.shadowBlur = 2;
+    }
+
+    public renderNinjaWeapon(ctx: CanvasRenderingContext2D) {
+        ctx.shadowBlur = 0;
+
+        let scale: number = 0.17;
+        if (this.facing) scale *= -1;
+        var imgStaff = new Image();
+        imgStaff.src = 'images/dagger.png';
 
         if (this.facing) ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width + 15, this.position.y + 20);
         else ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x - 15, this.position.y + 20);
