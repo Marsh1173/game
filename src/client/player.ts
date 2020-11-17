@@ -12,6 +12,7 @@ export class ClientPlayer extends Player {
         doArrow: (position: Vector, mometum: Vector, id: number) => void,
         private readonly serverTalker: ServerTalker,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
+        //private prevAnimationFrame: number = 0,
     ) {
         super(
             config,
@@ -19,6 +20,7 @@ export class ClientPlayer extends Player {
             info.name,
             info.classType,
             info.weaponEquipped,
+            info.animationFrame,
             info.position,
             info.momentum,
             info.color,
@@ -53,10 +55,18 @@ export class ClientPlayer extends Player {
             this.prevFocusPosition.x = this.focusPosition.x;
             this.prevFocusPosition.y = this.focusPosition.y;
         }
+        if (this.animationFrame !== this.animationFrame) {
+            this.serverTalker.sendMessage({
+                type: "animate",
+                id: this.id,
+                animationFrame: this.animationFrame,
+            });
+            //this.prevAnimationFrame = this.prevAnimationFrame;
+        }
         super.update(elapsedTime);
     }
 
-    public render(ctx: CanvasRenderingContext2D) {
+    public render(ctx: CanvasRenderingContext2D, isCharging: number) {
         //if(this.classType === 1) this.renderWizardWeapon(ctx);
 
         if (this.isShielded) {
@@ -96,12 +106,13 @@ export class ClientPlayer extends Player {
 
         if (this.classType === 0) {
             this.renderNinja(ctx);
-            if (!this.isDead)this.renderWeapon(ctx, "images/dagger.png");
+            if (!this.isDead)this.renderWeapon(ctx, "images/dagger.png", isCharging);
         } else if (this.classType === 1) {
             this.renderWizard(ctx);
-            if (!this.isDead)this.renderWeapon(ctx, "images/staff.png");
+            if (!this.isDead)this.renderWeapon(ctx, "images/staff.png", isCharging);
         } else if (this.classType === 2) {
-            this.renderTemplar(ctx)
+            this.renderTemplar(ctx);
+            if (!this.isDead)this.renderWeapon(ctx, "images/hammer.png", isCharging);
         };
 
         //name
@@ -137,9 +148,8 @@ export class ClientPlayer extends Player {
         ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
 
         //loose headband piece
-        let xStart: number;
-        if (this.focusPosition.x - this.position.x - this.size.width / 2  > 0) xStart = this.position.x + 2;
-        else xStart = this.position.x + this.size.width - 2;
+        let xStart: number = this.position.x + this.size.width - 2;
+        if (this.facing) xStart = this.position.x + 2;
 
         ctx.strokeStyle = "black";
         ctx.lineWidth = 5;
@@ -166,7 +176,7 @@ export class ClientPlayer extends Player {
         //beard
         ctx.beginPath();
         ctx.fillStyle = "lightgray";
-        if ((this.focusPosition.x - this.position.x - this.size.width / 2  < 0)) {
+        if (!this.facing) {
             ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
             ctx.lineTo(this.position.x + this.size.width / 5, this.position.y + (this.size.height * 5) / 6);
             ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
@@ -207,38 +217,37 @@ export class ClientPlayer extends Player {
     }
 
     public renderTemplar(ctx: CanvasRenderingContext2D) {
-        //scarf
         const opacity = this.isDead ? 0.2 : 0.9;
         ctx.globalAlpha = opacity;
-        ctx.shadowBlur = 1;
-        ctx.shadowColor = "darkgray";
-        ctx.fillStyle = "cornflowerblue";
-        ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
+        ctx.shadowBlur = 0;
+
+        //scarf
+        ctx.fillStyle = "mediumblue";
+        ctx.fillRect(this.position.x, this.position.y + this.size.height / 2, this.size.width, -10);
 
         //loose scarf piece
-        let xStart: number;
-        if (this.facing) xStart = this.position.x + 2;
-        else xStart = this.position.x + this.size.width - 2;
+        let xStart: number = this.position.x + this.size.width - 3;
+        if (this.facing) xStart = this.position.x + 3;
 
-        ctx.strokeStyle = "cornflowerblue";
-        ctx.lineWidth = 8;
+        ctx.strokeStyle = "mediumblue";
+        ctx.lineWidth = 9;
         ctx.beginPath();
-        ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 16 + 2, this.position.y + 20 - this.momentum.y / 30);
+        ctx.moveTo(xStart, this.position.y + this.size.height / 2 - 6);
+        ctx.lineTo(xStart - this.momentum.x / 20, this.position.y + this.size.height / 2 + 10 - this.momentum.y / 40);
         ctx.stroke();
+
 
         //reset
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
     }
 
-    public renderWeapon(ctx: CanvasRenderingContext2D, imgSrc: string) {
+    public renderWeapon(ctx: CanvasRenderingContext2D, imgSrc: string, isCharging: number) {
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan((this.focusPosition.y - this.position.y - this.size.height / 2)
          / (this.focusPosition.x - this.position.x - this.size.width / 2));
-        let scale: number = 0.17;
+        let scale: number = 0.2;
 
         var imgDagger = new Image();
         imgDagger.src = imgSrc;
@@ -251,8 +260,8 @@ export class ClientPlayer extends Player {
             ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 + 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
         }
         
-        ctx.rotate(rotation + Math.PI / 3);
-        ctx.drawImage(imgDagger, -imgDagger.width / 2, -imgDagger.height / 2);
+        ctx.rotate(rotation + Math.PI / 3 + this.animationFrame);
+        ctx.drawImage(imgDagger, -imgDagger.width * 2 / 3, -imgDagger.height / 2);
         ctx.resetTransform();
 
         ctx.shadowBlur = 2;
@@ -304,12 +313,4 @@ export class ClientPlayer extends Player {
         });
     }
 
-    /*public moveMouse() {
-        super.moveMouse();
-        this.serverTalker.sendMessage({
-            type: "moveMouse",
-            position: { x: this.mousePos.x, y: this.mousePos.y },
-            id: this.id,
-        });
-    }*/
 }

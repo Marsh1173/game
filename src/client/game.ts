@@ -126,8 +126,9 @@ export class Game {
 
         const playerWithId = this.findPlayer();
 
-        this.findPlayer().focusPosition.x = this.mousePos.x - this.screenPos;
-        this.findPlayer().focusPosition.y = this.mousePos.y;
+        playerWithId.focusPosition.x = this.mousePos.x - this.screenPos;
+        playerWithId.focusPosition.y = this.mousePos.y;
+        playerWithId.animationFrame = this.isCharging;
 
         this.updateSlider();
 
@@ -209,8 +210,9 @@ export class Game {
         this.players.forEach((player) => {
             if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isLeftClicking) {
                 player.renderMouseCharge(Game.ctx, this.isCharging);
+                //player.weaponAnimationFrame = 0.8;
             }
-            player.render(Game.ctx);
+            player.render(Game.ctx, this.isCharging);
         });
         this.blasts.forEach((blast) => blast.render(Game.ctx));
     }

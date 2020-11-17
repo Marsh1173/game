@@ -20,6 +20,7 @@ export class ServerPlayer extends Player {
             name,
             classType,
             0,
+            0,
             {
                 x: config.xSize / 8,
                 y: (config.ySize * 3) / 4 - config.playerSize,

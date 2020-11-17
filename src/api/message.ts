@@ -40,4 +40,10 @@ export interface MouseMessage {
     id: number;
 }
 
-export type ClientMessage = ActionMessage | ArrowMessage | MouseMessage;
+export interface AnimateMessage {
+    type: "animate";
+    animationFrame: number;
+    id: number;
+}
+
+export type ClientMessage = ActionMessage | ArrowMessage | MouseMessage | AnimateMessage;

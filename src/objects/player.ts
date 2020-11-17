@@ -3,7 +3,7 @@ import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow"; // | "moveMouse";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow";
 
 export abstract class Player {
     public shieldCount = setTimeout(() => "", 1);
@@ -14,7 +14,6 @@ export abstract class Player {
         moveRight: false,
         blast: false,
         arrow: false,
-        //moveMouse: false,
     };
 
     constructor(
@@ -23,6 +22,7 @@ export abstract class Player {
         public name: string,
         public classType: number,
         public weaponEquipped: number,
+        public animationFrame: number,
         public position: Vector,
         public momentum: Vector,
         public color: string,
@@ -52,6 +52,7 @@ export abstract class Player {
             name: this.name,
             classType: this.classType,
             weaponEquipped: this.weaponEquipped,
+            animationFrame: this.animationFrame,
             position: this.position,
             momentum: this.momentum,
             color: this.color,
@@ -152,7 +153,6 @@ export abstract class Player {
     public attemptMoveLeft(elapsedTime: number) {
         if (!this.isDead && this.momentum.x > -this.config.maxSidewaysMomentum) {
             this.moveLeft(elapsedTime);
-            this.facing = false;
         }
     }
     public moveLeft(elapsedTime: number) {
@@ -165,7 +165,6 @@ export abstract class Player {
     public attemptMoveRight(elapsedTime: number) {
         if (!this.isDead && this.momentum.x < this.config.maxSidewaysMomentum) {
             this.moveRight(elapsedTime);
-            this.facing = true;
         }
     }
     public moveRight(elapsedTime: number) {
@@ -207,14 +206,6 @@ export abstract class Player {
 
         this.doArrow({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
     }
-
-    /*public attemptMoveMouse() {
-        this.moveMouse();
-    }
-
-    public moveMouse() {
-
-    }*/
 
     public wasHit() {
         this.isHit = true;
@@ -284,9 +275,6 @@ export abstract class Player {
         if (this.actionsNextFrame.arrow) {
             this.attemptArrow();
         }
-        /*if (this.actionsNextFrame.moveMouse) {
-            this.attemptMoveMouse();
-        }*/
 
         // Falling speed
         if (!this.standing) {
@@ -311,6 +299,9 @@ export abstract class Player {
         } else {
             this.wasStanding = false;
         }
+
+        if (!this.isDead && (this.focusPosition.x - this.position.x - this.size.width / 2) > 0) this.facing = true;
+        else if (!this.isDead) this.facing = false;
 
         // Update position based on momentum
         this.position.x += this.momentum.x * elapsedTime;

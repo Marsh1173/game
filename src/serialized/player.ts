@@ -6,6 +6,7 @@ export interface SerializedPlayer {
     name: string;
     classType: number;
     weaponEquipped: number;
+    animationFrame: number;
     position: Vector;
     momentum: Vector;
     color: string;

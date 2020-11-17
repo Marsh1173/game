@@ -158,6 +158,9 @@ export class Game {
             case "moveMouse":
                 this.players.find((player) => player.id === id)!.focusPosition = data.position;
                 break;
+            case "animate":
+                this.players.find((player) => player.id === id)!.animationFrame = data.animationFrame;
+                break;
             default:
                 throw new Error(`Invalid client message type`);
         }
