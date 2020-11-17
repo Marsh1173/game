@@ -78,8 +78,8 @@ export class Game {
             }
         };
         window.onmousemove = (e: MouseEvent) => {
-            this.findPlayer().focusPosition.x = e.clientX;
-            this.findPlayer().focusPosition.y = e.clientY;
+            this.mousePos.x = e.clientX;
+            this.mousePos.y = e.clientY;
         };
         window.onkeydown = (e: KeyboardEvent) => {
             this.keyState[e.code] = true;
@@ -123,9 +123,15 @@ export class Game {
     }
 
     private update(elapsedTime: number) {
-        this.updateSlider();
 
         const playerWithId = this.findPlayer();
+
+        this.findPlayer().focusPosition.x = this.mousePos.x - this.screenPos;
+        this.findPlayer().focusPosition.y = this.mousePos.y;
+
+        this.updateSlider();
+
+        
         if (this.keyState[this.config.playerKeys.up]) {
             playerWithId.attemptJump();
             this.keyState[this.config.playerKeys.up] = false;
@@ -202,7 +208,7 @@ export class Game {
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.players.forEach((player) => {
             if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isLeftClicking) {
-                player.renderMouseCharge(Game.ctx, this.mousePos.x - this.screenPos, this.mousePos.y, this.isCharging);
+                player.renderMouseCharge(Game.ctx, this.isCharging);
             }
             player.render(Game.ctx);
         });

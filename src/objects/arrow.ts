@@ -129,8 +129,7 @@ export abstract class Arrow {
 
     public update(elapsedTime: number) {
         if (!this.inGround) {
-            this.momentum.y += (this.config.fallingAcceleration * elapsedTime) / 3;
-            this.momentum.x *= 0.995;
+            this.momentum.y += (this.config.fallingAcceleration * elapsedTime) / 2.7;
 
             /*if (this.position.y < 5) {
                 this.momentum.y /= -1.5;

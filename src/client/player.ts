@@ -96,20 +96,22 @@ export class ClientPlayer extends Player {
 
         if (this.classType === 0) {
             this.renderNinja(ctx);
-            this.renderNinjaWeapon(ctx);
+            if (!this.isDead)this.renderWeapon(ctx, "images/dagger.png");
         } else if (this.classType === 1) {
             this.renderWizard(ctx);
-            //this.renderWizardWeapon(ctx, x, y);
-        } else if (this.classType === 2) this.renderTemplar(ctx);
+            if (!this.isDead)this.renderWeapon(ctx, "images/staff.png");
+        } else if (this.classType === 2) {
+            this.renderTemplar(ctx)
+        };
 
         //name
         ctx.fillStyle = "white";
         ctx.fillText(this.name, this.position.x + this.size.width / 2 - this.name.length * 2.2 - 1, this.position.y - 15);
     }
 
-    public renderMouseCharge(ctx: CanvasRenderingContext2D, xMousePos: number, yMousePos: number, isCharging: number) {
-        let xComputed = isCharging * xMousePos + (this.position.x + this.size.width / 2) * (1 - isCharging) - 3;
-        let yComputed = isCharging * yMousePos + (this.position.y + this.size.height / 2) * (1 - isCharging) - 3;
+    public renderMouseCharge(ctx: CanvasRenderingContext2D, isCharging: number) {
+        let xComputed = isCharging * this.focusPosition.x + (this.position.x + this.size.width / 2) * (1 - isCharging) - 3;
+        let yComputed = isCharging * this.focusPosition.y + (this.position.y + this.size.height / 2) * (1 - isCharging) - 3;
 
         ctx.shadowBlur = 0;
 
@@ -136,7 +138,7 @@ export class ClientPlayer extends Player {
 
         //loose headband piece
         let xStart: number;
-        if (this.facing) xStart = this.position.x + 2;
+        if (this.focusPosition.x - this.position.x - this.size.width / 2  > 0) xStart = this.position.x + 2;
         else xStart = this.position.x + this.size.width - 2;
 
         ctx.strokeStyle = "black";
@@ -161,35 +163,34 @@ export class ClientPlayer extends Player {
         ctx.globalAlpha = opacity;
         ctx.shadowBlur = 0;
 
-        /*hat triangle
-        ctx.beginPath();
-        ctx.moveTo(this.position.x, this.position.y);
-        ctx.lineTo(this.position.x + this.size.width, this.position.y);
-        ctx.lineTo(this.position.x + (this.size.width / 2), this.position.y - 50);
-        ctx.fillStyle = "purple";
-        ctx.fill();*/
-
         //beard
         ctx.beginPath();
-        if (!this.facing) {
+        ctx.fillStyle = "lightgray";
+        if ((this.focusPosition.x - this.position.x - this.size.width / 2  < 0)) {
             ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
             ctx.lineTo(this.position.x + this.size.width / 5, this.position.y + (this.size.height * 5) / 6);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(this.position.x + this.size.width, this.position.y);
+            ctx.lineTo(this.position.x + this.size.width, this.position.y + this.size.height / 3);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + this.size.height / 6);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
+            ctx.lineTo(this.position.x + this.size.width / 4, this.position.y + this.size.height / 3);
             ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
         } else {
             ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + (this.size.height * 2) / 5);
             ctx.lineTo(this.position.x + (this.size.width * 4) / 5, this.position.y + (this.size.height * 5) / 6);
             ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
-        }
-        ctx.fillStyle = "lightgray";
-        ctx.fill();
-
-        //mustache
-        ctx.beginPath();
-        if (!this.facing) {
-            ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
-            ctx.lineTo(this.position.x + this.size.width / 4, this.position.y + this.size.height / 3);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
-        } else {
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(this.position.x, this.position.y);
+            ctx.lineTo(this.position.x, this.position.y + this.size.height / 3);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + this.size.height / 6);
+            ctx.fill();
+            ctx.beginPath();
             ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + (this.size.height * 2) / 5);
             ctx.lineTo(this.position.x + (this.size.width * 3) / 4, this.position.y + this.size.height / 3);
             ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
@@ -198,18 +199,6 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        /*hat band
-        ctx.beginPath();
-        if (!this.facing){
-            ctx.moveTo(this.position.x - 10, this.position.y - 3);
-            ctx.lineTo(this.position.x + this.size.width + 10, this.position.y);
-        } else {
-            ctx.moveTo(this.position.x - 10, this.position.y);
-            ctx.lineTo(this.position.x + this.size.width + 10, this.position.y - 3);
-        }
-        ctx.strokeStyle = "purple";
-        ctx.lineWidth = 7;
-        ctx.stroke();*/
 
         //reset
         ctx.globalAlpha = 1.0;
@@ -244,35 +233,26 @@ export class ClientPlayer extends Player {
         ctx.shadowColor = "gray";
     }
 
-    public renderWizardWeapon(ctx: CanvasRenderingContext2D) {
+    public renderWeapon(ctx: CanvasRenderingContext2D, imgSrc: string) {
         ctx.shadowBlur = 0;
 
+        let rotation: number = Math.atan((this.focusPosition.y - this.position.y - this.size.height / 2)
+         / (this.focusPosition.x - this.position.x - this.size.width / 2));
         let scale: number = 0.17;
-        if (this.facing) scale *= -1;
-        var imgStaff = new Image();
-        imgStaff.src = "images/staff.png";
 
-        if (this.facing) ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width + 15, this.position.y + 20);
-        else ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x - 15, this.position.y + 20);
-        ctx.rotate(Math.PI / 8);
-        ctx.drawImage(imgStaff, -imgStaff.width / 2, -imgStaff.height / 2);
-        ctx.resetTransform();
+        var imgDagger = new Image();
+        imgDagger.src = imgSrc;
 
-        ctx.shadowBlur = 2;
-    }
-
-    public renderNinjaWeapon(ctx: CanvasRenderingContext2D) {
-        ctx.shadowBlur = 0;
-
-        let scale: number = 0.17;
-        if (this.facing) scale *= -1;
-        var imgStaff = new Image();
-        imgStaff.src = "images/dagger.png";
-
-        if (this.facing) ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width + 15, this.position.y + 20);
-        else ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x - 15, this.position.y + 20);
-        ctx.rotate(Math.PI / 8);
-        ctx.drawImage(imgStaff, -imgStaff.width / 2, -imgStaff.height / 2);
+        if ((this.focusPosition.x - this.position.x - this.size.width / 2) < 0) {
+            scale *= -1;
+            rotation *= -1;
+            ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 - 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
+        } else {
+            ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 + 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
+        }
+        
+        ctx.rotate(rotation + Math.PI / 3);
+        ctx.drawImage(imgDagger, -imgDagger.width / 2, -imgDagger.height / 2);
         ctx.resetTransform();
 
         ctx.shadowBlur = 2;
