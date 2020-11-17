@@ -13,6 +13,7 @@ export class ServerPlayer extends Player {
         classType: number,
         doBlast: (position: Vector, color: string, id: number) => void,
         doArrow: (position: Vector, momentum: Vector, id: number) => void,
+        doBasicAttack: (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => void,
     ) {
         super(
             config,
@@ -48,6 +49,7 @@ export class ServerPlayer extends Player {
             true,
             doBlast,
             doArrow,
+            doBasicAttack,
         );
     }
 }

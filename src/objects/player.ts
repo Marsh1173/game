@@ -3,7 +3,7 @@ import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow" | "basicAttack";
 
 export abstract class Player {
     public shieldCount = setTimeout(() => "", 1);
@@ -14,6 +14,7 @@ export abstract class Player {
         moveRight: false,
         blast: false,
         arrow: false,
+        basicAttack: false,
     };
 
     constructor(
@@ -44,6 +45,7 @@ export abstract class Player {
         public facing: boolean,
         public doBlast: (position: Vector, color: string, id: number) => void,
         public doArrow: (position: Vector, momentum: Vector, id: number) => void,
+        public doBasicAttack: (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => void,
     ) {}
 
     public serialize(): SerializedPlayer {
@@ -207,11 +209,59 @@ export abstract class Player {
         this.doArrow({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
     }
 
+    public attemptBasicAttack(elapsedTime: number) {
+        this.basicAttack(elapsedTime);
+    }
+    public basicAttack(elapsedTime: number) {
+        let newX: number = (this.focusPosition.x - this.position.x - this.size.width / 2);
+        let newY: number = (this.focusPosition.y - this.position.y - this.size.height / 2);
+        let angle: number = Math.atan(newY / newX);
+        if(newX < 0) angle += Math.PI;
+
+
+        if (this.classType === 0) this.doBasicAttack( // ninja basic attack
+            {
+                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
+                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
+            },
+            angle,
+            this.id,
+            20,
+            70,
+            1,
+            40,
+        );
+         else if (this.classType === 1) this.doBasicAttack( // wizard basic attack
+            {
+                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
+                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
+            },
+            angle,
+            this.id,
+            8,
+            175,
+            1,
+            125,
+        );
+         else if (this.classType === 2) this.doBasicAttack( // templar basic attack
+            {
+                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
+                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
+            },
+            angle,
+            this.id,
+            10,
+            90,
+            1,
+            60,
+        );
+    }
+
     public wasHit() {
         this.isHit = true;
         setTimeout(() => {
             this.isHit = false;
-        }, 30);
+        }, 40);
     }
 
     public healPlayer(quantity: number) {
@@ -223,8 +273,13 @@ export abstract class Player {
 
     public damagePlayer(quantity: number, id: number): boolean {
         if (id != -1) this.lastHitBy = id;
-        this.health -= quantity;
+
+        if (this.classType === 0) this.health -= quantity * 1.2;
+        else if (this.classType === 1) this.health -= quantity;
+        else if (this.classType === 2) this.health -= quantity * 0.8;
+
         this.wasHit();
+
         if (this.health <= 0) {
             this.die();
             this.health = 0;
@@ -274,6 +329,9 @@ export abstract class Player {
         }
         if (this.actionsNextFrame.arrow) {
             this.attemptArrow();
+        }
+        if (this.actionsNextFrame.basicAttack) {
+            this.attemptBasicAttack(elapsedTime);
         }
 
         // Falling speed

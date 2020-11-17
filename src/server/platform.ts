@@ -26,34 +26,34 @@ export const getDefaultPlatformList = (config: Config) => {
         ),
         new ServerPlatform(
             {
-                height: 25,
+                height: 20,
                 width: (config.xSize * 3) / 8,
             },
             {
                 x: config.xSize / 8 + (config.xSize * 3) / 4 / 4,
-                y: config.ySize / 2,
+                y: config.ySize * 11 / 20 - 10,
             },
             config,
         ),
         new ServerPlatform(
             {
-                height: 25,
+                height: 20,
                 width: (config.xSize * 3) / 8,
             },
             {
                 x: (config.xSize * 3) / 4,
-                y: config.ySize / 4,
+                y: config.ySize * 2 / 5 - 50,
             },
             config,
         ),
         new ServerPlatform(
             {
-                height: 25,
+                height: 20,
                 width: (config.xSize * 3) / 8,
             },
             {
                 x: (config.xSize * -1) / 8,
-                y: config.ySize / 4,
+                y: config.ySize * 2 / 5 - 50,
             },
             config,
         ),

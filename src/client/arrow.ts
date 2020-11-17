@@ -10,15 +10,8 @@ export class ClientArrow extends Arrow {
     public render(ctx: CanvasRenderingContext2D) {
         ctx.shadowBlur = 0;
 
-        /*ctx.beginPath();
-        ctx.moveTo(this.position.x - this.momentum.x / 70, this.position.y - this.momentum.y / 70); // from player position
-        ctx.lineTo(this.position.x + this.momentum.x / 80, this.position.y + this.momentum.y / 80); // pointing towards cursor, based on percentage of charge
-        ctx.strokeStyle = "gray";
-        ctx.lineWidth = 3;
-        ctx.stroke();*/
-
         let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
-        let scale: number = 0.2;
+        let scale: number = 0.15;
         if (this.momentum.x < 0) rotation *= -1;
         if (this.momentum.x < 0) scale *= -1;
         let imgArrow = new Image();

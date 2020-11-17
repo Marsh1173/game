@@ -1,5 +1,6 @@
 import { AllInfo } from "../api/allinfo";
 import { ServerBlast } from "./blast";
+import { ServerBasicAttack } from "./basicAttack";
 import { ServerArrow } from "./arrow";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
@@ -15,6 +16,7 @@ export class Game {
     private players: ServerPlayer[] = [];
     private blasts: ServerBlast[] = [];
     private arrows: ServerArrow[] = [];
+    private basicAttacks: ServerBasicAttack[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
     public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
 
@@ -40,6 +42,7 @@ export class Game {
             blasts: this.blasts.map((blast) => blast.serialize()),
             arrows: this.arrows.map((arrow) => arrow.serialize()),
             platforms: this.platforms.map((platform) => platform.serialize()),
+            basicAttacks: this.basicAttacks.map((basicAttack) => basicAttack.serialize()),
         };
     }
 
@@ -69,14 +72,17 @@ export class Game {
         this.arrows.forEach((arrow) => arrow.update(elapsedTime));
         this.arrows = this.arrows.filter((arrow) => arrow.isDead === false);
 
+        this.basicAttacks.forEach((basicAttack) => basicAttack.update(elapsedTime));
+        this.basicAttacks = this.basicAttacks.filter((basicAttack) => basicAttack.life > 0);
+
         this.platforms.forEach((platform) => platform.update());
 
         this.players.forEach((player1) => {
-            this.players.forEach((player2) => {
+            /*this.players.forEach((player2) => {
                 if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
                     player1.checkCollisionWithRectangularObject(player2, elapsedTime);
                 }
-            });
+            });*/
             this.platforms.forEach((platform) => {
                 player1.checkCollisionWithRectangularObject(platform, elapsedTime);
             });
@@ -85,6 +91,7 @@ export class Game {
         this.arrows.forEach((arrow) => {
             if (!arrow.inGround) {
                 this.platforms.forEach((platform) => {
+                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
                     arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
                     arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
                     //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
@@ -108,6 +115,9 @@ export class Game {
             },
             (position: Vector, momentum: Vector, id: number) => {
                 this.arrow(position, momentum, id);
+            },
+            (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => {
+                this.basicAttack(position, angle, id, damage, range, life, spread);
             },
         );
         this.players.push(newPlayer);
@@ -140,6 +150,9 @@ export class Game {
                     case "blast":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.blast = true;
                         break;
+                    case "basicAttack":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
+                        break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
                 }
@@ -159,6 +172,8 @@ export class Game {
                 this.players.find((player) => player.id === id)!.focusPosition = data.position;
                 break;
             case "animate":
+                //var playerWithId: ServerPlayer = this.players.find((player) => player.id === id)!;
+                //console.log(playerWithId.animationFrame + " " + playerWithId.id);
                 this.players.find((player) => player.id === id)!.animationFrame = data.animationFrame;
                 break;
             default:
@@ -192,5 +207,21 @@ export class Game {
             isDead: false,
         });
         this.arrows.push(arrow);
+    }
+
+    private basicAttack(position: Vector, angle: number, id: number, damage: number, range: number, life:number, spread: number) {
+        const basicAttack = new ServerBasicAttack(this.config, {
+            position,
+            angle,
+            id,
+            damage,
+            range,
+            life,
+            spread,
+        });
+        this.basicAttacks.push(basicAttack);
+        this.players.forEach((player) => {
+            basicAttack.basicAttackPlayer(player);
+        });
     }
 }

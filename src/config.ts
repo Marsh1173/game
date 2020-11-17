@@ -40,9 +40,9 @@ export const defaultConfig: Config = {
         right: "KeyD",
     },
     platformColor: "grey",
-    fallingAcceleration: 3000,
+    fallingAcceleration: 3500,
     standingSidewaysAcceleration: 13000,
-    nonStandingSidewaysAcceleration: 2200,
-    maxSidewaysMomentum: 800,
+    nonStandingSidewaysAcceleration: 2000,
+    maxSidewaysMomentum: 900,
     arrowPower: 2000,
 };

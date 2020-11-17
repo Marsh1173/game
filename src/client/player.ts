@@ -10,9 +10,10 @@ export class ClientPlayer extends Player {
         info: SerializedPlayer,
         doBlast: (position: Vector, color: string, id: number) => void,
         doArrow: (position: Vector, mometum: Vector, id: number) => void,
+        doBasicAttack: (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => void,
         private readonly serverTalker: ServerTalker,
+        private readonly isClientPlayer: number,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
-        //private prevAnimationFrame: number = 0,
     ) {
         super(
             config,
@@ -42,6 +43,7 @@ export class ClientPlayer extends Player {
             info.facing,
             doBlast,
             doArrow,
+            doBasicAttack,
         );
     }
 
@@ -55,19 +57,18 @@ export class ClientPlayer extends Player {
             this.prevFocusPosition.x = this.focusPosition.x;
             this.prevFocusPosition.y = this.focusPosition.y;
         }
-        if (this.animationFrame !== this.animationFrame) {
+
+        if (this.id === this.isClientPlayer) {
             this.serverTalker.sendMessage({
                 type: "animate",
                 id: this.id,
                 animationFrame: this.animationFrame,
             });
-            //this.prevAnimationFrame = this.prevAnimationFrame;
         }
         super.update(elapsedTime);
     }
 
-    public render(ctx: CanvasRenderingContext2D, isCharging: number) {
-        //if(this.classType === 1) this.renderWizardWeapon(ctx);
+    public render(ctx: CanvasRenderingContext2D) {
 
         if (this.isShielded) {
             ctx.shadowBlur = 20;
@@ -104,15 +105,14 @@ export class ClientPlayer extends Player {
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
 
+
+        //renders the gear
         if (this.classType === 0) {
             this.renderNinja(ctx);
-            if (!this.isDead)this.renderWeapon(ctx, "images/dagger.png", isCharging);
         } else if (this.classType === 1) {
             this.renderWizard(ctx);
-            if (!this.isDead)this.renderWeapon(ctx, "images/staff.png", isCharging);
         } else if (this.classType === 2) {
             this.renderTemplar(ctx);
-            if (!this.isDead)this.renderWeapon(ctx, "images/hammer.png", isCharging);
         };
 
         //name
@@ -242,12 +242,21 @@ export class ClientPlayer extends Player {
         ctx.shadowBlur = 2;
     }
 
-    public renderWeapon(ctx: CanvasRenderingContext2D, imgSrc: string, isCharging: number) {
+    public renderWeapon(ctx: CanvasRenderingContext2D) {
+        if (this.classType === 0) {
+            this.renderWeaponTemplate(ctx, "images/dagger.png", 0.17);
+        } else if (this.classType === 1) {
+            this.renderWeaponTemplate(ctx, "images/staff.png", 0.21);
+        } else if (this.classType === 2) {
+            this.renderWeaponTemplate(ctx, "images/hammer.png", 0.25);
+        };
+    }
+
+    public renderWeaponTemplate(ctx: CanvasRenderingContext2D, imgSrc: string, scale: number) {
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan((this.focusPosition.y - this.position.y - this.size.height / 2)
          / (this.focusPosition.x - this.position.x - this.size.width / 2));
-        let scale: number = 0.2;
 
         var imgDagger = new Image();
         imgDagger.src = imgSrc;
@@ -260,8 +269,8 @@ export class ClientPlayer extends Player {
             ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 + 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
         }
         
-        ctx.rotate(rotation + Math.PI / 3 + this.animationFrame);
-        ctx.drawImage(imgDagger, -imgDagger.width * 2 / 3, -imgDagger.height / 2);
+        ctx.rotate(rotation + Math.PI / 8 + this.animationFrame);
+        ctx.drawImage(imgDagger, -imgDagger.width * 2 / 3, -imgDagger.height * 3 / 4 - (this.animationFrame * 60));
         ctx.resetTransform();
 
         ctx.shadowBlur = 2;
@@ -309,6 +318,15 @@ export class ClientPlayer extends Player {
             type: "arrow",
             direction: { x: this.focusPosition.x, y: this.focusPosition.y },
             position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            id: this.id,
+        });
+    }
+
+    public basicAttack(elapsedTime: number) {
+        super.basicAttack(elapsedTime);
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "basicAttack",
             id: this.id,
         });
     }
