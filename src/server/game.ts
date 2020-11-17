@@ -83,7 +83,7 @@ export class Game {
         });
 
         this.arrows.forEach((arrow) => {
-            if (!arrow.inGround){
+            if (!arrow.inGround) {
                 this.platforms.forEach((platform) => {
                     arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
                     arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
@@ -145,11 +145,19 @@ export class Game {
                 }
                 break;
             case "arrow":
-                this.arrows.push(new ServerArrow(this.config, { position: data.position, momentum: {x: data.direction.x, y: data.direction.y - 100}, id, inGround: false, isDead: false }));
+                this.arrows.push(
+                    new ServerArrow(this.config, {
+                        position: data.position,
+                        momentum: { x: data.direction.x, y: data.direction.y - 100 },
+                        id,
+                        inGround: false,
+                        isDead: false,
+                    }),
+                );
                 break;
-            /*case "moveMouse":
-                this.players.find((player) => player.id === id)!.actionsNextFrame.moveMouse = true;
-                break;*/
+            case "moveMouse":
+                this.players.find((player) => player.id === id)!.focusPosition = data.position;
+                break;
             default:
                 throw new Error(`Invalid client message type`);
         }

@@ -3,17 +3,15 @@ import { ServerTalker } from "./servertalker";
 import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { Config } from "../config";
-import { createVoidZero } from "typescript";
-import { safeGetElementById } from "./util";
 
 export class ClientPlayer extends Player {
-
     constructor(
         config: Config,
         info: SerializedPlayer,
         doBlast: (position: Vector, color: string, id: number) => void,
         doArrow: (position: Vector, mometum: Vector, id: number) => void,
         private readonly serverTalker: ServerTalker,
+        private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
     ) {
         super(
             config,
@@ -35,7 +33,7 @@ export class ClientPlayer extends Player {
             info.deathCooldown,
             info.lastHitBy,
             info.killCount,
-            info.mousePos,
+            info.focusPosition,
             info.isCharging,
             info.isHit,
             info.isShielded,
@@ -45,8 +43,20 @@ export class ClientPlayer extends Player {
         );
     }
 
-    public render(ctx: CanvasRenderingContext2D) {
+    public update(elapsedTime: number) {
+        if (this.prevFocusPosition.x !== this.focusPosition.x || this.prevFocusPosition.y !== this.focusPosition.y) {
+            this.serverTalker.sendMessage({
+                type: "moveMouse",
+                id: this.id,
+                position: this.focusPosition,
+            });
+            this.prevFocusPosition.x = this.focusPosition.x;
+            this.prevFocusPosition.y = this.focusPosition.y;
+        }
+        super.update(elapsedTime);
+    }
 
+    public render(ctx: CanvasRenderingContext2D) {
         //if(this.classType === 1) this.renderWizardWeapon(ctx);
 
         if (this.isShielded) {
@@ -57,9 +67,8 @@ export class ClientPlayer extends Player {
             ctx.shadowColor = this.color;
         } else if (!this.isDead) {
             ctx.shadowBlur = this.health / 6;
-            ctx.shadowColor = this.color;//red?
+            ctx.shadowColor = this.color; //red?
         }
-
 
         //hit and shielded exceptions
         if (this.isHit === true) {
@@ -74,7 +83,8 @@ export class ClientPlayer extends Player {
         const opacity = this.isDead ? 0.2 : 0.9;
         ctx.globalAlpha = opacity;
         ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
-        if (this.isShielded || this.isDead) { // for exceptions, colors the inside normally
+        if (this.isShielded || this.isDead) {
+            // for exceptions, colors the inside normally
             ctx.fillStyle = this.color;
             ctx.fillRect(this.position.x + 5, this.position.y + 5, this.size.width - 10, this.size.height - 10);
         }
@@ -84,18 +94,17 @@ export class ClientPlayer extends Player {
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
 
-        if(this.classType === 0) {
+        if (this.classType === 0) {
             this.renderNinja(ctx);
             this.renderNinjaWeapon(ctx);
-        }else if(this.classType === 1) {
+        } else if (this.classType === 1) {
             this.renderWizard(ctx);
             //this.renderWizardWeapon(ctx, x, y);
-        }
-        else if(this.classType === 2) this.renderTemplar(ctx);
+        } else if (this.classType === 2) this.renderTemplar(ctx);
 
         //name
         ctx.fillStyle = "white";
-        ctx.fillText(this.name, this.position.x + (this.size.width / 2) - (this.name.length * 2.2) - 1, this.position.y - 15);
+        ctx.fillText(this.name, this.position.x + this.size.width / 2 - this.name.length * 2.2 - 1, this.position.y - 15);
     }
 
     public renderMouseCharge(ctx: CanvasRenderingContext2D, xMousePos: number, yMousePos: number, isCharging: number) {
@@ -141,7 +150,6 @@ export class ClientPlayer extends Player {
         ctx.lineTo(xStart - this.momentum.x / 20 - 2, this.position.y + 30 - this.momentum.y / 30);
         ctx.stroke();
 
-
         //reset
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
@@ -152,7 +160,7 @@ export class ClientPlayer extends Player {
         const opacity = this.isDead ? 0.2 : 0.9;
         ctx.globalAlpha = opacity;
         ctx.shadowBlur = 0;
-        
+
         /*hat triangle
         ctx.beginPath();
         ctx.moveTo(this.position.x, this.position.y);
@@ -163,34 +171,32 @@ export class ClientPlayer extends Player {
 
         //beard
         ctx.beginPath();
-        if (!this.facing){
-            ctx.moveTo(this.position.x + 3, this.position.y + this.size.height * 2 / 5);
-            ctx.lineTo(this.position.x + this.size.width / 5, this.position.y + (this.size.height * 5 / 6));
-            ctx.lineTo(this.position.x + (this.size.width / 2), this.position.y + (this.size.height * 2 / 5) + 3);
+        if (!this.facing) {
+            ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
+            ctx.lineTo(this.position.x + this.size.width / 5, this.position.y + (this.size.height * 5) / 6);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
         } else {
-            ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + this.size.height * 2 / 5);
-            ctx.lineTo(this.position.x + this.size.width * 4 / 5, this.position.y + (this.size.height * 5 / 6));
-            ctx.lineTo(this.position.x + (this.size.width / 2), this.position.y + (this.size.height * 2 / 5) + 3);
+            ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + (this.size.height * 2) / 5);
+            ctx.lineTo(this.position.x + (this.size.width * 4) / 5, this.position.y + (this.size.height * 5) / 6);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
         }
         ctx.fillStyle = "lightgray";
         ctx.fill();
 
         //mustache
         ctx.beginPath();
-        if (!this.facing){
-            ctx.moveTo(this.position.x + 3, this.position.y + this.size.height * 2 / 5);
-            ctx.lineTo(this.position.x + this.size.width / 4, this.position.y + (this.size.height / 3));
-            ctx.lineTo(this.position.x + (this.size.width / 2), this.position.y + (this.size.height * 2 / 5) + 3);
+        if (!this.facing) {
+            ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
+            ctx.lineTo(this.position.x + this.size.width / 4, this.position.y + this.size.height / 3);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
         } else {
-            ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + this.size.height * 2 / 5);
-            ctx.lineTo(this.position.x + this.size.width * 3 / 4, this.position.y + (this.size.height / 3));
-            ctx.lineTo(this.position.x + (this.size.width / 2), this.position.y + (this.size.height * 2 / 5) + 3);
+            ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + (this.size.height * 2) / 5);
+            ctx.lineTo(this.position.x + (this.size.width * 3) / 4, this.position.y + this.size.height / 3);
+            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
         }
         ctx.strokeStyle = "lightgray";
         ctx.lineWidth = 2;
         ctx.stroke();
-
-
 
         /*hat band
         ctx.beginPath();
@@ -204,7 +210,6 @@ export class ClientPlayer extends Player {
         ctx.strokeStyle = "purple";
         ctx.lineWidth = 7;
         ctx.stroke();*/
-
 
         //reset
         ctx.globalAlpha = 1.0;
@@ -233,7 +238,6 @@ export class ClientPlayer extends Player {
         ctx.lineTo(xStart - this.momentum.x / 16 + 2, this.position.y + 20 - this.momentum.y / 30);
         ctx.stroke();
 
-
         //reset
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
@@ -246,7 +250,7 @@ export class ClientPlayer extends Player {
         let scale: number = 0.17;
         if (this.facing) scale *= -1;
         var imgStaff = new Image();
-        imgStaff.src = 'images/staff.png';
+        imgStaff.src = "images/staff.png";
 
         if (this.facing) ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width + 15, this.position.y + 20);
         else ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x - 15, this.position.y + 20);
@@ -263,7 +267,7 @@ export class ClientPlayer extends Player {
         let scale: number = 0.17;
         if (this.facing) scale *= -1;
         var imgStaff = new Image();
-        imgStaff.src = 'images/dagger.png';
+        imgStaff.src = "images/dagger.png";
 
         if (this.facing) ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width + 15, this.position.y + 20);
         else ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x - 15, this.position.y + 20);
@@ -314,7 +318,7 @@ export class ClientPlayer extends Player {
         super.arrow();
         this.serverTalker.sendMessage({
             type: "arrow",
-            direction: { x: this.mousePos.x, y: this.mousePos.y },
+            direction: { x: this.focusPosition.x, y: this.focusPosition.y },
             position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             id: this.id,
         });

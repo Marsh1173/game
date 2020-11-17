@@ -65,11 +65,11 @@ export class Game {
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
         safeGetElementById("slider").onmousedown = (e: MouseEvent) => {
-            if(e.button === 0) this.isLeftClicking = true;
-            
+            if (e.button === 0) this.isLeftClicking = true;
         };
         window.onmouseup = (e: MouseEvent) => {
-            if(e.button === 0) { // leftClicking
+            if (e.button === 0) {
+                // leftClicking
                 this.isLeftClicking = false;
                 if (this.isCharging >= 0.4) {
                     this.calculateArrow();
@@ -78,9 +78,8 @@ export class Game {
             }
         };
         window.onmousemove = (e: MouseEvent) => {
-            this.mousePos.x = e.clientX;
-            this.mousePos.y = e.clientY;
-            //this.findPlayer().attemptMoveMouse();
+            this.findPlayer().focusPosition.x = e.clientX;
+            this.findPlayer().focusPosition.y = e.clientY;
         };
         window.onkeydown = (e: KeyboardEvent) => {
             this.keyState[e.code] = true;
@@ -174,7 +173,7 @@ export class Game {
         });
 
         this.arrows.forEach((arrow) => {
-            if (!arrow.inGround){
+            if (!arrow.inGround) {
                 this.platforms.forEach((platform) => {
                     arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
                     arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
@@ -258,8 +257,8 @@ export class Game {
             newY *= -1;
         }
 
-        playerWithId.mousePos.x = newX;
-        playerWithId.mousePos.y = newY;
+        playerWithId.focusPosition.x = newX;
+        playerWithId.focusPosition.y = newY;
 
         if (playerWithId.isDead === false) playerWithId.attemptArrow();
     }

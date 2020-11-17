@@ -3,10 +3,10 @@ import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow";// | "moveMouse";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow"; // | "moveMouse";
 
 export abstract class Player {
-    public shieldCount = setTimeout(() => '', 1);
+    public shieldCount = setTimeout(() => "", 1);
 
     public readonly actionsNextFrame: Record<PlayerActions, boolean> = {
         jump: false,
@@ -37,7 +37,7 @@ export abstract class Player {
         public deathCooldown: number,
         public lastHitBy: number,
         public killCount: number,
-        public mousePos: Vector,
+        public focusPosition: Vector,
         public isCharging: number,
         public isHit: boolean,
         public isShielded: boolean,
@@ -66,7 +66,7 @@ export abstract class Player {
             deathCooldown: this.deathCooldown,
             lastHitBy: this.lastHitBy,
             killCount: this.killCount,
-            mousePos: this.mousePos,
+            focusPosition: this.focusPosition,
             isCharging: this.isCharging,
             isHit: this.isHit,
             isShielded: this.isShielded,
@@ -199,11 +199,11 @@ export abstract class Player {
     public arrow() {
         const power: number = 100;
 
-        let newX = Math.sqrt(power - Math.pow(this.mousePos.y, 2));
-        let newY = Math.sqrt(power - Math.pow(this.mousePos.x, 2));
+        let newX = Math.sqrt(power - Math.pow(this.focusPosition.y, 2));
+        let newY = Math.sqrt(power - Math.pow(this.focusPosition.x, 2));
 
-        if (this.mousePos.x < 0) newX *= -1;
-        if (this.mousePos.y < 0) newY *= -1;
+        if (this.focusPosition.x < 0) newX *= -1;
+        if (this.focusPosition.y < 0) newY *= -1;
 
         this.doArrow({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
     }

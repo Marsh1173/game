@@ -20,7 +20,7 @@ export interface SerializedPlayer {
     deathCooldown: number;
     lastHitBy: number;
     killCount: number;
-    mousePos: Vector;
+    focusPosition: Vector;
     isCharging: number;
     isHit: boolean;
     isShielded: boolean;

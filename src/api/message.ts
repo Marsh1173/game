@@ -34,10 +34,10 @@ export interface ArrowMessage {
     id: number;
 }
 
-/*export interface MouseMessage {
+export interface MouseMessage {
     type: "moveMouse";
     position: Vector;
     id: number;
-}*/
+}
 
-export type ClientMessage = ActionMessage | ArrowMessage;// | MouseMessage;
+export type ClientMessage = ActionMessage | ArrowMessage | MouseMessage;
