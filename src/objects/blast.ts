@@ -2,7 +2,7 @@ import { Config } from "../config";
 import { SerializedBlast } from "../serialized/blast";
 import { Vector } from "../vector";
 import { Player } from "./player";
-import { Arrow } from "./arrow";
+import { Projectile } from "./projectile";
 
 export abstract class Blast {
     constructor(
@@ -44,15 +44,15 @@ export abstract class Blast {
             player.momentum.x -= (Math.sin(angle) * this.config.blastPower) / Math.pow(distance, 1.3);
             player.momentum.y -= (Math.cos(angle) * this.config.blastPower) / Math.pow(distance, 1.4) + (100 * this.config.blastRadius) / distance;
             if (!player.isDead && !player.isShielded) {
-                player.damagePlayer(15, this.id);
+                player.damagePlayer(15, this.id, "none", "explosive");
             }
         }
     }
-    public blastArrow(arrow: Arrow) {
+    public blastProjectile(projectile: Projectile) {
         const x1 = this.position.x;
         const y1 = this.position.y;
-        const x2 = arrow.position.x;
-        const y2 = arrow.position.y;
+        const x2 = projectile.position.x;
+        const y2 = projectile.position.y;
         const distanceVector = {
             x: x1 - x2,
             y: y1 - y2,
@@ -60,8 +60,8 @@ export abstract class Blast {
         const distance = Math.sqrt(Math.pow(distanceVector.x, 2) + Math.pow(distanceVector.y, 2));
         if (distance < this.config.blastRadius) {
             const angle = Math.atan2(distanceVector.x, distanceVector.y);
-            arrow.momentum.x -= (Math.sin(angle) * this.config.blastPower) / (distance * 10);
-            arrow.momentum.y -= (Math.cos(angle) * this.config.blastPower) / (distance * 10);
+            projectile.momentum.x -= (Math.sin(angle) * this.config.blastPower) / (distance * 10);
+            projectile.momentum.y -= (Math.cos(angle) * this.config.blastPower) / (distance * 10);
         }
     }
 }

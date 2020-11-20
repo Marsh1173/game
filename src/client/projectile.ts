@@ -1,27 +1,29 @@
 import { Config } from "../config";
-import { Arrow } from "../objects/arrow";
-import { SerializedArrow } from "../serialized/arrow";
+import { Projectile } from "../objects/projectile";
+import { SerializedProjectile } from "../serialized/projectile";
 
-export class ClientArrow extends Arrow {
-    constructor(config: Config, info: SerializedArrow) {
+export class ClientProjectile extends Projectile {
+    constructor(config: Config, info: SerializedProjectile) {
         super(config, info.position, info.momentum, info.id, info.inGround, info.isDead);
     }
 
     public render(ctx: CanvasRenderingContext2D) {
-        ctx.shadowBlur = 0;
+        ctx.shadowColor = "white";
+        ctx.shadowBlur = 6;
 
         let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
-        let scale: number = 0.15;
+        let scale: number = 0.17;
         if (this.momentum.x < 0) rotation *= -1;
         if (this.momentum.x < 0) scale *= -1;
         let imgArrow = new Image();
-        imgArrow.src = 'images/arrow.png';
+        imgArrow.src = 'images/projectiles/ice.png';
 
         ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
         ctx.rotate(rotation + Math.PI / 4);
         ctx.drawImage(imgArrow, -imgArrow.width / 2, -imgArrow.height / 2);
         ctx.resetTransform();
 
+        ctx.shadowColor = "gray";
         ctx.shadowBlur = 2;
     }
 }

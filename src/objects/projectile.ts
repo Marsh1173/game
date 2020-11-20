@@ -1,13 +1,13 @@
 import { Config } from "../config";
-import { SerializedArrow } from "../serialized/arrow";
+import { SerializedProjectile } from "../serialized/projectile";
 import { Vector } from "../vector";
 import { Size } from "../size";
 import { Player } from "./player";
 
-export abstract class Arrow {
+export abstract class Projectile {
     constructor(private readonly config: Config, public readonly position: Vector, public momentum: Vector, public id: number, public inGround: boolean, public isDead: boolean) {}
 
-    public serialize(): SerializedArrow {
+    public serialize(): SerializedProjectile {
         return {
             position: this.position,
             momentum: this.momentum,
@@ -103,10 +103,10 @@ export abstract class Arrow {
             this.id != player.id
         ) {
             if (!player.isDead && !this.inGround) {
-                if (!player.isShielded) player.damagePlayer((Math.abs(this.momentum.y) + Math.abs(this.momentum.x)) / 150, this.id);
+                if (!player.isShielded) player.damagePlayer(5, this.id, "projectile", "piercing");
                 this.isDead = true;
-                player.momentum.x += this.momentum.x / 2;
-                player.momentum.y += this.momentum.y / 2;
+                player.momentum.x += this.momentum.x / 5;
+                player.momentum.y += this.momentum.y / 5;
             }
         }
     }

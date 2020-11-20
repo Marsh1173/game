@@ -11,6 +11,15 @@ body {
 #canvas {
     background: #2e3133;
 }
+/*#slideBackground {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+
+    width: 3000px;
+    height: 900px;
+    top: -300px;
+}*/
 #menu {
     position: absolute;
     left: 50%;
@@ -136,23 +145,79 @@ p {
     align-items: center;
     justify-content: space-between;
     margin: 5px;
+    padding: 2px;
     border-radius: 10px;
     border: 2px solid rgb(124, 125, 138);
     background-color: #778288;
+
+    height: 50px;
 }
-#healthContainer {
+#healthContainer,
+#chargeContainer {
     width: 300px;
-    height: 35px;
+    height: 45px;
     background-color: #33424d;
     border: 2px solid #33424d;
     border-radius: 5px;
     overflow: hidden;
 }
-#health {
+#health,
+#charge {
     width: 100%;
     height: 100%;
     background-color: rgb(201, 0, 0);
     border-right: 2px solid #ebebeb;
     border-radius: 1px;
     transform: translateX(-6px);
+}
+
+#chargeContainer {
+    width: 50%;
+    height: 10px;
+    margin-left: 24%;
+    background-color: #27343d;
+}
+#charge {
+    width: 30%;
+    background-color: rgb(20, 172, 0);
+}
+
+#abilities {
+    display: flex;
+}
+
+.abilityIcon {
+    height: 50px;
+    border: 2px solid #33424d;
+    border-radius: 10px;
+    overflow: hidden;
+
+    margin: 2px;
+    padding: 0px;
+}
+
+.abilityIcon img {
+    padding: 0px;
+    height: 100%;
+
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+.abilityCooldown {
+    border-top: 2px solid #ebebeb;
+    border-radius: 3px;
+    position: relative;
+
+    width: 46px;
+    height: 50px;
+
+    left: 0px;
+    top: -3px;
+
+    background-color: black;
+    opacity: 0.9;
 }

@@ -1,13 +1,11 @@
 import { SerializedBlast } from "../serialized/blast";
 import { SerializedPlatform } from "../serialized/platform";
 import { SerializedPlayer } from "../serialized/player";
-import { SerializedArrow } from "../serialized/arrow";
-import { SerializedBasicAttack } from "../serialized/basicAttack";
+import { SerializedProjectile } from "../serialized/projectile";
 
 export interface AllInfo {
     players: SerializedPlayer[];
     blasts: SerializedBlast[];
     platforms: SerializedPlatform[];
-    arrows: SerializedArrow[];
-    basicAttacks: SerializedBasicAttack[];
+    projectiles: SerializedProjectile[];
 }

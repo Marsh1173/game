@@ -31,6 +31,7 @@ safeGetElementById("start").onclick = async () => {
 
     let name: string = (safeGetElementById("name") as HTMLInputElement).value;
     if (name === "") name = "Player";
+    else if (name.split(" ").join("") === "") name = "Poop";
 
     const serverTalker = new ServerTalker({
         name,

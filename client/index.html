@@ -7,12 +7,37 @@
 
     <body oncontextmenu="return false;">
         <div id="gameDiv">
-            <div id='slideContainer'><div id='slider'><canvas id="canvas"></canvas></div></div>
-            <img id='arrow' src="../src/client/images/ar_t_02.png" style="display:none; width:0px"/>
-            <div id='playerInformationBar'>
-                <button id="end">End Game</button>
-                <div id='healthContainer'><div id='health'></div></div>
+            <div id='slideContainer'>
+                <!--<img id='slideBackground' src='images/testBackground.jpg'/>-->
+                <div id='slider'><canvas id="canvas"></canvas></div>
             </div>
+            <div id='playerInformationBar'>
+                    <button id="end">End Game</button>
+                    <div id='abilities'>
+                        <div class='abilityIcon'>
+                            <img id='basicAttackImg' src='images/abilites/swordBasicAttack.png'></img>
+                            <div id='basicAttack' class='abilityCooldown'></div>
+                        </div>
+                        <div class='abilityIcon' style='margin-right: 25px;'>
+                            <img id='secondaryAttackImg' src='images/abilites/shurikenSecondary.png'></img>
+                            <div id='secondaryAttack' class='abilityCooldown'></div>
+                        </div>
+                        <div class='abilityIcon'>
+                            <img id='firstAbilityImg' src=''></img>
+                            <div id='firstAbility' class='abilityCooldown'></div>
+                        </div>
+                        <div class='abilityIcon'>
+                            <img id='secondAbilityImg' src=''></img>
+                            <div id='secondAbility' class='abilityCooldown'></div>
+                        </div>
+                        <div class='abilityIcon'>
+                            <img id='thirdAbilityImg' src=''></img>
+                            <div id='thirdAbility' class='abilityCooldown'></div>
+                        </div>
+                    </div>
+                    <div id='healthContainer'><div id='health'></div></div>
+                </div>
+                <div id='chargeContainer'><div id='charge'></div></div>
         </div>
         <div id="menuDiv">
             <div id="menu">

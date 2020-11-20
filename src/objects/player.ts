@@ -3,7 +3,7 @@ import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "arrow" | "basicAttack";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "projectile" | "basicAttack" | "secondaryAttack";
 
 export abstract class Player {
     public shieldCount = setTimeout(() => "", 1);
@@ -13,8 +13,9 @@ export abstract class Player {
         moveLeft: false,
         moveRight: false,
         blast: false,
-        arrow: false,
+        projectile: false,
         basicAttack: false,
+        secondaryAttack: false,
     };
 
     constructor(
@@ -44,8 +45,7 @@ export abstract class Player {
         public isShielded: boolean,
         public facing: boolean,
         public doBlast: (position: Vector, color: string, id: number) => void,
-        public doArrow: (position: Vector, momentum: Vector, id: number) => void,
-        public doBasicAttack: (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => void,
+        public doProjectile: (position: Vector, momentum: Vector, id: number) => void,
     ) {}
 
     public serialize(): SerializedPlayer {
@@ -194,10 +194,10 @@ export abstract class Player {
         );
     }
 
-    public attemptArrow() {
-        this.arrow();
+    public attemptProjectile() {
+        this.projectile();
     }
-    public arrow() {
+    public projectile() {
         const power: number = 100;
 
         let newX = Math.sqrt(power - Math.pow(this.focusPosition.y, 2));
@@ -206,55 +206,91 @@ export abstract class Player {
         if (this.focusPosition.x < 0) newX *= -1;
         if (this.focusPosition.y < 0) newY *= -1;
 
-        this.doArrow({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
+        this.doProjectile({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
     }
 
-    public attemptBasicAttack(elapsedTime: number) {
-        this.basicAttack(elapsedTime);
+    public attemptBasicAttack(player: Player) {
+        this.basicAttack(player);
     }
-    public basicAttack(elapsedTime: number) {
+    public basicAttack(player: Player) {
         let newX: number = (this.focusPosition.x - this.position.x - this.size.width / 2);
         let newY: number = (this.focusPosition.y - this.position.y - this.size.height / 2);
         let angle: number = Math.atan(newY / newX);
         if(newX < 0) angle += Math.PI;
 
+        if (this.classType === 0) this.basicAttackTemplate(player, 7, "poison", "melee", angle, 100, Math.PI / 6, 10, this.id, 300);
+        if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this.id, 200);
+        if (this.classType === 2) this.basicAttackTemplate(player, 15, "crushing", "melee", angle, 120, Math.PI / 3, 25, this.id, 900);
 
-        if (this.classType === 0) this.doBasicAttack( // ninja basic attack
-            {
-                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
-                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
-            },
-            angle,
-            this.id,
-            20,
-            70,
-            1,
-            40,
+    }
+
+    public basicAttackTemplate(player: Player,
+        damage: number,
+        damageType: String,
+        type: string,
+        angle: number,
+        range: number,
+        spread: number,
+        meleeRange: number,
+        id: number,
+        knockback: number,
+        //on hit effect methods?)
+    ) {
+
+        //find relative distance
+        const xDif = player.position.x - this.position.x;
+        const yDif = player.position.y - this.position.y;
+        const distance = Math.sqrt(Math.pow(xDif, 2) + Math.pow(yDif, 2));
+
+        //find relative angle
+        let newX: number = ((player.position.x + player.size.width / 2) - (this.position.x + this.size.width / 2));
+        let newY: number = ((player.position.y + player.size.height / 2) - (this.position.y + this.size.height / 2));
+        let enemyAngle: number = Math.atan(newY / newX);
+        if(newX < 0) enemyAngle += Math.PI;
+
+        if (distance < range) {
+            if ((enemyAngle > (angle - spread / 2) && enemyAngle < (angle + spread / 2)) || 
+            (enemyAngle > (angle - spread / 2 + (Math.PI * 2)) && enemyAngle < (angle + spread / 2 + (Math.PI * 2))) ||
+            (enemyAngle > (angle - spread / 2 - (Math.PI * 2)) && enemyAngle < (angle + spread / 2 - (Math.PI * 2))) ||
+            distance < meleeRange
+            ) {
+                player.damagePlayer(damage, id, type, damageType);
+                player.knockbackPlayer(angle, knockback)
+
+
+                if (damageType === "poison" && !player.isShielded && !player.isDead) player.dotPlayer(1, id, "poison", "elemental", 300, 15);
+            }
+        }
+        
+        return;
+    }
+
+    public attemptSecondaryAttack(players: Player[]) {
+        this.secondaryAttack(players);
+    }
+
+    public secondaryAttack(players: Player[]) {
+        if (this.classType === 0) this.ninjaSecondaryAttack(players);
+        //if (this.classType === 1) this.wizardSecondaryAttack();
+        //if (this.classType === 2) this.templarSecondaryAttack();
+    }
+
+    public ninjaSecondaryAttack(players: Player[]) {
+        let newX: number = (this.focusPosition.x - this.position.x - this.size.width / 2);
+        let newY: number = (this.focusPosition.y - this.position.y - this.size.height / 2);
+        let angle: number = Math.atan(newY / newX);
+        if(newX < 0) angle += Math.PI;
+
+        this.momentum.x -= 1000 * Math.cos(angle);
+        this.momentum.y -= 1000 * Math.sin(angle);
+
+        players.forEach((player) =>
+            this.basicAttackTemplate(player, 10, "poison", "ranged", angle, 500, Math.PI / 8, 0, this.id, 600)
         );
-         else if (this.classType === 1) this.doBasicAttack( // wizard basic attack
-            {
-                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
-                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
-            },
-            angle,
-            this.id,
-            8,
-            175,
-            1,
-            125,
-        );
-         else if (this.classType === 2) this.doBasicAttack( // templar basic attack
-            {
-                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
-                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
-            },
-            angle,
-            this.id,
-            10,
-            90,
-            1,
-            60,
-        );
+    }
+
+    public wizardSecondaryAttack() {
+        //this.attemptProjectile();
     }
 
     public wasHit() {
@@ -271,13 +307,24 @@ export abstract class Player {
         }
     }
 
-    public damagePlayer(quantity: number, id: number): boolean {
+    public dotPlayer(quantity: number, id: number, type: String, damageType: String, spacing: number, amount: number) {
+        if (amount === 0 || this.isDead) return;
+        setTimeout(() => {
+            this.damagePlayer(quantity, id, type, damageType);
+            this.dotPlayer(quantity, id, type, damageType, spacing, amount - 1);
+        }, spacing);
+    }
+
+    public damagePlayer(quantity: number, id: number, type: String, damageType: String): boolean {
+        
+        if (this.isShielded) {
+            if (type != 'unblockable') return false;
+        } else if (this.isDead) {
+            return false;
+        }
+        
         if (id != -1) this.lastHitBy = id;
-
-        if (this.classType === 0) this.health -= quantity * 1.2;
-        else if (this.classType === 1) this.health -= quantity;
-        else if (this.classType === 2) this.health -= quantity * 0.8;
-
+        this.health -= quantity;
         this.wasHit();
 
         if (this.health <= 0) {
@@ -286,6 +333,12 @@ export abstract class Player {
             return true;
         }
         return false;
+    }
+
+    public knockbackPlayer(angle: number, force: number) {
+        if (force === 0) return;
+        this.momentum.x += force * Math.cos(angle);
+        this.momentum.y += force * Math.sin(angle);
     }
 
     public die() {
@@ -309,7 +362,7 @@ export abstract class Player {
         }, 3000);
     }
 
-    public update(elapsedTime: number) {
+    public update(elapsedTime: number, players: Player[]) {
         // Action handling
         if (this.actionsNextFrame.jump) {
             this.attemptJump();
@@ -327,11 +380,16 @@ export abstract class Player {
         if (this.actionsNextFrame.blast) {
             this.attemptBlast(elapsedTime);
         }
-        if (this.actionsNextFrame.arrow) {
-            this.attemptArrow();
+        if (this.actionsNextFrame.projectile) {
+            this.attemptProjectile();
         }
         if (this.actionsNextFrame.basicAttack) {
-            this.attemptBasicAttack(elapsedTime);
+            players.forEach((player) => {
+                if (player.id != this.id) this.attemptBasicAttack(player);
+            }) 
+        }
+        if (this.actionsNextFrame.secondaryAttack) {
+            this.attemptSecondaryAttack(players);
         }
 
         // Falling speed
@@ -362,7 +420,7 @@ export abstract class Player {
         else if (!this.isDead) this.facing = false;
 
         // Update position based on momentum
-        this.position.x += this.momentum.x * elapsedTime;
+        this.position.x += this.momentum.x * elapsedTime * 1.1;
         this.position.y += this.momentum.y * elapsedTime;
 
         // Check collision with sides of area
@@ -396,10 +454,10 @@ export abstract class Player {
         }
 
         // get damaged if you hit the bottom of the screen
-        if (!this.isShielded && !this.isDead && this.position.y >= this.config.ySize - this.size.height) {
-            this.damagePlayer(elapsedTime * 120, -1);
+        if (!this.isDead && this.position.y >= this.config.ySize - this.size.height) {
+            this.damagePlayer(elapsedTime * 120, -1, "unblockable", "lava");
         } else if (!this.isDead) {
-            this.healPlayer(elapsedTime * 2);
+            this.healPlayer(elapsedTime * 1);
         }
 
         // Respawn timer

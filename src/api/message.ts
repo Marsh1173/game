@@ -27,8 +27,8 @@ export interface ActionMessage {
     id: number;
 }
 
-export interface ArrowMessage {
-    type: "arrow";
+export interface ProjectileMessage {
+    type: "projectile";
     position: Vector;
     direction: Vector;
     id: number;
@@ -46,4 +46,4 @@ export interface AnimateMessage {
     id: number;
 }
 
-export type ClientMessage = ActionMessage | ArrowMessage | MouseMessage | AnimateMessage;
+export type ClientMessage = ActionMessage | ProjectileMessage | MouseMessage | AnimateMessage;

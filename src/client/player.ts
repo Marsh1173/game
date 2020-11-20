@@ -10,7 +10,6 @@ export class ClientPlayer extends Player {
         info: SerializedPlayer,
         doBlast: (position: Vector, color: string, id: number) => void,
         doArrow: (position: Vector, mometum: Vector, id: number) => void,
-        doBasicAttack: (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => void,
         private readonly serverTalker: ServerTalker,
         private readonly isClientPlayer: number,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
@@ -43,11 +42,10 @@ export class ClientPlayer extends Player {
             info.facing,
             doBlast,
             doArrow,
-            doBasicAttack,
         );
     }
 
-    public update(elapsedTime: number) {
+    public update(elapsedTime: number, players: Player[]) {
         if (this.prevFocusPosition.x !== this.focusPosition.x || this.prevFocusPosition.y !== this.focusPosition.y) {
             this.serverTalker.sendMessage({
                 type: "moveMouse",
@@ -65,7 +63,7 @@ export class ClientPlayer extends Player {
                 animationFrame: this.animationFrame,
             });
         }
-        super.update(elapsedTime);
+        super.update(elapsedTime, players);
     }
 
     public render(ctx: CanvasRenderingContext2D) {
@@ -155,11 +153,11 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 16 + 2, this.position.y + 20 - this.momentum.y / 30);
+        ctx.lineTo(xStart - this.momentum.x / 25 + 2, this.position.y + 20 - this.momentum.y / 40);
         ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 20 - 2, this.position.y + 30 - this.momentum.y / 30);
+        ctx.lineTo(xStart - this.momentum.x / 27 - 2, this.position.y + 30 - this.momentum.y / 40);
         ctx.stroke();
 
         //reset
@@ -244,7 +242,7 @@ export class ClientPlayer extends Player {
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
         if (this.classType === 0) {
-            this.renderWeaponTemplate(ctx, "images/dagger.png", 0.17);
+            this.renderWeaponTemplate(ctx, "images/sword.png", 0.20);
         } else if (this.classType === 1) {
             this.renderWeaponTemplate(ctx, "images/staff.png", 0.21);
         } else if (this.classType === 2) {
@@ -312,21 +310,30 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public arrow() {
-        super.arrow();
+    public projectile() {
+        super.projectile();
         this.serverTalker.sendMessage({
-            type: "arrow",
+            type: "projectile",
             direction: { x: this.focusPosition.x, y: this.focusPosition.y },
             position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             id: this.id,
         });
     }
 
-    public basicAttack(elapsedTime: number) {
-        super.basicAttack(elapsedTime);
+    public basicAttack(player: Player) {
+        super.basicAttack(player);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "basicAttack",
+            id: this.id,
+        });
+    }
+
+    public secondaryAttack(players: Player[]) {
+        super.secondaryAttack(players);
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "secondaryAttack",
             id: this.id,
         });
     }

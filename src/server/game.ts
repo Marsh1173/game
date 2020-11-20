@@ -1,7 +1,6 @@
 import { AllInfo } from "../api/allinfo";
 import { ServerBlast } from "./blast";
-import { ServerBasicAttack } from "./basicAttack";
-import { ServerArrow } from "./arrow";
+import { ServerProjectile } from "./projectile";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
 import * as wsWebsocket from "ws";
@@ -15,8 +14,7 @@ export class Game {
 
     private players: ServerPlayer[] = [];
     private blasts: ServerBlast[] = [];
-    private arrows: ServerArrow[] = [];
-    private basicAttacks: ServerBasicAttack[] = [];
+    private projectiles: ServerProjectile[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
     public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
 
@@ -40,9 +38,8 @@ export class Game {
         return {
             players: this.players.map((player) => player.serialize()),
             blasts: this.blasts.map((blast) => blast.serialize()),
-            arrows: this.arrows.map((arrow) => arrow.serialize()),
+            projectiles: this.projectiles.map((projectile) => projectile.serialize()),
             platforms: this.platforms.map((platform) => platform.serialize()),
-            basicAttacks: this.basicAttacks.map((basicAttack) => basicAttack.serialize()),
         };
     }
 
@@ -63,41 +60,46 @@ export class Game {
         });
     }
 
+
+
     public update(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime));
-        // Collision detection with other players or platforms
+
+        this.updateObjects(elapsedTime);
+        this.updateObjectsSecondary(elapsedTime);
+
+
+
+    }
+
+    private updateObjects(elapsedTime: number) {
+        this.players.forEach((player) => player.update(elapsedTime, this.players));
+
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
-        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.isDead === false);
-
-        this.basicAttacks.forEach((basicAttack) => basicAttack.update(elapsedTime));
-        this.basicAttacks = this.basicAttacks.filter((basicAttack) => basicAttack.life > 0);
+        this.projectiles.forEach((projectile) => projectile.update(elapsedTime));
+        this.projectiles = this.projectiles.filter((projectile) => projectile.isDead === false);
 
         this.platforms.forEach((platform) => platform.update());
+    }
+
+    private updateObjectsSecondary(elapsedTime: number) {
 
         this.players.forEach((player1) => {
-            /*this.players.forEach((player2) => {
-                if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
-                    player1.checkCollisionWithRectangularObject(player2, elapsedTime);
-                }
-            });*/
             this.platforms.forEach((platform) => {
                 player1.checkCollisionWithRectangularObject(platform, elapsedTime);
             });
         });
 
-        this.arrows.forEach((arrow) => {
-            if (!arrow.inGround) {
+        this.projectiles.forEach((projectile) => {
+            if (!projectile.inGround) {
                 this.platforms.forEach((platform) => {
-                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
-                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
-                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
-                    //arrow.checkCollisionWithRectangularObject(platform, elapsedTime * 2);
+                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
+                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
+                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime);
                 });
                 this.players.forEach((player) => {
-                    arrow.checkCollisionWithPlayer(player, elapsedTime);
+                    projectile.checkCollisionWithPlayer(player, elapsedTime);
                 });
             }
         });
@@ -114,10 +116,7 @@ export class Game {
                 this.blast(position, color, id);
             },
             (position: Vector, momentum: Vector, id: number) => {
-                this.arrow(position, momentum, id);
-            },
-            (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => {
-                this.basicAttack(position, angle, id, damage, range, life, spread);
+                this.projectile(position, momentum, id);
             },
         );
         this.players.push(newPlayer);
@@ -153,13 +152,16 @@ export class Game {
                     case "basicAttack":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
                         break;
+                    case "secondaryAttack":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.secondaryAttack = true;
+                        break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
                 }
                 break;
-            case "arrow":
-                this.arrows.push(
-                    new ServerArrow(this.config, {
+            case "projectile":
+                this.projectiles.push(
+                    new ServerProjectile(this.config, {
                         position: data.position,
                         momentum: { x: data.direction.x, y: data.direction.y - 100 },
                         id,
@@ -193,35 +195,19 @@ export class Game {
         this.players.forEach((player) => {
             blast.blastPlayer(player);
         });
-        this.arrows.forEach((arrow) => {
-            if (!arrow.inGround) blast.blastArrow(arrow);
+        this.projectiles.forEach((projectile) => {
+            if (!projectile.inGround) blast.blastProjectile(projectile);
         });
     }
 
-    private arrow(position: Vector, momentum: Vector, id: number) {
-        const arrow = new ServerArrow(this.config, {
+    private projectile(position: Vector, momentum: Vector, id: number) {
+        const projectile = new ServerProjectile(this.config, {
             position,
             momentum,
             id,
             inGround: false,
             isDead: false,
         });
-        this.arrows.push(arrow);
-    }
-
-    private basicAttack(position: Vector, angle: number, id: number, damage: number, range: number, life:number, spread: number) {
-        const basicAttack = new ServerBasicAttack(this.config, {
-            position,
-            angle,
-            id,
-            damage,
-            range,
-            life,
-            spread,
-        });
-        this.basicAttacks.push(basicAttack);
-        this.players.forEach((player) => {
-            basicAttack.basicAttackPlayer(player);
-        });
+        this.projectiles.push(projectile);
     }
 }

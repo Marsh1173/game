@@ -5,10 +5,9 @@ import { Config } from "../config";
 import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { ClientBlast } from "./blast";
-import { ClientArrow } from "./arrow";
+import { ClientProjectile } from "./projectile";
 import { ClientPlatform } from "./platform";
 import { ClientPlayer } from "./player";
-import { ClientBasicAttack } from "./basicAttack";
 import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
 
@@ -18,27 +17,31 @@ export class Game {
     private static readonly canvas = safeGetElementById("canvas") as HTMLCanvasElement;
     private static readonly ctx = Game.canvas.getContext("2d")!;
     private readonly keyState: Record<string, boolean> = {};
-    private screenPos: number = 0;
     private players: ClientPlayer[] = [];
     private blasts: ClientBlast[] = [];
-    private arrows: ClientArrow[] = [];
+    private projectiles: ClientProjectile[] = [];
     private platforms: ClientPlatform[] = [];
-    private basicAttacks: ClientBasicAttack[] = [];
     private going: boolean = false;
 
+    private screenPos: number = 0;
+
     private mousePos: Vector = { x: 0, y: 0 };
-    private isRightClicking: boolean = false;
-    private isLeftClicking: boolean = false;
-    private isCharging: number = 0;
     private animationFrame: number = 0;
-    private globalElapsedTime: number = 0;
-    private basicAttackCooldown: number = 0.5;
+
+    private isLeftClicking: boolean = false;
+    private isLeftCharging: number = 0;
+    private leftClickCooldown: number = 0;
+    private leftClickCounter: number = 0;
+
+    private isRightClicking: boolean = false;
+    private isRightCharging: number = 0;
+    private rightClickCooldown: number = 0;
+    private rightClickCounter: number = 0;
 
     private constructGame(info: AllInfo) {
         this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(this.config, platformInfo));
         this.blasts = info.blasts.map((blastInfo) => new ClientBlast(this.config, blastInfo));
-        this.arrows = info.arrows.map((arrowInfo) => new ClientArrow(this.config, arrowInfo));
-        this.basicAttacks = info.basicAttacks.map((basicAttackInfo) => new ClientBasicAttack(this.config, basicAttackInfo));
+        this.projectiles = info.projectiles.map((projectileInfo) => new ClientProjectile(this.config, projectileInfo));
         this.players = info.players.map(
             (playerInfo) =>
                 new ClientPlayer(
@@ -49,9 +52,6 @@ export class Game {
                     },
                     (position: Vector, momentum: Vector, id: number) => {
                         this.arrow(position, momentum, id);
-                    },
-                    (position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) => {
-                        this.basicAttack(position, angle, id, damage, range, life, spread);
                     },
                     this.serverTalker,
                     this.id,
@@ -66,6 +66,7 @@ export class Game {
         Game.canvas.height = this.config.ySize;
 
         this.constructGame(info);
+        this.setCooldowns(this.findPlayer());
 
         this.serverTalker.messageHandler = (msg: ServerMessage) => {
             if (msg.type === "info") {
@@ -73,35 +74,60 @@ export class Game {
             }
         };
 
-        const playerWithId = this.findPlayer();
-
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
         safeGetElementById("slider").onmousedown = (e: MouseEvent) => {
-            if (e.button === 2) {
-                this.isRightClicking = true;
-            } else if (e.button === 0 && !playerWithId.isDead && this.basicAttackCooldown <= 0) {
-                this.animationFrame = 2;
-                this.players.forEach((player) => playerWithId.attemptBasicAttack(this.globalElapsedTime));
+
+            const playerWithId = this.findPlayer();
+
+            if (e.button === 0 && !playerWithId.isDead && this.leftClickCounter <= 0) {
+                //left mouse button click
+
+                this.animationFrame = 2; //will be removed
                 this.isLeftClicking = true;
+                this.leftClickCounter = this.leftClickCooldown;
 
-                if (playerWithId.classType === 0) this.basicAttackCooldown = 0.3;
-                else if (playerWithId.classType === 1) this.basicAttackCooldown = 0.4;
-                else if (playerWithId.classType === 2) this.basicAttackCooldown = 0.2;
+                this.isRightClicking = false;
+                this.isRightCharging = 0;
 
+                //register basic attack
+                this.players.forEach((player) => {
+                    if (player.id != this.id) playerWithId.attemptBasicAttack(player)
+                });
+
+            } else if (e.button === 2 && !playerWithId.isDead && this.isRightClicking === false) {
+                //right mouse button click
+
+                this.isRightClicking = true;
+                this.isLeftClicking = false;
+                this.isLeftCharging = 0;
+                this.animationFrame = 0;
             }
         };
         window.onmouseup = (e: MouseEvent) => {
-            if (e.button === 2) {
-                // leftClicking
-                this.isRightClicking = false;
-                if (this.isCharging >= 0.4 && playerWithId.classType === 1) {
-                    this.calculateArrow();
-                }
-                this.isCharging = 0;
-            } else if (e.button === 0) {
-                this.animationFrame = 0;
+
+            const playerWithId = this.findPlayer();
+
+            if (e.button === 0 && this.isLeftClicking === true) { // left mouse release
+                
                 this.isLeftClicking = false;
+                //add left mouse charged ability register that passes isLeftCharging
+                this.isLeftCharging = 0;
+
+                this.animationFrame = 0; // will be removed
+
+            } else if (e.button === 2 &&
+                this.isRightClicking === true) { // right mouse release
+
+                this.isRightClicking = false;
+                //add right mouse charged ability register that passes isRightCharging
+                if (this.rightClickCounter <= 0 && this.isRightCharging >= 1 && playerWithId.classType != 2) {
+                    playerWithId.attemptSecondaryAttack(this.players);
+                    this.rightClickCounter = this.rightClickCooldown;
+                }
+
+                this.isRightCharging = 0;
+
             }
         };
         window.onmousemove = (e: MouseEvent) => {
@@ -156,16 +182,9 @@ export class Game {
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPos;
         playerWithId.focusPosition.y = this.mousePos.y;
         playerWithId.animationFrame += (this.animationFrame - playerWithId.animationFrame) / 2;
-        this.globalElapsedTime = elapsedTime;
-
-        if (this.basicAttackCooldown > 0 ) {
-            this.basicAttackCooldown -= elapsedTime;
-        } else if (this.basicAttackCooldown < 0) {
-            this.basicAttackCooldown = 0;
-        }
 
 
-
+        this.updateCooldowns(elapsedTime, playerWithId);
         this.updateSlider();
 
         
@@ -179,55 +198,18 @@ export class Game {
         if (this.keyState[this.config.playerKeys.right]) {
             playerWithId.attemptMoveRight(elapsedTime);
         }
-        if (this.keyState[this.config.playerKeys.down]) {
+        
+        /*if (this.keyState[this.config.playerKeys.down]) {
             playerWithId.attemptBlast(elapsedTime);
             this.keyState[this.config.playerKeys.down] = false;
-        }
+        }*/
 
         //update if player is charging, can be cleaned up
-        if (this.isRightClicking && this.isCharging < 1 && playerWithId.isDead === false) this.isCharging += elapsedTime * 3;
-        else if (this.isCharging > 1) this.isCharging = 1;
+        if (this.isRightClicking && this.isRightCharging < 1 && playerWithId.isDead === false && this.rightClickCounter <= 0) this.isRightCharging += elapsedTime * 2;
+        else if (this.isRightCharging > 1) this.isRightCharging = 1;
 
-        //update health bar
-        safeGetElementById("health").style.width = playerWithId.health * 1.02 + "%";
-        if (playerWithId.isShielded) safeGetElementById("health").style.background = "cyan";
-        else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
-
-        this.players.forEach((player) => player.update(elapsedTime));
-
-        this.blasts.forEach((blast) => blast.update(elapsedTime));
-        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
-
-        this.arrows.forEach((arrow) => arrow.update(elapsedTime));
-        this.arrows = this.arrows.filter((arrow) => arrow.isDead === false);
-
-        this.basicAttacks.forEach((basicAttack) => basicAttack.update(elapsedTime));
-        this.basicAttacks = this.basicAttacks.filter((basicAttack) => basicAttack.life > 0);
-
-        // Collision detection with other players or platforms
-        this.players.forEach((player1) => {
-            /*this.players.forEach((player2) => {
-                if (player1 !== player2 && player2.isDead === false && player1.isDead === false) {
-                    player1.checkCollisionWithRectangularObject(player2, elapsedTime);
-                }
-            });*/
-            this.platforms.forEach((platform) => {
-                player1.checkCollisionWithRectangularObject(platform, elapsedTime);
-            });
-        });
-
-        this.arrows.forEach((arrow) => {
-            if (!arrow.inGround) {
-                this.platforms.forEach((platform) => {
-                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
-                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
-                    arrow.checkCollisionWithRectangularObject(platform, elapsedTime);
-                });
-                this.players.forEach((player) => {
-                    arrow.checkCollisionWithPlayer(player, elapsedTime);
-                });
-            }
-        });
+        this.updateObjects(elapsedTime);
+        this.updateObjectsSecondary(elapsedTime);
 
         this.render();
     }
@@ -242,7 +224,7 @@ export class Game {
 
     private render() {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
-        this.arrows.forEach((arrow) => arrow.render(Game.ctx));
+        this.projectiles.forEach((projectile) => projectile.render(Game.ctx));
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.players.forEach((player) => player.render(Game.ctx));
         this.players.forEach((player) => {
@@ -284,6 +266,83 @@ export class Game {
         }
 
         safeGetElementById("slider").style.left = this.screenPos + "px";
+        //safeGetElementById("slideBackground").style.left = (this.screenPos * 2 / 3) + "px";
+    }
+
+    private setCooldowns(player: Player) { // sets cooldowns based on player class
+        if (player.classType === 0) {
+            this.leftClickCooldown = 0.2; // ninja shank
+            this.rightClickCooldown = 3; // shuriken
+        } else if (player.classType === 1) {
+            this.leftClickCooldown = 0.4; // Arcane scythe
+            this.rightClickCooldown = 0.5; // ice spike
+            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/staffBasicAttack.png");
+            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/fireballSecondary.png");
+        } else if (player.classType === 2) {
+            this.leftClickCooldown = 0.4; // hammer bash
+            this.rightClickCooldown = 0.5; // shield
+            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/hammerBasicAttack.png");
+            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shieldSecondary.png");
+        }
+    }
+
+    private updateCooldowns(elapsedTime: number, player: Player) { // updates player's cooldown icons
+        
+        safeGetElementById("health").style.width = player.health * 1.02 + "%";
+        if (player.isShielded) safeGetElementById("health").style.background = "cyan";
+        else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
+
+        safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
+        if (this.isRightCharging < 1) safeGetElementById("charge").style.background = "rgb(24, 100, 14)";
+        else safeGetElementById("charge").style.background = "rgb(20, 172, 0)";
+
+        if (this.leftClickCounter > 0 ) {
+            this.leftClickCounter -= elapsedTime;
+            safeGetElementById("basicAttack").style.top = (((this.leftClickCounter / this.leftClickCooldown) * -55 ) - 3 ) + "px";
+        } else if (this.leftClickCounter < 0) {
+            this.leftClickCounter = 0;
+        }
+
+        if (this.rightClickCounter > 0 ) {
+            this.rightClickCounter -= elapsedTime;
+            safeGetElementById("secondaryAttack").style.top = (((this.rightClickCounter / this.rightClickCooldown) * -50 ) - 3 ) + "px";
+        } else if (this.rightClickCounter < 0) {
+            this.rightClickCounter = 0;
+        }
+    }
+
+    private updateObjects(elapsedTime: number) {
+        this.players.forEach((player) => player.update(elapsedTime, this.players));
+
+        this.blasts.forEach((blast) => blast.update(elapsedTime));
+        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
+
+        this.projectiles.forEach((projectile) => projectile.update(elapsedTime));
+        this.projectiles = this.projectiles.filter((projectile) => projectile.isDead === false);
+
+    }
+
+    private updateObjectsSecondary(elapsedTime: number) {
+
+        this.players.forEach((player1) => {
+            this.platforms.forEach((platform) => {
+                player1.checkCollisionWithRectangularObject(platform, elapsedTime);
+            });
+        });
+
+        this.projectiles.forEach((projectile) => {
+            if (!projectile.inGround) {
+                this.platforms.forEach((platform) => {
+                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
+                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
+                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime);
+                });
+                this.players.forEach((player) => {
+                    projectile.checkCollisionWithPlayer(player, elapsedTime);
+                });
+            }
+        });
+
     }
 
     private calculateArrow() {
@@ -295,8 +354,8 @@ export class Game {
 
         const angle: number = Math.atan(newX / newY);
 
-        newX = Math.sin(angle) * this.config.arrowPower * this.isCharging;
-        newY = Math.cos(angle) * this.config.arrowPower * this.isCharging;
+        newX = Math.sin(angle) * this.config.arrowPower * this.isRightCharging;
+        newY = Math.cos(angle) * this.config.arrowPower * this.isRightCharging;
 
         if (this.mousePos.y - playerWithId.position.y - this.config.playerSize / 2 < 0) {
             newX *= -1;
@@ -306,7 +365,7 @@ export class Game {
         playerWithId.focusPosition.x = newX;
         playerWithId.focusPosition.y = newY;
 
-        if (playerWithId.isDead === false) playerWithId.attemptArrow();
+        if (playerWithId.isDead === false) playerWithId.attemptProjectile();
     }
 
     private blast(position: Vector, color: string, id: number) {
@@ -321,35 +380,20 @@ export class Game {
         this.players.forEach((player) => {
             blast.blastPlayer(player);
         });
-        this.arrows.forEach((arrow) => {
-            if (!arrow.inGround) blast.blastArrow(arrow);
+        this.projectiles.forEach((projectile) => {
+            if (!projectile.inGround) blast.blastProjectile(projectile);
         });
     }
 
     private arrow(position: Vector, momentum: Vector, id: number) {
-        const arrow = new ClientArrow(this.config, {
+        const arrow = new ClientProjectile(this.config, {
             position,
             momentum,
             id,
             inGround: false,
             isDead: false,
         });
-        this.arrows.push(arrow);
+        this.projectiles.push(arrow);
     }
 
-    private basicAttack(position: Vector, angle: number, id: number, damage: number, range: number, life: number, spread: number) {
-        const basicAttack = new ClientBasicAttack(this.config, {
-            position,
-            angle,
-            id,
-            damage,
-            range,
-            life,
-            spread,
-        });
-        this.basicAttacks.push(basicAttack);
-        this.players.forEach((player) => {
-            basicAttack.basicAttackPlayer(player);
-        });
-    }
 }
