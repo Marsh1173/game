@@ -78,7 +78,7 @@ export class Game {
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime));
-        this.projectiles = this.projectiles.filter((projectile) => projectile.isDead === false);
+        this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
 
         this.platforms.forEach((platform) => platform.update());
     }
@@ -115,8 +115,21 @@ export class Game {
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
             },
-            (position: Vector, momentum: Vector, id: number) => {
-                this.projectile(position, momentum, id);
+            (projectileType: string,
+                damageType: string,
+                damage: number,
+                id: number,
+                team: number,
+                image: string,
+                position: Vector,
+                momentum: Vector,
+                angle: number,
+                fallSpeed: number,
+                knockback: number,
+                range: number,
+                life: number,
+                inGround: boolean) => {
+                this.projectile(projectileType, damageType, damage, id, team, image, position, momentum, angle, fallSpeed, knockback, range, life, inGround);
             },
         );
         this.players.push(newPlayer);
@@ -162,11 +175,20 @@ export class Game {
             case "projectile":
                 this.projectiles.push(
                     new ServerProjectile(this.config, {
+                        projectileType: data.projectileType,
+                        damageType: data.damageType,
+                        damage: data.damage,
+                        id: data.id,
+                        team: data.team,
+                        image: data.image,
                         position: data.position,
-                        momentum: { x: data.direction.x, y: data.direction.y - 100 },
-                        id,
-                        inGround: false,
-                        isDead: false,
+                        momentum: data.momentum, // might be a pointer to old?
+                        angle: data.angle,
+                        fallSpeed: data.fallSpeed,
+                        knockback: data.knockback,
+                        range: data.range,
+                        life: data.life,
+                        inGround: data.inGround,
                     }),
                 );
                 break;
@@ -200,13 +222,35 @@ export class Game {
         });
     }
 
-    private projectile(position: Vector, momentum: Vector, id: number) {
+    private projectile(projectileType: string,
+        damageType: string,
+        damage: number,
+        id: number,
+        team: number,
+        image: string,
+        position: Vector,
+        momentum: Vector,
+        angle: number,
+        fallSpeed: number,
+        knockback: number,
+        range: number,
+        life: number,
+        inGround: boolean) {
         const projectile = new ServerProjectile(this.config, {
+            projectileType,
+            damageType,
+            damage,
+            id,
+            team,
+            image,
             position,
             momentum,
-            id,
-            inGround: false,
-            isDead: false,
+            angle,
+            fallSpeed,
+            knockback,
+            range,
+            life,
+            inGround,
         });
         this.projectiles.push(projectile);
     }

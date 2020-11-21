@@ -50,8 +50,21 @@ export class Game {
                     (position: Vector, color: string, id: number) => {
                         this.blast(position, color, id);
                     },
-                    (position: Vector, momentum: Vector, id: number) => {
-                        this.arrow(position, momentum, id);
+                    (projectileType: string,
+                        damageType: string,
+                        damage: number,
+                        id: number,
+                        team: number,
+                        image: string,
+                        position: Vector,
+                        momentum: Vector,
+                        angle: number,
+                        fallSpeed: number,
+                        knockback: number,
+                        range: number,
+                        life: number,
+                        inGround: boolean) => {
+                        this.projectile(projectileType, damageType, damage, id, team, image, position, momentum, angle, fallSpeed, knockback, range, life, inGround);
                     },
                     this.serverTalker,
                     this.id,
@@ -273,6 +286,8 @@ export class Game {
         if (player.classType === 0) {
             this.leftClickCooldown = 0.2; // ninja shank
             this.rightClickCooldown = 3; // shuriken
+            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/swordBasicAttack.png");
+            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shurikenSecondary.png");
         } else if (player.classType === 1) {
             this.leftClickCooldown = 0.4; // Arcane scythe
             this.rightClickCooldown = 0.5; // ice spike
@@ -284,6 +299,9 @@ export class Game {
             safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/hammerBasicAttack.png");
             safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shieldSecondary.png");
         }
+
+        this.isRightCharging = 0;
+        safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
     }
 
     private updateCooldowns(elapsedTime: number, player: Player) { // updates player's cooldown icons
@@ -294,7 +312,7 @@ export class Game {
 
         safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
         if (this.isRightCharging < 1) safeGetElementById("charge").style.background = "rgb(24, 100, 14)";
-        else safeGetElementById("charge").style.background = "rgb(20, 172, 0)";
+        else safeGetElementById("charge").style.background = "rgb(20, 200, 0)";
 
         if (this.leftClickCounter > 0 ) {
             this.leftClickCounter -= elapsedTime;
@@ -318,7 +336,7 @@ export class Game {
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime));
-        this.projectiles = this.projectiles.filter((projectile) => projectile.isDead === false);
+        this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);
 
     }
 
@@ -385,15 +403,37 @@ export class Game {
         });
     }
 
-    private arrow(position: Vector, momentum: Vector, id: number) {
-        const arrow = new ClientProjectile(this.config, {
+    private projectile(projectileType: string,
+        damageType: string,
+        damage: number,
+        id: number,
+        team: number,
+        image: string,
+        position: Vector,
+        momentum: Vector,
+        angle: number,
+        fallSpeed: number,
+        knockback: number,
+        range: number,
+        life: number,
+        inGround: boolean) {
+        const projectile = new ClientProjectile(this.config, {
+            projectileType,
+            damageType,
+            damage,
+            id,
+            team,
+            image,
             position,
             momentum,
-            id,
-            inGround: false,
-            isDead: false,
+            angle,
+            fallSpeed,
+            knockback,
+            range,
+            life,
+            inGround,
         });
-        this.projectiles.push(arrow);
+        this.projectiles.push(projectile);
     }
 
 }

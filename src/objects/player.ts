@@ -21,6 +21,7 @@ export abstract class Player {
     constructor(
         private readonly config: Config,
         public id: number,
+        //public team: number,
         public name: string,
         public classType: number,
         public weaponEquipped: number,
@@ -44,13 +45,30 @@ export abstract class Player {
         public isHit: boolean,
         public isShielded: boolean,
         public facing: boolean,
+
+        //public moveSpeedModifier: number, // multiplied by their total speed, good for percents
+        //public damageMitigation: number, // divides the damage taken
         public doBlast: (position: Vector, color: string, id: number) => void,
-        public doProjectile: (position: Vector, momentum: Vector, id: number) => void,
+        public doProjectile: (projectileType: string,
+            damageType: string,
+            damage: number,
+            id: number,
+            team: number,
+            image: string,
+            position: Vector,
+            momentum: Vector,
+            angle: number,
+            fallSpeed: number,
+            knockback: number,
+            range: number,
+            life: number,
+            inGround: boolean) => void,
     ) {}
 
     public serialize(): SerializedPlayer {
         return {
             id: this.id,
+            //team: this.team,
             name: this.name,
             classType: this.classType,
             weaponEquipped: this.weaponEquipped,
@@ -74,6 +92,8 @@ export abstract class Player {
             isHit: this.isHit,
             isShielded: this.isShielded,
             facing: this.facing,
+            //moveSpeedModifier: this.moveSpeedModifier,
+            //damageMitigation: this.damageMitigation,
         };
     }
 
@@ -206,7 +226,22 @@ export abstract class Player {
         if (this.focusPosition.x < 0) newX *= -1;
         if (this.focusPosition.y < 0) newY *= -1;
 
-        this.doProjectile({ x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 }, { x: newX, y: newY }, this.id);
+        this.doProjectile(
+            "arrow",
+            "piercing",
+            15,
+            this.id,
+            this.id,
+            "images/projectiles/arrow.png",
+            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            { x: newX, y: newY },
+            0, // should be taken out
+            10, // should be tested
+            400,
+            0,
+            800, // test
+            false,
+            );
     }
 
     public attemptBasicAttack(player: Player) {
@@ -281,8 +316,8 @@ export abstract class Player {
         let angle: number = Math.atan(newY / newX);
         if(newX < 0) angle += Math.PI;
 
-        this.momentum.x -= 1000 * Math.cos(angle);
-        this.momentum.y -= 1000 * Math.sin(angle);
+        this.momentum.x -= (this.momentum.x / 2) - 1000 * Math.cos(angle);
+        this.momentum.y -= (this.momentum.y / 2) - 1000 * Math.sin(angle);
 
         players.forEach((player) =>
             this.basicAttackTemplate(player, 10, "poison", "ranged", angle, 500, Math.PI / 8, 0, this.id, 600)

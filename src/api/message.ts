@@ -29,9 +29,20 @@ export interface ActionMessage {
 
 export interface ProjectileMessage {
     type: "projectile";
-    position: Vector;
-    direction: Vector;
-    id: number;
+    projectileType: string,
+    damageType: string,
+    damage: number,
+    id: number,
+    team: number,
+    image: string,
+    position: Vector,
+    momentum: Vector,
+    angle: number,
+    fallSpeed: number,
+    knockback: number,
+    range: number,
+    life: number,
+    inGround: boolean
 }
 
 export interface MouseMessage {

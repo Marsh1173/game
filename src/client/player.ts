@@ -9,7 +9,20 @@ export class ClientPlayer extends Player {
         config: Config,
         info: SerializedPlayer,
         doBlast: (position: Vector, color: string, id: number) => void,
-        doArrow: (position: Vector, mometum: Vector, id: number) => void,
+        doProjectile: (projectileType: string,
+            damageType: string,
+            damage: number,
+            id: number,
+            team: number,
+            image: string,
+            position: Vector,
+            momentum: Vector,
+            angle: number,
+            fallSpeed: number,
+            knockback: number,
+            range: number,
+            life: number,
+            inGround: boolean) => void,
         private readonly serverTalker: ServerTalker,
         private readonly isClientPlayer: number,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
@@ -41,7 +54,7 @@ export class ClientPlayer extends Player {
             info.isShielded,
             info.facing,
             doBlast,
-            doArrow,
+            doProjectile,
         );
     }
 
@@ -311,11 +324,10 @@ export class ClientPlayer extends Player {
     }
 
     public projectile() {
+
         super.projectile();
-        this.serverTalker.sendMessage({
+        if (this.classType === 0)this.serverTalker.sendMessage({
             type: "projectile",
-            direction: { x: this.focusPosition.x, y: this.focusPosition.y },
-            position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             id: this.id,
         });
     }

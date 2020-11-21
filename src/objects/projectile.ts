@@ -5,15 +5,39 @@ import { Size } from "../size";
 import { Player } from "./player";
 
 export abstract class Projectile {
-    constructor(private readonly config: Config, public readonly position: Vector, public momentum: Vector, public id: number, public inGround: boolean, public isDead: boolean) {}
+    constructor(private readonly config: Config,
+        public projectileType: string, // literal name of the projectile
+        public damageType: string, // type of damage
+        public damage: number, // amount of damage
+        public id: number, // id of player who shot it
+        public team: number, // team of player who shot it (not implemented)
+        public image: string, // path to image file
+        public position: Vector, // (starting) coordinates
+        public momentum: Vector, // (starting) momentum?
+        public angle: number, // probably not needed, since momentum is included
+        public fallSpeed: number, // speed at which the projectile falls down 
+        public knockback: number, // force exerted on player upon hitting (avg. 400)
+        public range: number, // hit range extending around projectile. Default is 0
+        public life: number, // life span in miliseconds, filter decider (normally decremented if it's stuck in the ground)
+        public inGround: boolean // self explanatory
+        ) {}
 
     public serialize(): SerializedProjectile {
         return {
+            projectileType: this.projectileType,
+            damageType: this.damageType,
+            damage: this.damage,
+            id: this.id,
+            team: this.team,
+            image: this.image,
             position: this.position,
             momentum: this.momentum,
-            id: this.id,
+            angle: this.angle,
+            fallSpeed: this.fallSpeed,
+            knockback: this.knockback,
+            range: this.range,
+            life: this.life,
             inGround: this.inGround,
-            isDead: this.isDead,
         };
     }
 
@@ -104,7 +128,7 @@ export abstract class Projectile {
         ) {
             if (!player.isDead && !this.inGround) {
                 if (!player.isShielded) player.damagePlayer(5, this.id, "projectile", "piercing");
-                this.isDead = true;
+                this.life = 0;
                 player.momentum.x += this.momentum.x / 5;
                 player.momentum.y += this.momentum.y / 5;
             }
@@ -159,7 +183,7 @@ export abstract class Projectile {
             }
         } else {
             setTimeout(() => {
-                this.isDead = true;
+                this.life = 0;
             }, 2000);
         }
     }
