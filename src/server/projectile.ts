@@ -1,5 +1,5 @@
 import { Config } from "../config";
-import { Projectile } from "../objects/projectile";
+import { Projectile, ProjectileType } from "../objects/projectile";
 import { SerializedProjectile } from "../serialized/projectile";
 
 export class ServerProjectile extends Projectile {
@@ -9,10 +9,8 @@ export class ServerProjectile extends Projectile {
             info.damage,
             info.id,
             info.team,
-            info.image,
             info.position,
             info.momentum,
-            info.angle,
             info.fallSpeed,
             info.knockback,
             info.range,

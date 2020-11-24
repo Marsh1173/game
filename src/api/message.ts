@@ -1,4 +1,5 @@
 import { Player, PlayerActions } from "../objects/player";
+import { ProjectileType } from "../objects/projectile";
 import { SerializedPlayer } from "../serialized/player";
 import { Vector } from "../vector";
 import { AllInfo } from "./allinfo";
@@ -29,15 +30,13 @@ export interface ActionMessage {
 
 export interface ProjectileMessage {
     type: "projectile";
-    projectileType: string,
+    projectileType: ProjectileType,
     damageType: string,
     damage: number,
     id: number,
     team: number,
-    image: string,
     position: Vector,
     momentum: Vector,
-    angle: number,
     fallSpeed: number,
     knockback: number,
     range: number,

@@ -6,6 +6,7 @@ import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { ClientBlast } from "./blast";
 import { ClientProjectile } from "./projectile";
+import { ProjectileType } from "../objects/projectile";
 import { ClientPlatform } from "./platform";
 import { ClientPlayer } from "./player";
 import { ServerTalker } from "./servertalker";
@@ -50,21 +51,19 @@ export class Game {
                     (position: Vector, color: string, id: number) => {
                         this.blast(position, color, id);
                     },
-                    (projectileType: string,
+                    (projectileType: ProjectileType,
                         damageType: string,
                         damage: number,
                         id: number,
                         team: number,
-                        image: string,
                         position: Vector,
                         momentum: Vector,
-                        angle: number,
                         fallSpeed: number,
                         knockback: number,
                         range: number,
                         life: number,
                         inGround: boolean) => {
-                        this.projectile(projectileType, damageType, damage, id, team, image, position, momentum, angle, fallSpeed, knockback, range, life, inGround);
+                        this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
                     },
                     this.serverTalker,
                     this.id,
@@ -134,7 +133,7 @@ export class Game {
 
                 this.isRightClicking = false;
                 //add right mouse charged ability register that passes isRightCharging
-                if (this.rightClickCounter <= 0 && this.isRightCharging >= 1 && playerWithId.classType != 2) {
+                if (this.rightClickCounter <= 0 && this.isRightCharging >= 1) {
                     playerWithId.attemptSecondaryAttack(this.players);
                     this.rightClickCounter = this.rightClickCooldown;
                 }
@@ -239,15 +238,18 @@ export class Game {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
         this.projectiles.forEach((projectile) => projectile.render(Game.ctx));
         this.platforms.forEach((platform) => platform.render(Game.ctx));
-        this.players.forEach((player) => player.render(Game.ctx));
         this.players.forEach((player) => {
-            /*if (player.id === this.id && this.isCharging != 0 && !player.isDead && this.isLeftClicking) {
-                player.renderMouseCharge(Game.ctx, this.isCharging);
-            }*/
-            if (!player.isDead)player.renderWeapon(Game.ctx);
+            player.render(Game.ctx);
+        });
+        this.players.forEach((player) => {
+            if (!player.isDead){
+                player.renderWeapon(Game.ctx);
+            }
+        });
+        this.players.forEach((player) => {
+            if (player.id != this.id && !player.isDead) player.renderName(Game.ctx);
         });
         this.blasts.forEach((blast) => blast.render(Game.ctx));
-        //this.basicAttacks.forEach((basicAttack) => basicAttack.render(Game.ctx));
     }
 
     private updateSlider() {
@@ -289,13 +291,13 @@ export class Game {
             safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/swordBasicAttack.png");
             safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shurikenSecondary.png");
         } else if (player.classType === 1) {
-            this.leftClickCooldown = 0.4; // Arcane scythe
-            this.rightClickCooldown = 0.5; // ice spike
-            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/staffBasicAttack.png");
-            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/fireballSecondary.png");
+            this.leftClickCooldown = 0.4; // fireball
+            this.rightClickCooldown = 4; // ice spike
+            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/fireballBasicAttack.png");
+            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/iceSecondary.png");
         } else if (player.classType === 2) {
             this.leftClickCooldown = 0.4; // hammer bash
-            this.rightClickCooldown = 0.5; // shield
+            this.rightClickCooldown = 1.5; // shield bash
             safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/hammerBasicAttack.png");
             safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shieldSecondary.png");
         }
@@ -335,7 +337,7 @@ export class Game {
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
-        this.projectiles.forEach((projectile) => projectile.update(elapsedTime));
+        this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);
 
     }
@@ -346,19 +348,6 @@ export class Game {
             this.platforms.forEach((platform) => {
                 player1.checkCollisionWithRectangularObject(platform, elapsedTime);
             });
-        });
-
-        this.projectiles.forEach((projectile) => {
-            if (!projectile.inGround) {
-                this.platforms.forEach((platform) => {
-                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
-                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
-                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime);
-                });
-                this.players.forEach((player) => {
-                    projectile.checkCollisionWithPlayer(player, elapsedTime);
-                });
-            }
         });
 
     }
@@ -403,15 +392,13 @@ export class Game {
         });
     }
 
-    private projectile(projectileType: string,
+    private projectile(projectileType: ProjectileType,
         damageType: string,
         damage: number,
         id: number,
         team: number,
-        image: string,
         position: Vector,
         momentum: Vector,
-        angle: number,
         fallSpeed: number,
         knockback: number,
         range: number,
@@ -423,10 +410,8 @@ export class Game {
             damage,
             id,
             team,
-            image,
             position,
             momentum,
-            angle,
             fallSpeed,
             knockback,
             range,

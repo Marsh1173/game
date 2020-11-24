@@ -15,15 +15,7 @@ check why End Game breaks the server and reload too occasionally
 make hitbox ability hit registering instead of if they're within an area
 make a particle object
 
-attack types so far:
--melee
--projectile
--lava
--none
-
-damage types so far:
--piercing
--crushing
--magic
--unblockable
--explosive
+KNOWN BUGS
+wizard fireball icon does not load until a second player joins
+players can move faster if they jump constantly
+-and many more!

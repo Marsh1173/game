@@ -3,19 +3,20 @@ import { SerializedProjectile } from "../serialized/projectile";
 import { Vector } from "../vector";
 import { Size } from "../size";
 import { Player } from "./player";
+import { Platform } from "./platform";
+
+export type ProjectileType = "arrow" | "shuriken" | "ice" | "fire";
 
 export abstract class Projectile {
     constructor(private readonly config: Config,
-        public projectileType: string, // literal name of the projectile
+        public projectileType: ProjectileType, // literal name of the projectile
         public damageType: string, // type of damage
         public damage: number, // amount of damage
         public id: number, // id of player who shot it
         public team: number, // team of player who shot it (not implemented)
-        public image: string, // path to image file
         public position: Vector, // (starting) coordinates
         public momentum: Vector, // (starting) momentum?
-        public angle: number, // probably not needed, since momentum is included
-        public fallSpeed: number, // speed at which the projectile falls down 
+        public fallSpeed: number, // multiplier for fallspeed based on player fallspeed (zero negates it)
         public knockback: number, // force exerted on player upon hitting (avg. 400)
         public range: number, // hit range extending around projectile. Default is 0
         public life: number, // life span in miliseconds, filter decider (normally decremented if it's stuck in the ground)
@@ -29,10 +30,8 @@ export abstract class Projectile {
             damage: this.damage,
             id: this.id,
             team: this.team,
-            image: this.image,
             position: this.position,
             momentum: this.momentum,
-            angle: this.angle,
             fallSpeed: this.fallSpeed,
             knockback: this.knockback,
             range: this.range,
@@ -50,6 +49,8 @@ export abstract class Projectile {
             futurePosY < object.position.y + object.size.height &&
             futurePosY > object.position.y
         ) {
+            this.position.y = (futurePosY + this.position.y) / 2;
+            this.position.x = (futurePosX + this.position.x) / 2;
             this.inGround = true;
             /*const points: Vector[] = [
                 {
@@ -116,7 +117,7 @@ export abstract class Projectile {
         }
     }
 
-    public checkCollisionWithPlayer(player: Player, elapsedTime: number) {
+    public checkCollisionWithPlayer(player: Player, elapsedTime: number): boolean {
         let futurePosX = this.position.x + this.momentum.x * elapsedTime;
         let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
@@ -127,12 +128,19 @@ export abstract class Projectile {
             this.id != player.id
         ) {
             if (!player.isDead && !this.inGround) {
-                if (!player.isShielded) player.damagePlayer(5, this.id, "projectile", "piercing");
+                if (!player.isShielded){
+
+                    player.damagePlayer(this.damage, this.id, "projectile", this.damageType);
+                    if (this.damageType === "poison") player.dotPlayer(2, this.id, "poison", "elemental", 300, 5);
+                    if (this.damageType === "fire") player.dotPlayer(4, this.id, "fire", "elemental", 800, 2);
+                }
                 this.life = 0;
-                player.momentum.x += this.momentum.x / 5;
-                player.momentum.y += this.momentum.y / 5;
+                this.inGround = true;
+
+                return true;
             }
         }
+        return false;
     }
 
     public checkSideCollision(elapsedTime: number) {
@@ -140,40 +148,61 @@ export abstract class Projectile {
         let futurePosY = this.position.y + this.momentum.y * elapsedTime;
 
         if (futurePosY < 5 || futurePosY > this.config.ySize) {
+            this.position.y = (futurePosY + this.position.y) / 2;
+            this.position.x = (futurePosX + this.position.x) / 2;
             this.inGround = true;
         } else if (futurePosY > this.config.ySize) {
+            this.position.y = (futurePosY + this.position.y) / 2;
+            this.position.x = (futurePosX + this.position.x) / 2;
             this.inGround = true;
         }
         if (futurePosX < 0) {
+            this.position.y = (futurePosY + this.position.y) / 2;
+            this.position.x = (futurePosX + this.position.x) / 2;
             this.inGround = true;
         } else if (futurePosX > this.config.xSize) {
+            this.position.y = (futurePosY + this.position.y) / 2;
+            this.position.x = (futurePosX + this.position.x) / 2;
             this.inGround = true;
         }
     }
 
-    public update(elapsedTime: number) {
+    public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
         if (!this.inGround) {
-            this.momentum.y += (this.config.fallingAcceleration * elapsedTime) / 2.7;
+            if (this.fallSpeed != 0 ) this.momentum.y += (this.config.fallingAcceleration * elapsedTime) * this.fallSpeed;
 
-            /*if (this.position.y < 5) {
-                this.momentum.y /= -1.5;
-                this.position.y += this.momentum.y * elapsedTime;
-            } else if (this.position.y > this.config.ySize) {
-                if (this.momentum.x > 700 || this.momentum.x < -700) {
-                    this.momentum.y /= -2;
-                    this.momentum.x /= 1.3;
-                    this.position.y += this.momentum.y * elapsedTime;
-                } else {
-                    this.inGround = true;
+            players.forEach((player) => {
+                if(this.id != player.id){
+                    if (this.checkCollisionWithPlayer(player, elapsedTime)) {
+
+                        let angle: number = Math.atan(this.momentum.y / this.momentum.x);
+                        if(this.momentum.x < 0) angle += Math.PI;
+                        player.knockbackPlayer(angle, this.knockback);
+
+                        if (this.projectileType === "ice") {
+                            player.moveSpeedModifier /= 3;
+                            setTimeout(() => {
+                                player.moveSpeedModifier *= 3;
+                            }, 2000);
+                        }
+
+                        if (this.projectileType === "shuriken") {
+                            players.forEach((player2) => {
+                                if (player2.id === this.id) player2.movePlayer((player.position.x - player2.position.x) * 0.95, (player.position.y - player2.position.y) * 0.95, true);
+                            });
+                        }
+                    }
                 }
+            });
+
+        
+            if (!this.inGround) {
+                platforms.forEach((platform) => {
+                    this.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
+                    if (!this.inGround)this.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
+                    if (!this.inGround)this.checkCollisionWithRectangularObject(platform, elapsedTime);
+                });
             }
-            if (this.position.x < 0) {
-                this.position.x = 0;
-                this.momentum.x /= -1.2;
-            } else if (this.position.x > this.config.xSize) {
-                this.position.x = this.config.xSize;
-                this.momentum.x /= -1.2;
-            }*/
 
             this.checkSideCollision(elapsedTime);
 
@@ -182,9 +211,13 @@ export abstract class Projectile {
                 this.position.y += this.momentum.y * elapsedTime;
             }
         } else {
-            setTimeout(() => {
+            if (this.projectileType == "fire") {
                 this.life = 0;
-            }, 2000);
+            } else {
+                setTimeout(() => {
+                    this.life = 0;
+                }, 2000);
+            }
         }
     }
 }

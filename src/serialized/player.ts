@@ -26,4 +26,5 @@ export interface SerializedPlayer {
     isHit: boolean;
     isShielded: boolean;
     facing: boolean;
+    moveSpeedModifier: number;
 }

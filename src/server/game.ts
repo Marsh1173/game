@@ -7,6 +7,7 @@ import * as wsWebsocket from "ws";
 import { ClientMessage, InfoMessage, PlayerLeavingMessage, ServerMessage } from "../api/message";
 import { Vector } from "../vector";
 import { Config } from "../config";
+import { ProjectileType } from "../objects/projectile";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -77,7 +78,7 @@ export class Game {
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
-        this.projectiles.forEach((projectile) => projectile.update(elapsedTime));
+        this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
 
         this.platforms.forEach((platform) => platform.update());
@@ -91,18 +92,6 @@ export class Game {
             });
         });
 
-        this.projectiles.forEach((projectile) => {
-            if (!projectile.inGround) {
-                this.platforms.forEach((platform) => {
-                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 4);
-                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime / 2);
-                    projectile.checkCollisionWithRectangularObject(platform, elapsedTime);
-                });
-                this.players.forEach((player) => {
-                    projectile.checkCollisionWithPlayer(player, elapsedTime);
-                });
-            }
-        });
     }
 
     public newPlayer(id: number, name: string, color: string, classType: number) {
@@ -115,21 +104,19 @@ export class Game {
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
             },
-            (projectileType: string,
+            (projectileType: ProjectileType,
                 damageType: string,
                 damage: number,
                 id: number,
                 team: number,
-                image: string,
                 position: Vector,
                 momentum: Vector,
-                angle: number,
                 fallSpeed: number,
                 knockback: number,
                 range: number,
                 life: number,
                 inGround: boolean) => {
-                this.projectile(projectileType, damageType, damage, id, team, image, position, momentum, angle, fallSpeed, knockback, range, life, inGround);
+                this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
             },
         );
         this.players.push(newPlayer);
@@ -180,10 +167,8 @@ export class Game {
                         damage: data.damage,
                         id: data.id,
                         team: data.team,
-                        image: data.image,
                         position: data.position,
                         momentum: data.momentum, // might be a pointer to old?
-                        angle: data.angle,
                         fallSpeed: data.fallSpeed,
                         knockback: data.knockback,
                         range: data.range,
@@ -222,15 +207,13 @@ export class Game {
         });
     }
 
-    private projectile(projectileType: string,
+    private projectile(projectileType: ProjectileType,
         damageType: string,
         damage: number,
         id: number,
         team: number,
-        image: string,
         position: Vector,
         momentum: Vector,
-        angle: number,
         fallSpeed: number,
         knockback: number,
         range: number,
@@ -242,10 +225,8 @@ export class Game {
             damage,
             id,
             team,
-            image,
             position,
             momentum,
-            angle,
             fallSpeed,
             knockback,
             range,

@@ -2,6 +2,7 @@ import { Config } from "../config";
 import { SerializedPlayer } from "../serialized/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
+import { ProjectileType } from "./projectile";
 
 export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "projectile" | "basicAttack" | "secondaryAttack";
 
@@ -45,24 +46,25 @@ export abstract class Player {
         public isHit: boolean,
         public isShielded: boolean,
         public facing: boolean,
+        public moveSpeedModifier: number,
 
         //public moveSpeedModifier: number, // multiplied by their total speed, good for percents
         //public damageMitigation: number, // divides the damage taken
         public doBlast: (position: Vector, color: string, id: number) => void,
-        public doProjectile: (projectileType: string,
+        public doProjectile: (projectileType: ProjectileType,
             damageType: string,
             damage: number,
             id: number,
             team: number,
-            image: string,
             position: Vector,
             momentum: Vector,
-            angle: number,
             fallSpeed: number,
             knockback: number,
             range: number,
             life: number,
             inGround: boolean) => void,
+
+        public oldColor = color,
     ) {}
 
     public serialize(): SerializedPlayer {
@@ -92,7 +94,7 @@ export abstract class Player {
             isHit: this.isHit,
             isShielded: this.isShielded,
             facing: this.facing,
-            //moveSpeedModifier: this.moveSpeedModifier,
+            moveSpeedModifier: this.moveSpeedModifier,
             //damageMitigation: this.damageMitigation,
         };
     }
@@ -179,9 +181,9 @@ export abstract class Player {
     }
     public moveLeft(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime;
+            this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         } else {
-            this.momentum.x -= this.config.nonStandingSidewaysAcceleration * elapsedTime;
+            this.momentum.x -= this.config.nonStandingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         }
     }
     public attemptMoveRight(elapsedTime: number) {
@@ -191,9 +193,9 @@ export abstract class Player {
     }
     public moveRight(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime;
+            this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         } else {
-            this.momentum.x += this.config.nonStandingSidewaysAcceleration * elapsedTime;
+            this.momentum.x += this.config.nonStandingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         }
     }
 
@@ -232,10 +234,8 @@ export abstract class Player {
             15,
             this.id,
             this.id,
-            "images/projectiles/arrow.png",
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             { x: newX, y: newY },
-            0, // should be taken out
             10, // should be tested
             400,
             0,
@@ -254,8 +254,9 @@ export abstract class Player {
         if(newX < 0) angle += Math.PI;
 
         if (this.classType === 0) this.basicAttackTemplate(player, 7, "poison", "melee", angle, 100, Math.PI / 6, 10, this.id, 300);
-        if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this.id, 200);
-        if (this.classType === 2) this.basicAttackTemplate(player, 15, "crushing", "melee", angle, 120, Math.PI / 3, 25, this.id, 900);
+        //if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this.id, 200);
+        if (this.classType === 1) this.wizardBasicAttack();
+        if (this.classType === 2) this.basicAttackTemplate(player, 12, "crushing", "melee", angle, 120, Math.PI / 3, 25, this.id, 900);
 
     }
 
@@ -300,39 +301,146 @@ export abstract class Player {
         return;
     }
 
-    public attemptSecondaryAttack(players: Player[]) {
-        this.secondaryAttack(players);
-    }
-
-    public secondaryAttack(players: Player[]) {
-        if (this.classType === 0) this.ninjaSecondaryAttack(players);
-        //if (this.classType === 1) this.wizardSecondaryAttack();
-        //if (this.classType === 2) this.templarSecondaryAttack();
-    }
-
-    public ninjaSecondaryAttack(players: Player[]) {
+    public wizardBasicAttack() {
         let newX: number = (this.focusPosition.x - this.position.x - this.size.width / 2);
         let newY: number = (this.focusPosition.y - this.position.y - this.size.height / 2);
         let angle: number = Math.atan(newY / newX);
         if(newX < 0) angle += Math.PI;
 
-        this.momentum.x -= (this.momentum.x / 2) - 1000 * Math.cos(angle);
-        this.momentum.y -= (this.momentum.y / 2) - 1000 * Math.sin(angle);
+        this.doProjectile(
+            "fire",
+            "fire",
+            4,
+            this.id,
+            this.id,
+            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            { x: 900 * Math.cos(angle), y: 900 * Math.sin(angle)},
+            0,
+            200,
+            0,
+            1,
+            false,
+            );
+    }
 
-        players.forEach((player) =>
-            this.basicAttackTemplate(player, 10, "poison", "ranged", angle, 500, Math.PI / 8, 0, this.id, 600)
-        );
+    public attemptSecondaryAttack(players: Player[]) {
+        this.secondaryAttack(players);
+    }
+
+    public secondaryAttack(players: Player[]) {
+        if (this.classType === 0) this.ninjaSecondaryAttack();
+        if (this.classType === 1) this.wizardSecondaryAttack();
+        if (this.classType === 2) this.knightSecondaryAttack(players);
+    }
+
+    public ninjaSecondaryAttack() {
+        let newX: number = (this.focusPosition.x - this.position.x - this.size.width / 2);
+        let newY: number = (this.focusPosition.y - this.position.y - this.size.height / 2);
+        let angle: number = Math.atan(newY / newX);
+        if(newX < 0) angle += Math.PI;
+
+        this.momentum.x += (this.momentum.x / 2) - 1000 * Math.cos(angle);
+        this.momentum.y += (this.momentum.y / 2) - 1000 * Math.sin(angle);
+
+        this.doProjectile(
+            "shuriken",
+            "poison",
+            5,
+            this.id,
+            this.id,
+            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            { x: 2500 * Math.cos(angle), y: 2500 * Math.sin(angle) },
+            0.1,
+            2000,
+            0,
+            1,
+            false,
+            );
     }
 
     public wizardSecondaryAttack() {
-        //this.attemptProjectile();
+        let newX: number = (this.focusPosition.x - this.position.x - this.size.width / 2);
+        let newY: number = (this.focusPosition.y - this.position.y - this.size.height / 2);
+        let angle: number = Math.atan(newY / newX);
+        if(newX < 0) angle += Math.PI;
+
+        this.doProjectile(
+            "ice",
+            "elemental",
+            25,
+            this.id,
+            this.id,
+            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            { x: 1300 * Math.cos(angle), y: 1300 * Math.sin(angle) - 100},
+            0.25,
+            1000,
+            0,
+            1,
+            false,
+            );
     }
 
-    public wasHit() {
+    public knightSecondaryAttack(players: Player[]) {
+
+        let momentum: number = 3000;
+        let knockbackMomentum: number = 2000;
+        let range: number = 250;
+        let damage: number = 20;
+
+       if (!this.facing){
+            momentum *= -1;
+            knockbackMomentum *= -1;
+        }
+
+        this.momentum.x += momentum;
+        setTimeout(() => {
+            this.momentum.x /= 2;
+        }, 100);
+        
+        players.forEach((player) => {
+            if (player.id != this.id &&
+                player.position.y > this.position.y - 50 &&
+                player.position.y < this.position.y + 50) {
+                    if (this.facing &&
+                        player.position.x > this.position.x - 25 &&
+                        player.position.x < this.position.x + range) {
+                            setTimeout(() => {
+                                player.damagePlayer(damage, this.id, "crushing", "melee");
+                                player.knockbackPlayer(0, knockbackMomentum);
+                                player.momentum.y -= 500; // knocks them slightly upwards
+
+                                player.moveSpeedModifier /= 5; // slows them by 80%
+                                setTimeout(() => {
+                                    player.moveSpeedModifier *= 5;
+                                }, 800);
+                            }, 30);
+                        } else if (!this.facing &&
+                            player.position.x > this.position.x - range &&
+                            player.position.x < this.position.x + 25) {
+                                setTimeout(() => {
+                                    player.damagePlayer(damage, this.id, "crushing", "melee");
+                                    player.knockbackPlayer(0, knockbackMomentum);
+                                    player.momentum.y -= 500;  // knocks them slightly upwards
+
+                                    player.moveSpeedModifier /= 5;  // slows them by 80%
+                                    setTimeout(() => {
+                                        player.moveSpeedModifier *= 5;
+                                    }, 800);
+                                }, 30);
+                        }
+                } 
+        });
+    }
+
+    public wasHit(changePlayerColor: boolean = true) {
+        if (changePlayerColor) {
+            this.color = "red";
+        }
         this.isHit = true;
         setTimeout(() => {
             this.isHit = false;
-        }, 40);
+            this.color = this.oldColor;
+        }, 55);
     }
 
     public healPlayer(quantity: number) {
@@ -345,12 +453,12 @@ export abstract class Player {
     public dotPlayer(quantity: number, id: number, type: String, damageType: String, spacing: number, amount: number) {
         if (amount === 0 || this.isDead) return;
         setTimeout(() => {
-            this.damagePlayer(quantity, id, type, damageType);
+            this.damagePlayer(quantity, id, type, damageType, false);
             this.dotPlayer(quantity, id, type, damageType, spacing, amount - 1);
         }, spacing);
     }
 
-    public damagePlayer(quantity: number, id: number, type: String, damageType: String): boolean {
+    public damagePlayer(quantity: number, id: number, type: String, damageType: String, ifVisualEffects: boolean = true): boolean {
         
         if (this.isShielded) {
             if (type != 'unblockable') return false;
@@ -360,7 +468,8 @@ export abstract class Player {
         
         if (id != -1) this.lastHitBy = id;
         this.health -= quantity;
-        this.wasHit();
+        if (ifVisualEffects) this.wasHit();
+        else this.wasHit(false);
 
         if (this.health <= 0) {
             this.die();
@@ -372,8 +481,17 @@ export abstract class Player {
 
     public knockbackPlayer(angle: number, force: number) {
         if (force === 0) return;
-        this.momentum.x += force * Math.cos(angle);
-        this.momentum.y += force * Math.sin(angle);
+        this.momentum.x = (this.momentum.x / 2) + (force * Math.cos(angle));
+        this.momentum.y = (this.momentum.y / 2) + (force * Math.sin(angle));
+    }
+
+    public movePlayer(x: number, y: number, cancelMomentum: boolean = false) {
+        this.position.x += x;
+        this.position.y += y;
+        if(cancelMomentum) {
+            this.momentum.x = 0;
+            this.momentum.y = 0;
+        }
     }
 
     public die() {

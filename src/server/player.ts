@@ -1,5 +1,6 @@
 import { Config } from "../config";
 import { Player, PlayerActions } from "../objects/player";
+import { ProjectileType } from "../objects/projectile";
 import { Vector } from "../vector";
 
 export class ServerPlayer extends Player {
@@ -12,15 +13,13 @@ export class ServerPlayer extends Player {
         color: string,
         classType: number,
         doBlast: (position: Vector, color: string, id: number) => void,
-        doProjectile: (projectileType: string,
+        doProjectile: (projectileType: ProjectileType,
             damageType: string,
             damage: number,
             id: number,
             team: number,
-            image: string,
             position: Vector,
             momentum: Vector,
-            angle: number,
             fallSpeed: number,
             knockback: number,
             range: number,
@@ -59,6 +58,7 @@ export class ServerPlayer extends Player {
             false,
             false,
             true,
+            1,
             doBlast,
             doProjectile,
         );

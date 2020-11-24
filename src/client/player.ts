@@ -3,21 +3,20 @@ import { ServerTalker } from "./servertalker";
 import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { Config } from "../config";
+import { ProjectileType } from "../objects/projectile";
 
 export class ClientPlayer extends Player {
     constructor(
         config: Config,
         info: SerializedPlayer,
         doBlast: (position: Vector, color: string, id: number) => void,
-        doProjectile: (projectileType: string,
+        doProjectile: (projectileType: ProjectileType,
             damageType: string,
             damage: number,
             id: number,
             team: number,
-            image: string,
             position: Vector,
             momentum: Vector,
-            angle: number,
             fallSpeed: number,
             knockback: number,
             range: number,
@@ -53,6 +52,7 @@ export class ClientPlayer extends Player {
             info.isHit,
             info.isShielded,
             info.facing,
+            info.moveSpeedModifier,
             doBlast,
             doProjectile,
         );
@@ -88,18 +88,15 @@ export class ClientPlayer extends Player {
             ctx.shadowBlur = 16;
             ctx.shadowColor = this.color;
         } else if (!this.isDead) {
-            ctx.shadowBlur = this.health / 6;
+            ctx.shadowBlur = 7;
             ctx.shadowColor = this.color; //red?
         }
 
         //hit and shielded exceptions
-        if (this.isHit === true) {
-            ctx.fillStyle = "red";
-        } else {
-            if (this.isShielded) ctx.fillStyle = "white";
-            else if (this.isDead) ctx.fillStyle = "black";
-            else ctx.fillStyle = this.color;
-        }
+
+        if (this.isShielded) ctx.fillStyle = "white";
+        else if (this.isDead) ctx.fillStyle = "black";
+        else ctx.fillStyle = this.color;
 
         //square
         const opacity = this.isDead ? 0.2 : 0.9;
@@ -126,9 +123,27 @@ export class ClientPlayer extends Player {
             this.renderTemplar(ctx);
         };
 
-        //name
-        ctx.fillStyle = "white";
-        ctx.fillText(this.name, this.position.x + this.size.width / 2 - this.name.length * 2.2 - 1, this.position.y - 15);
+    }
+
+    public renderName(ctx: CanvasRenderingContext2D) {
+        ctx.shadowBlur = 0;
+
+        //ctx.fillStyle = "white";
+        //ctx.fillText(this.name, this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
+
+        ctx.fillStyle = "red";
+        ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * 3 / 4), 4);
+        if (this.isHit) {
+            ctx.shadowBlur = 2;
+            ctx.fillStyle = "white";
+            ctx.shadowColor = "white";
+            ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, ((this.size.width * this.health / 100) * 3 / 4) + 2, 4);
+        }
+        ctx.fillStyle = "#32a852";
+        ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * this.health / 100) * 3 / 4, 4);
+
+        ctx.shadowColor = "gray";
+        ctx.shadowBlur = 2;
     }
 
     public renderMouseCharge(ctx: CanvasRenderingContext2D, isCharging: number) {
@@ -166,11 +181,11 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 25 + 2, this.position.y + 20 - this.momentum.y / 40);
+        ctx.lineTo(xStart - this.momentum.x / 60 + 2, this.position.y + 20 - this.momentum.y / 100);
         ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 27 - 2, this.position.y + 30 - this.momentum.y / 40);
+        ctx.lineTo(xStart - this.momentum.x / 70 - 2, this.position.y + 30 - this.momentum.y / 100);
         ctx.stroke();
 
         //reset
@@ -244,7 +259,7 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 9;
         ctx.beginPath();
         ctx.moveTo(xStart, this.position.y + this.size.height / 2 - 6);
-        ctx.lineTo(xStart - this.momentum.x / 20, this.position.y + this.size.height / 2 + 10 - this.momentum.y / 40);
+        ctx.lineTo(xStart - this.momentum.x / 60, this.position.y + this.size.height / 2 + 10 - this.momentum.y / 80);
         ctx.stroke();
 
 
@@ -325,11 +340,30 @@ export class ClientPlayer extends Player {
 
     public projectile() {
 
-        super.projectile();
+        const power: number = 100;
+
+        let newX = Math.sqrt(power - Math.pow(this.focusPosition.y, 2));
+        let newY = Math.sqrt(power - Math.pow(this.focusPosition.x, 2));
+
+        if (this.focusPosition.x < 0) newX *= -1;
+        if (this.focusPosition.y < 0) newY *= -1;
+
+        /*super.projectile(); // not needed for some reason
         if (this.classType === 0)this.serverTalker.sendMessage({
             type: "projectile",
+            projectileType: "arrow",
+            damageType: "piercing",
+            damage: 15,
             id: this.id,
-        });
+            team: this.id,
+            position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            momentum: { x: newX, y: newY },
+            fallSpeed: 10, // should be tested
+            knockback: 400,
+            range: 0,
+            life: 800, // test
+            inGround: false,
+        });*/
     }
 
     public basicAttack(player: Player) {
