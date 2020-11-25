@@ -1,6 +1,7 @@
 import { Config } from "../config";
 import { Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
+import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
 
 export class ServerPlayer extends Player {
@@ -25,6 +26,14 @@ export class ServerPlayer extends Player {
             range: number,
             life: number,
             inGround: boolean) => void,
+        doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,
+            id: number,
+            team: number,
+            position: Vector,
+            momentum: Vector,
+            destination: Vector,
+            isDead: boolean,
+            life: number) => void,
     ) {
         super(
             config,
@@ -61,6 +70,7 @@ export class ServerPlayer extends Player {
             1,
             doBlast,
             doProjectile,
+            doTargetedProjectile,
         );
     }
 }

@@ -1,6 +1,7 @@
 import { AllInfo } from "../api/allinfo";
 import { ServerBlast } from "./blast";
 import { ServerProjectile } from "./projectile";
+import { ServerTargetedProjectile } from "./targetedProjectile";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
 import * as wsWebsocket from "ws";
@@ -8,6 +9,7 @@ import { ClientMessage, InfoMessage, PlayerLeavingMessage, ServerMessage } from 
 import { Vector } from "../vector";
 import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
+import { TargetedProjectileType } from "../objects/targetedProjectile";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -16,6 +18,7 @@ export class Game {
     private players: ServerPlayer[] = [];
     private blasts: ServerBlast[] = [];
     private projectiles: ServerProjectile[] = [];
+    private targetedProjectiles: ServerTargetedProjectile[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
     public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
 
@@ -40,6 +43,7 @@ export class Game {
             players: this.players.map((player) => player.serialize()),
             blasts: this.blasts.map((blast) => blast.serialize()),
             projectiles: this.projectiles.map((projectile) => projectile.serialize()),
+            targetedProjectiles: this.targetedProjectiles.map((targetedProjectile) => targetedProjectile.serialize()),
             platforms: this.platforms.map((platform) => platform.serialize()),
         };
     }
@@ -73,13 +77,16 @@ export class Game {
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime, this.players));
+        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
 
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
+
+        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms));
+        this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
 
         this.platforms.forEach((platform) => platform.update());
     }
@@ -118,6 +125,16 @@ export class Game {
                 inGround: boolean) => {
                 this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
             },
+            (targetedProjectileType: TargetedProjectileType,
+                id: number,
+                team: number,
+                position: Vector,
+                momentum: Vector,
+                destination: Vector,
+                isDead: boolean,
+                life: number) => {
+                this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
+            },
         );
         this.players.push(newPlayer);
     }
@@ -155,6 +172,9 @@ export class Game {
                     case "secondaryAttack":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.secondaryAttack = true;
                         break;
+                    case "firstAbility":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.firstAbility = true;
+                        break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
                 }
@@ -174,6 +194,20 @@ export class Game {
                         range: data.range,
                         life: data.life,
                         inGround: data.inGround,
+                    }),
+                );
+                break;
+            case "targetedProjectile":
+                this.targetedProjectiles.push(
+                    new ServerTargetedProjectile(this.config, {
+                        targetedProjectileType: data.targetedProjectileType,
+                        id: data.id,
+                        team: data.team,
+                        position: data.position,
+                        momentum: data.momentum,
+                        destination: data.destination,
+                        isDead: data.isDead,
+                        life: data.life,
                     }),
                 );
                 break;
@@ -234,5 +268,26 @@ export class Game {
             inGround,
         });
         this.projectiles.push(projectile);
+    }
+
+    private targetedProjectile(targetedProjectileType: TargetedProjectileType,
+        id: number,
+        team: number,
+        position: Vector,
+        momentum: Vector,
+        destination: Vector,
+        isDead: boolean,
+        life: number) {
+        const targetedProjectile = new ServerTargetedProjectile(this.config, {
+            targetedProjectileType,
+            id,
+            team,
+            position,
+            momentum,
+            destination,
+            isDead,
+            life,
+        });
+        this.targetedProjectiles.push(targetedProjectile);
     }
 }

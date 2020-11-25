@@ -4,8 +4,11 @@ import { Player } from "../objects/player";
 import { Vector } from "../vector";
 import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
+import { TargetedProjectileType } from "../objects/targetedProjectile";
+import { Platform } from "../objects/platform";
 
 export class ClientPlayer extends Player {
+    
     constructor(
         config: Config,
         info: SerializedPlayer,
@@ -22,6 +25,14 @@ export class ClientPlayer extends Player {
             range: number,
             life: number,
             inGround: boolean) => void,
+        doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,
+            id: number,
+            team: number,
+            position: Vector,
+            momentum: Vector,
+            destination: Vector,
+            isDead: boolean,
+            life: number,) => void,
         private readonly serverTalker: ServerTalker,
         private readonly isClientPlayer: number,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
@@ -55,10 +66,11 @@ export class ClientPlayer extends Player {
             info.moveSpeedModifier,
             doBlast,
             doProjectile,
+            doTargetedProjectile,
         );
     }
 
-    public update(elapsedTime: number, players: Player[]) {
+    public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
         if (this.prevFocusPosition.x !== this.focusPosition.x || this.prevFocusPosition.y !== this.focusPosition.y) {
             this.serverTalker.sendMessage({
                 type: "moveMouse",
@@ -76,7 +88,7 @@ export class ClientPlayer extends Player {
                 animationFrame: this.animationFrame,
             });
         }
-        super.update(elapsedTime, players);
+        super.update(elapsedTime, players, platforms);
     }
 
     public render(ctx: CanvasRenderingContext2D) {
@@ -122,6 +134,64 @@ export class ClientPlayer extends Player {
         } else if (this.classType === 2) {
             this.renderTemplar(ctx);
         };
+
+    }
+
+    public renderFirstAbilityPointer(ctx: CanvasRenderingContext2D, platforms: Platform[]) {
+        if (this.classType === 1) this.renderFirestrikePointer(ctx, platforms);
+    }
+
+    public renderFirestrikePointer(ctx: CanvasRenderingContext2D, platforms: Platform[]) {
+
+        let x = this.focusPosition.x - 4;
+        let y = this.config.ySize;
+
+        platforms.forEach(platform => {
+            if (platform.position.x < x && platform.position.x + platform.size.width > x && 
+                platform.position.y > this.focusPosition.y - 4) {
+                y = platform.position.y;
+            }
+        });
+
+        ctx.shadowBlur = 7;
+        ctx.shadowColor = "orange";
+
+        ctx.fillStyle = "orange"; // side spikes
+        ctx.beginPath();
+        ctx.moveTo(x + 80, y - 50);
+        ctx.lineTo(x + 70, y);
+        ctx.lineTo(x + 65, y);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - 80, y - 50);
+        ctx.lineTo(x - 70, y);
+        ctx.lineTo(x - 65, y);
+        ctx.fill();
+
+        ctx.beginPath(); // base
+        ctx.moveTo(x - 25, y - 5);
+        ctx.lineTo(x + 25, y - 5);
+        ctx.lineTo(x + 70, y);
+        ctx.lineTo(x - 70, y);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.1;
+        ctx.beginPath(); // pillar
+        ctx.moveTo(x - 60, y - this.config.ySize - 50);
+        ctx.lineTo(x + 60, y - this.config.ySize - 50);
+        ctx.lineTo(x + 65, y);
+        ctx.lineTo(x - 65, y);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+
+        ctx.beginPath(); // orange pointer on mouse
+        ctx.moveTo(this.focusPosition.x - 3, this.focusPosition.y);
+        ctx.lineTo(this.focusPosition.x - 13, this.focusPosition.y - 40);
+        ctx.lineTo(this.focusPosition.x + 7, this.focusPosition.y - 40);
+        ctx.fill();
+
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "gray";
 
     }
 
@@ -270,9 +340,9 @@ export class ClientPlayer extends Player {
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
         if (this.classType === 0) {
-            this.renderWeaponTemplate(ctx, "images/sword.png", 0.20);
+            this.renderWeaponTemplate(ctx, "images/sword.png", 0.17);
         } else if (this.classType === 1) {
-            this.renderWeaponTemplate(ctx, "images/staff.png", 0.21);
+            this.renderWeaponTemplate(ctx, "images/staff.png", 0.24);
         } else if (this.classType === 2) {
             this.renderWeaponTemplate(ctx, "images/hammer.png", 0.25);
         };
@@ -338,7 +408,7 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public projectile() {
+    /*public projectile() {
 
         const power: number = 100;
 
@@ -348,7 +418,7 @@ export class ClientPlayer extends Player {
         if (this.focusPosition.x < 0) newX *= -1;
         if (this.focusPosition.y < 0) newY *= -1;
 
-        /*super.projectile(); // not needed for some reason
+        super.projectile(); // not needed for some reason
         if (this.classType === 0)this.serverTalker.sendMessage({
             type: "projectile",
             projectileType: "arrow",
@@ -363,11 +433,11 @@ export class ClientPlayer extends Player {
             range: 0,
             life: 800, // test
             inGround: false,
-        });*/
-    }
+        });
+    }*/
 
-    public basicAttack(player: Player) {
-        super.basicAttack(player);
+    public basicAttack(players: Player[]) {
+        super.basicAttack(players);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "basicAttack",
@@ -380,6 +450,15 @@ export class ClientPlayer extends Player {
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "secondaryAttack",
+            id: this.id,
+        });
+    }
+
+    public firstAbility(players: Player[], platforms: Platform[]) {
+        super.firstAbility(players, platforms);
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "firstAbility",
             id: this.id,
         });
     }

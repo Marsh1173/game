@@ -4,6 +4,8 @@ import { SerializedProjectile } from "../serialized/projectile";
 
 export class ClientProjectile extends Projectile {
 
+    public projectileImage= new Image();
+
     //private projectileImage = new Image();
     //projectileImage.src = info.image;
 
@@ -22,6 +24,8 @@ export class ClientProjectile extends Projectile {
             info.range,
             info.life,
             info.inGround,);
+
+        this.projectileImage.src = "images/projectiles/" + this.projectileType + ".png";
 
     }
 
@@ -51,15 +55,12 @@ export class ClientProjectile extends Projectile {
         if (this.momentum.x < 0) rotation *= -1;
         if (this.momentum.x < 0) scale *= -1;
 
-        var projectileImage = new Image();
-        projectileImage.src = "images/projectiles/" + this.projectileType + ".png";
-
         ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
 
         if (this.projectileType != 'shuriken') ctx.rotate(rotation + Math.PI / 4);
         else ctx.rotate(this.position.x / 150);
 
-        ctx.drawImage(projectileImage, -projectileImage.width / 2, -projectileImage.height / 2);
+        ctx.drawImage(this.projectileImage, -this.projectileImage.width / 2, -this.projectileImage.height / 2);
         ctx.resetTransform();
 
         ctx.shadowColor = "gray";

@@ -118,13 +118,13 @@ export abstract class Projectile {
     }
 
     public checkCollisionWithPlayer(player: Player, elapsedTime: number): boolean {
-        let futurePosX = this.position.x + this.momentum.x * elapsedTime;
-        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
+        //let futurePosX = this.position.x + this.momentum.x * elapsedTime;
+        //let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
-            futurePosX < player.position.x + player.size.width &&
-            futurePosX > player.position.x &&
-            futurePosY < player.position.y + player.size.height &&
-            futurePosY > player.position.y &&
+            this.position.x < player.position.x + player.size.width &&
+            this.position.x > player.position.x &&
+            this.position.y < player.position.y + player.size.height &&
+            this.position.y > player.position.y &&
             this.id != player.id
         ) {
             if (!player.isDead && !this.inGround) {
@@ -132,7 +132,7 @@ export abstract class Projectile {
 
                     player.damagePlayer(this.damage, this.id, "projectile", this.damageType);
                     if (this.damageType === "poison") player.dotPlayer(2, this.id, "poison", "elemental", 300, 5);
-                    if (this.damageType === "fire") player.dotPlayer(4, this.id, "fire", "elemental", 800, 2);
+                    if (this.damageType === "fire") player.dotPlayer(2, this.id, "fire", "elemental", 500, 2);
                 }
                 this.life = 0;
                 this.inGround = true;
@@ -180,15 +180,15 @@ export abstract class Projectile {
                         player.knockbackPlayer(angle, this.knockback);
 
                         if (this.projectileType === "ice") {
-                            player.moveSpeedModifier /= 3;
+                            player.moveSpeedModifier /= 2;
                             setTimeout(() => {
-                                player.moveSpeedModifier *= 3;
+                                player.moveSpeedModifier *= 2;
                             }, 2000);
                         }
 
                         if (this.projectileType === "shuriken") {
                             players.forEach((player2) => {
-                                if (player2.id === this.id) player2.movePlayer((player.position.x - player2.position.x) * 0.95, (player.position.y - player2.position.y) * 0.95, true);
+                                if (player2.id === this.id) player2.movePlayer((player.position.x - player2.position.x) * 1.1, (player.position.y - player2.position.y) * 1.1, true);
                             });
                         }
                     }
