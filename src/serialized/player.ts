@@ -25,6 +25,7 @@ export interface SerializedPlayer {
     isCharging: number;
     isHit: boolean;
     isShielded: boolean;
+    isStealthed: boolean;
     facing: boolean;
     moveSpeedModifier: number;
 }

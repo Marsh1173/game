@@ -1,8 +1,14 @@
+import { Vector } from "./vector";
+
+const xSize: number = 3000;
+const ySize: number = 600;
+
 export interface Config {
     /**
      * Decides player height and width
      */
     playerSize: number;
+    playerStart: Vector;
     blastRadius: number;
     blastDuration: number;
     blastPower: number;
@@ -26,13 +32,17 @@ export interface Config {
 
 export const defaultConfig: Config = {
     playerSize: 50,
+    playerStart: {
+        x: xSize / 8 + (xSize * 3) / 16,
+        y: ySize * 11 / 20 - 30
+    },
     blastRadius: 180,
     blastDuration: 0.15,
     blastPower: 300000,
     playerJumpHeight: 1000,
     blastCooldown: 20,
-    xSize: 3000,
-    ySize: 600,
+    xSize,
+    ySize,
     playerKeys: {
         up: "KeyW",
         down: "KeyS",

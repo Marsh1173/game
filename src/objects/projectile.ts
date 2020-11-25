@@ -188,7 +188,11 @@ export abstract class Projectile {
 
                         if (this.projectileType === "shuriken") {
                             players.forEach((player2) => {
-                                if (player2.id === this.id) player2.movePlayer((player.position.x - player2.position.x) * 1.1, (player.position.y - player2.position.y) * 1.1, true);
+                                if (player2.id === this.id) {
+                                    player2.revealStealthed(500);
+                                    if (player.facing) player2.movePlayer((player.position.x - player2.position.x - 60), (player.position.y - player2.position.y), true);
+                                    else player2.movePlayer((player.position.x - player2.position.x + 60), (player.position.y - player2.position.y), true);
+                                }
                             });
                         }
                     }

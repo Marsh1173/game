@@ -10,6 +10,7 @@ export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "basic
 
 export abstract class Player {
     public shieldCount = setTimeout(() => "", 1);
+    public stealthCount = setTimeout(() => "", 1);
 
 
     public readonly actionsNextFrame: Record<PlayerActions, boolean> = {
@@ -48,6 +49,7 @@ export abstract class Player {
         public isCharging: number,
         public isHit: boolean, // quick true/false if they've been hit in the last moment
         public isShielded: boolean,
+        public isStealthed: boolean,
         public facing: boolean, // true if facing right, false for left
         public moveSpeedModifier: number, // multiplied by their movespeed and jump height.
 
@@ -103,6 +105,7 @@ export abstract class Player {
             isCharging: this.isCharging,
             isHit: this.isHit,
             isShielded: this.isShielded,
+            isStealthed: this.isStealthed,
             facing: this.facing,
             moveSpeedModifier: this.moveSpeedModifier,
             //damageMitigation: this.damageMitigation,
@@ -263,18 +266,17 @@ export abstract class Player {
         let angle: number = Math.atan(newY / newX);
         if(newX < 0) angle += Math.PI;
 
-
         if (this.classType === 1) this.wizardBasicAttack();
         else {
             players.forEach(player => {
                 if (player.id != this.id) {
+                    
                     if (this.classType === 0) this.basicAttackTemplate(player, 7, "poison", "melee", angle, 100, Math.PI / 6, 10, this.id, 300);
-                    else if (this.classType === 2) this.basicAttackTemplate(player, 17, "crushing", "melee", angle, 120, Math.PI / 3, 25, this.id, 900);
+                    else if (this.classType === 2) this.basicAttackTemplate(player, 15, "crushing", "melee", angle, 130, Math.PI / 3, 30, this.id, 900);
                     //if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this.id, 200);
                 }
             });
         }
-
     }
     public basicAttackTemplate(player: Player,
         damage: number,
@@ -306,11 +308,20 @@ export abstract class Player {
             (enemyAngle > (angle - spread / 2 - (Math.PI * 2)) && enemyAngle < (angle + spread / 2 - (Math.PI * 2))) ||
             distance < meleeRange
             ) {
+
+                if (this.classType === 0){
+                     if (!player.isShielded && !player.isDead) player.dotPlayer(2, id, "poison", "elemental", 250, 6);
+                     if ((player.facing && angle >= Math.PI / -2 && angle <= Math.PI / 2) ||
+                        (!player.facing && angle >= Math.PI / 2 && angle <= Math.PI * 3 / 2)) {
+                            if (this.isStealthed) damage += 15;
+                            else damage += 3;
+                        }
+                }
+
                 player.damagePlayer(damage, id, type, damageType);
-                player.knockbackPlayer(angle, knockback)
+                player.knockbackPlayer(angle, knockback);
 
-
-                if (damageType === "poison" && !player.isShielded && !player.isDead) player.dotPlayer(1, id, "poison", "elemental", 300, 15);
+                this.revealStealthed(20);
             }
         }
         
@@ -325,11 +336,11 @@ export abstract class Player {
         this.doProjectile(
             "fire",
             "fire",
-            10,
+            8,
             this.id,
             this.id,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            { x: 900 * Math.cos(angle), y: 900 * Math.sin(angle)},
+            { x: 1200 * Math.cos(angle), y: 1200 * Math.sin(angle)},
             0,
             0,
             0,
@@ -337,9 +348,9 @@ export abstract class Player {
             false,
         );
 
-        this.moveSpeedModifier /= 1.5;
+        this.moveSpeedModifier /= 1.2;
         setTimeout(() => {
-            this.moveSpeedModifier *= 1.5;
+            this.moveSpeedModifier *= 1.2;
         }, 500);
     }
 
@@ -347,7 +358,6 @@ export abstract class Player {
         this.secondaryAttack(players);
     }
     public secondaryAttack(players: Player[]) {
-
         if (this.classType === 0) this.ninjaSecondaryAttack();
         if (this.classType === 1) this.wizardSecondaryAttack();
         if (this.classType === 2) this.knightSecondaryAttack(players);
@@ -458,7 +468,7 @@ export abstract class Player {
         this.firstAbility(players, platforms);
     }
     public firstAbility(players: Player[], platforms: Platform[]) {
-        //if (this.classType === 0) this.ninjaFirstAbility(platforms);
+        if (this.classType === 0) this.ninjaFirstAbility();
         if (this.classType === 1) this.wizardFirstAbility(platforms);
         if (this.classType === 2) this.knightFirstAbility();
     }
@@ -477,11 +487,11 @@ export abstract class Player {
             "firestrike",
             this.id,
             this.id,
-            {x: this.focusPosition.x - 4, y: y - this.config.ySize - 100},
+            {x: this.focusPosition.x - 4, y: y - this.config.ySize},
             {x: 0, y: 600},
             {x: this.focusPosition.x - 4, y: y},
             false,
-            10,
+            40,
         );
     }
 
@@ -500,8 +510,21 @@ export abstract class Player {
             this.position,
             //{x: this.position.x, y: this.position.y},
             false,
-            2,
+            1,
         );
+    }
+
+    public ninjaFirstAbility() {
+        this.isStealthed = true;
+        this.stealthCount = setTimeout(() => {
+            this.isStealthed = false;
+        }, 6500);
+    }
+
+    public revealStealthed(time: number = 1) {
+        this.stealthCount = setTimeout(() => {
+            this.isStealthed = false;
+        }, time);
     }
 
     public wasHit(changePlayerColor: boolean = true) {
@@ -530,7 +553,7 @@ export abstract class Player {
         }, spacing);
     }
 
-    public damagePlayer(quantity: number, id: number, type: String, damageType: String, ifVisualEffects: boolean = true): boolean {
+    public damagePlayer(quantity: number, id: number, type: String, damageType: String, ifStrong: boolean = true): boolean {
         
         if (this.isShielded) {
             if (type != 'unblockable') return false;
@@ -540,7 +563,10 @@ export abstract class Player {
         
         if (id != -1) this.lastHitBy = id;
         this.health -= quantity;
-        if (ifVisualEffects) this.wasHit();
+        if (ifStrong) {
+            this.revealStealthed();
+            this.wasHit();
+        }
         else this.wasHit(false);
 
         if (this.health <= 0) {
@@ -567,6 +593,7 @@ export abstract class Player {
     }
 
     public die() {
+        this.revealStealthed();
         console.log(this.id + " was killed by " + this.lastHitBy);
         this.lastHitBy = -1;
         this.isDead = true;
@@ -574,14 +601,14 @@ export abstract class Player {
 
     public resurrect() {
         this.isDead = false;
-        this.position.x = this.config.xSize / 2 - this.size.height / 2;
-        this.position.y = 200;
+        this.position.x = this.config.playerStart.x + Math.random() * (this.config.xSize * 3 / 8 - this.config.playerSize);
+        this.position.y = this.config.playerStart.y;
         this.deathCooldown = 150;
         this.health = 100;
         this.momentum.x = 0;
         this.momentum.y = 0;
+
         this.isShielded = true;
-        clearTimeout(this.shieldCount);
         this.shieldCount = setTimeout(() => {
             this.isShielded = false;
         }, 3000);

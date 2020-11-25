@@ -62,6 +62,7 @@ export class ClientPlayer extends Player {
             info.isCharging,
             info.isHit,
             info.isShielded,
+            info.isStealthed,
             info.facing,
             info.moveSpeedModifier,
             doBlast,
@@ -190,6 +191,33 @@ export class ClientPlayer extends Player {
         ctx.lineTo(this.focusPosition.x + 7, this.focusPosition.y - 40);
         ctx.fill();
 
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "gray";
+
+    }
+
+    public renderInvisiblePlayer(ctx: CanvasRenderingContext2D) {
+
+        ctx.fillStyle = "black";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 100;
+        ctx.globalAlpha = 0.7;
+
+
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.beginPath(); // circle
+        ctx.arc(this.position.x + this.size.width / 2 - this.momentum.x / 50, this.position.y + this.size.height / 2 - this.momentum.y / 50, 300, 0, 2 * Math.PI);
+        ctx.fill();
+
+
+        ctx.globalCompositeOperation = "source-over";
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
+
+        ctx.globalAlpha = 1;
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
 

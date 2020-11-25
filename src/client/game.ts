@@ -127,7 +127,7 @@ export class Game {
             } else if (e.button === 2) {
                 //right mouse button click
                 this.cancelAbilites();
-                if (playerWithId.classType != 1 && this.rightClickCounter <= 0 ) {
+                if (!playerWithId.isDead && playerWithId.classType != 1 && this.rightClickCounter <= 0 ) {
                     playerWithId.attemptSecondaryAttack(this.players);
                     this.rightClickCounter = this.rightClickCooldown;
                 } else if (playerWithId.classType === 1) this.isRightClicking = true;
@@ -166,7 +166,7 @@ export class Game {
                 !this.isLeftClicking){
                     const playerWithId = this.findPlayer();
                     this.cancelAbilites();
-                    if (playerWithId.classType === 2 && this.firstAbilityCounter <= 0) {
+                    if (!playerWithId.isDead && playerWithId.classType === 2 && this.firstAbilityCounter <= 0) {
                         playerWithId.attemptfirstAbility(this.players, this.platforms);
                         this.firstAbilityCounter = this.firstAbilityCooldown;
                     } else if (playerWithId.classType != 2) {
@@ -303,24 +303,33 @@ export class Game {
 
     private render() {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
+
+        const playerWithId = this.findPlayer();
+
+        if (!playerWithId.isStealthed && Game.canvas.style.background != "#2e3133") Game.canvas.style.background = "#2e3133";
+        else if (playerWithId.isStealthed && Game.canvas.style.background != "#191b1c") Game.canvas.style.background = "#191b1c";
+
         this.projectiles.forEach((projectile) => projectile.render(Game.ctx));
         this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.render(Game.ctx));
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.players.forEach((player) => {
-            player.render(Game.ctx);
+            if (!player.isStealthed) player.render(Game.ctx);
         });
         this.players.forEach((player) => {
             if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
             }
-            if (!player.isDead){
+            if (!player.isDead && !player.isStealthed){
                 player.renderWeapon(Game.ctx);
             }
         });
         this.players.forEach((player) => {
-            if (player.id != this.id && !player.isDead) player.renderName(Game.ctx);
+            if (!player.isStealthed && player.id != this.id && !player.isDead) player.renderName(Game.ctx);
         });
-        this.blasts.forEach((blast) => blast.render(Game.ctx));
+        if (playerWithId.isStealthed) {
+            playerWithId.renderInvisiblePlayer(Game.ctx);
+        }
+        //this.blasts.forEach((blast) => blast.render(Game.ctx));
     }
 
     private updateSlider() {
@@ -358,20 +367,20 @@ export class Game {
     private setCooldowns(player: Player) { // sets cooldowns based on player class
         if (player.classType === 0) {
             this.leftClickCooldown = 0.2; // ninja shank
-            this.rightClickCooldown = 2.5; // shuriken
-            this.firstAbilityCooldown = 20; //
+            this.rightClickCooldown = 3; // shuriken
+            this.firstAbilityCooldown = 12; // stealth
             safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/swordBasicAttack.png");
             safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shurikenSecondary.png");
             safeGetElementById('firstAbilityImg').setAttribute('src', "images/abilites/stealth.png");
         } else if (player.classType === 1) {
-            this.leftClickCooldown = 0.4; // fireball
+            this.leftClickCooldown = 0.3; // fireball
             this.rightClickCooldown = 4; // ice spike
-            this.firstAbilityCooldown = 4; // //firestrike
+            this.firstAbilityCooldown = 4.5; // //firestrike
             safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/fireballBasicAttack.png");
             safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/iceSecondary.png");
             safeGetElementById('firstAbilityImg').setAttribute('src', "images/abilites/firestrike.png");
         } else if (player.classType === 2) {
-            this.leftClickCooldown = 0.4; // hammer bash
+            this.leftClickCooldown = 0.3; // hammer bash
             this.rightClickCooldown = 1.5; // shield bash
             this.firstAbilityCooldown = 2.5; //
             safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/hammerBasicAttack.png");

@@ -54,7 +54,7 @@ export abstract class TargetedProjectile {
 
         let distance = Math.sqrt(Math.pow(this.destination.x - this.position.x, 2) + Math.pow(this.destination.y - this.position.y, 2))
         if (distance < 50) this.isDead = true;*/
-        this.life -= elapsedTime * 4;
+        this.life -= elapsedTime;
         if(this.targetedProjectileType === "firestrike") this.updateFirestrike(elapsedTime, players);
         else if(this.targetedProjectileType === "chains") this.updateChains(elapsedTime, players);
         if (this.life <= 0) this.isDead = true;
@@ -62,7 +62,7 @@ export abstract class TargetedProjectile {
     }
 
     private updateFirestrike(elapsedTime: number, players: Player[]) {
-        this.momentum.y += 50;
+        this.momentum.y += 20;
 
         this.position.y += this.momentum.y * elapsedTime;
 
@@ -81,7 +81,7 @@ export abstract class TargetedProjectile {
                 let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
                 if (!player.isDead && distance < 100) {
 
-                    if (this.id != player.id) player.damagePlayer(30, this.id, "fire", "ranged");
+                    if (this.id != player.id) player.damagePlayer(40, this.id, "fire", "ranged");
 
                     let newX: number = (player.position.x + player.size.width / 2 - this.position.x);
                     let newY: number = (player.position.y + player.size.height / 2 - this.position.y);

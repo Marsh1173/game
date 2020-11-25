@@ -43,8 +43,8 @@ export class ServerPlayer extends Player {
             0,
             0,
             {
-                x: config.xSize / 8,
-                y: (config.ySize * 3) / 4 - config.playerSize,
+                x: config.playerStart.x,
+                y: config.playerStart.y,
             },
             { x: 0, y: 0 },
             color,
@@ -64,6 +64,7 @@ export class ServerPlayer extends Player {
                 y: 0,
             },
             0,
+            false,
             false,
             false,
             true,

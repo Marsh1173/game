@@ -34,10 +34,9 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
-        var scale: number = 1;
+        var scale: number = 0.5;
         ctx.shadowColor = "red";
-        ctx.shadowBlur = 20;
-        scale = 0.6;
+        ctx.shadowBlur = 50;
 
         if (this.momentum.x < 0) rotation *= -1;
         if (this.momentum.x < 0) scale *= -1;

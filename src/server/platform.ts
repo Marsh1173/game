@@ -20,7 +20,7 @@ export const getDefaultPlatformList = (config: Config) => {
             },
             {
                 x: config.xSize / 8,
-                y: (config.ySize * 3) / 4,
+                y: (config.ySize * 3) / 4 + 30,
             },
             config,
         ),
@@ -30,8 +30,8 @@ export const getDefaultPlatformList = (config: Config) => {
                 width: (config.xSize * 3) / 8,
             },
             {
-                x: config.xSize / 8 + (config.xSize * 3) / 4 / 4,
-                y: config.ySize * 11 / 20 - 10,
+                x: config.xSize / 8 + (config.xSize * 3) / 16,
+                y: config.ySize * 11 / 20 + 20,
             },
             config,
         ),
@@ -42,7 +42,7 @@ export const getDefaultPlatformList = (config: Config) => {
             },
             {
                 x: (config.xSize * 3) / 4,
-                y: config.ySize * 2 / 5 - 50,
+                y: config.ySize * 2 / 5 - 20,
             },
             config,
         ),
@@ -53,7 +53,7 @@ export const getDefaultPlatformList = (config: Config) => {
             },
             {
                 x: (config.xSize * -1) / 8,
-                y: config.ySize * 2 / 5 - 50,
+                y: config.ySize * 2 / 5 - 20,
             },
             config,
         ),
