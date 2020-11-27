@@ -24,7 +24,7 @@ app.get("/bundle.js", (request, response) => {
 app.post("/join", (request, response) => {
     const joinRequest: JoinRequest = request.body;
     const newId = Player.getNextId();
-    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType, {x: defaultConfig.playerStart.x, y: defaultConfig.playerStart.y});
+    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType, { x: defaultConfig.playerStart.x, y: defaultConfig.playerStart.y });
     const joinResponse: JoinResponse = {
         id: newId,
         config: game.config,
@@ -35,7 +35,7 @@ app.post("/join", (request, response) => {
 
 app.ws("/:id", (ws, request) => {
     const clientId = parseInt(request.params.id);
-    game.clientMap[clientId] = (message: ServerMessage) => {
+    Game.clientMap[clientId] = (message: ServerMessage) => {
         if (ws.OPEN) {
             ws.send(JSON.stringify(message));
         } else {
@@ -48,7 +48,7 @@ app.ws("/:id", (ws, request) => {
         game.handleMessage(clientId, data);
     });
     ws.on("close", () => {
-        delete game.clientMap[clientId];
+        delete Game.clientMap[clientId];
         game.removePlayer(clientId);
     });
 });

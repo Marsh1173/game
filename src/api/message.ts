@@ -21,7 +21,12 @@ export interface InfoMessage {
     info: AllInfo;
 }
 
-export type ServerMessage = PlayerInfoMessage | PlayerLeavingMessage | InfoMessage;
+export interface LevelUpMessage {
+    type: "levelUp";
+    id: number;
+}
+
+export type ServerMessage = PlayerInfoMessage | PlayerLeavingMessage | InfoMessage | LevelUpMessage;
 
 export interface ActionMessage {
     type: "action";
@@ -31,30 +36,30 @@ export interface ActionMessage {
 
 export interface ProjectileMessage {
     type: "projectile";
-    projectileType: ProjectileType,
-    damageType: string,
-    damage: number,
-    id: number,
-    team: number,
-    position: Vector,
-    momentum: Vector,
-    fallSpeed: number,
-    knockback: number,
-    range: number,
-    life: number,
-    inGround: boolean
+    projectileType: ProjectileType;
+    damageType: string;
+    damage: number;
+    id: number;
+    team: number;
+    position: Vector;
+    momentum: Vector;
+    fallSpeed: number;
+    knockback: number;
+    range: number;
+    life: number;
+    inGround: boolean;
 }
 
 export interface TargetedProjectileMessage {
     type: "targetedProjectile";
-    targetedProjectileType: TargetedProjectileType,
-    id: number,
-    team: number,
-    position: Vector,
-    momentum: Vector,
-    destination: Vector,
-    isDead: boolean,
-    life: number
+    targetedProjectileType: TargetedProjectileType;
+    id: number;
+    team: number;
+    position: Vector;
+    momentum: Vector;
+    destination: Vector;
+    isDead: boolean;
+    life: number;
 }
 
 export interface MouseMessage {

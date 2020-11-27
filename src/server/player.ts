@@ -1,3 +1,4 @@
+import { Game } from "../server/game";
 import { Config } from "../config";
 import { Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
@@ -80,5 +81,13 @@ export class ServerPlayer extends Player {
             doProjectile,
             doTargetedProjectile,
         );
+    }
+
+    protected levelUp() {
+        super.levelUp();
+        Game.broadcastMessage({
+            type: "levelUp",
+            id: this.id,
+        });
     }
 }

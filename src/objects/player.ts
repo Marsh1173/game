@@ -631,10 +631,12 @@ export abstract class Player {
 
     private getAKill() {
         this.killCount++;
-        if (this.killCount % 4 === 0) this.levelUp();
+        while (Math.floor(this.killCount / 4) > this.level) {
+            this.levelUp();
+        }
     }
 
-    private levelUp() {
+    protected levelUp() {
         const rand: number = Math.floor(Math.random() * 3);
         switch (rand) {
             case 0:

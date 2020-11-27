@@ -4,14 +4,12 @@ import { ServerProjectile } from "./projectile";
 import { ServerTargetedProjectile } from "./targetedProjectile";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
 import { ServerPlayer } from "./player";
-import * as wsWebsocket from "ws";
 import { ClientMessage, InfoMessage, PlayerLeavingMessage, ServerMessage } from "../api/message";
 import { Vector } from "../vector";
 import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { PlayerAI } from "./playerai";
-import { Player } from "../objects/player";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -22,7 +20,12 @@ export class Game {
     private projectiles: ServerProjectile[] = [];
     private targetedProjectiles: ServerTargetedProjectile[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
-    public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
+    public static readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
+    public static broadcastMessage(msg: ServerMessage) {
+        Object.values(Game.clientMap).forEach((sendFunction) => {
+            sendFunction(msg);
+        });
+    }
 
     private aiId: number;
 
@@ -68,20 +71,12 @@ export class Game {
             type: "info",
             info: this.allInfo(),
         };
-        Object.values(this.clientMap).forEach((sendFunction) => {
-            sendFunction(data);
-        });
+        Game.broadcastMessage(data);
     }
 
-
-
     public update(elapsedTime: number) {
-
         this.updateObjects(elapsedTime);
         this.updateObjectsSecondary(elapsedTime);
-
-
-
     }
 
     private updateObjects(elapsedTime: number) {
@@ -101,13 +96,11 @@ export class Game {
     }
 
     private updateObjectsSecondary(elapsedTime: number) {
-
         this.players.forEach((player1) => {
             this.platforms.forEach((platform) => {
                 player1.checkCollisionWithRectangularObject(platform, elapsedTime);
             });
         });
-
     }
 
     public newPlayer(id: number, name: string, color: string, classType: number, position: Vector) {
@@ -121,7 +114,8 @@ export class Game {
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
             },
-            (projectileType: ProjectileType,
+            (
+                projectileType: ProjectileType,
                 damageType: string,
                 damage: number,
                 id: number,
@@ -132,17 +126,20 @@ export class Game {
                 knockback: number,
                 range: number,
                 life: number,
-                inGround: boolean) => {
+                inGround: boolean,
+            ) => {
                 this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
             },
-            (targetedProjectileType: TargetedProjectileType,
+            (
+                targetedProjectileType: TargetedProjectileType,
                 id: number,
                 team: number,
                 position: Vector,
                 momentum: Vector,
                 destination: Vector,
                 isDead: boolean,
-                life: number) => {
+                life: number,
+            ) => {
                 this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
             },
         );
@@ -160,7 +157,8 @@ export class Game {
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
             },
-            (projectileType: ProjectileType,
+            (
+                projectileType: ProjectileType,
                 damageType: string,
                 damage: number,
                 id: number,
@@ -171,17 +169,20 @@ export class Game {
                 knockback: number,
                 range: number,
                 life: number,
-                inGround: boolean) => {
+                inGround: boolean,
+            ) => {
                 this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
             },
-            (targetedProjectileType: TargetedProjectileType,
+            (
+                targetedProjectileType: TargetedProjectileType,
                 id: number,
                 team: number,
                 position: Vector,
                 momentum: Vector,
                 destination: Vector,
                 isDead: boolean,
-                life: number) => {
+                life: number,
+            ) => {
                 this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
             },
         );
@@ -194,9 +195,7 @@ export class Game {
             type: "playerLeaving",
             id,
         };
-        Object.values(this.clientMap).forEach((sendFunction) => {
-            sendFunction(leavingMessage);
-        });
+        Game.broadcastMessage(leavingMessage);
     }
 
     public handleMessage(id: number, data: ClientMessage) {
@@ -290,7 +289,8 @@ export class Game {
         });
     }
 
-    private projectile(projectileType: ProjectileType,
+    private projectile(
+        projectileType: ProjectileType,
         damageType: string,
         damage: number,
         id: number,
@@ -301,7 +301,8 @@ export class Game {
         knockback: number,
         range: number,
         life: number,
-        inGround: boolean) {
+        inGround: boolean,
+    ) {
         const projectile = new ServerProjectile(this.config, {
             projectileType,
             damageType,
@@ -319,14 +320,16 @@ export class Game {
         this.projectiles.push(projectile);
     }
 
-    private targetedProjectile(targetedProjectileType: TargetedProjectileType,
+    private targetedProjectile(
+        targetedProjectileType: TargetedProjectileType,
         id: number,
         team: number,
         position: Vector,
         momentum: Vector,
         destination: Vector,
         isDead: boolean,
-        life: number) {
+        life: number,
+    ) {
         const targetedProjectile = new ServerTargetedProjectile(this.config, {
             targetedProjectileType,
             id,
@@ -341,7 +344,7 @@ export class Game {
     }
 
     private makePlayer() {
-        this.newPlayerAI(this.aiId, "AI", "#800d0d", -1, {x: this.config.xSize / 3 + Math.random() * 800, y: this.config.ySize * 3 / 4 - 90});
+        this.newPlayerAI(this.aiId, "AI", "#800d0d", -1, { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
         this.aiId--;
         setTimeout(() => {
             this.makePlayer();
