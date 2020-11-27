@@ -1,4 +1,3 @@
-import { time } from "console";
 import { AllInfo } from "../api/allinfo";
 import { ServerMessage } from "../api/message";
 import { Config } from "../config";
@@ -13,13 +12,14 @@ import { ClientPlatform } from "./platform";
 import { ClientPlayer } from "./player";
 import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
-import { createTextChangeRange } from "typescript";
+import { ParticleSystem } from "./particle";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
     private static readonly gameDiv = safeGetElementById("gameDiv");
     private static readonly canvas = safeGetElementById("canvas") as HTMLCanvasElement;
     private static readonly ctx = Game.canvas.getContext("2d")!;
+    public static readonly particleHandler = new ParticleSystem();
     private readonly keyState: Record<string, boolean> = {};
     private players: ClientPlayer[] = [];
     private blasts: ClientBlast[] = [];
@@ -105,6 +105,27 @@ export class Game {
         this.setCooldowns(this.findPlayer());
 
         this.serverTalker.messageHandler = (msg: ServerMessage) => {
+            switch (msg.type) {
+                case "info":
+                    this.constructGame(msg.info);
+                    break;
+                case "levelUp":
+                    const player = this.players.find((player) => player.id === msg.id)!;
+                    Game.particleHandler.newEffect({
+                        particleType: "smoke",
+                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2 },
+                        particleSize: { width: 50, height: 50 },
+                        particleSpeed: { mean: 300, stdev: 200 },
+                        particleLifetime: { mean: 0.4, stdev: 0.3 },
+                        particleAmt: 70,
+                    });
+                    break;
+                case "playerLeaving":
+                    // We don't do anything here yet
+                    break;
+                default:
+                    throw new Error("Unrecognized message from server");
+            }
             if (msg.type === "info") {
                 this.constructGame(msg.info);
             }
@@ -248,6 +269,8 @@ export class Game {
             playerWithId.attemptMoveRight(elapsedTime);
         }
 
+        Game.particleHandler.update(elapsedTime);
+
         /*if (this.keyState[this.config.playerKeys.down]) {
             playerWithId.attemptBlast(elapsedTime);
             this.keyState[this.config.playerKeys.down] = false;
@@ -319,6 +342,7 @@ export class Game {
                 player.renderWeapon(Game.ctx);
             }
         });
+        Game.particleHandler.render(Game.ctx);
         this.players.forEach((player) => {
             if (!player.isStealthed && player.id != this.id && !player.isDead) player.renderName(Game.ctx);
             //player.renderFocus(Game.ctx); //FOR DEBUGGING
