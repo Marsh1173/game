@@ -8,12 +8,12 @@ import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Platform } from "../objects/platform";
 
 export class ClientPlayer extends Player {
-    
     constructor(
         config: Config,
         info: SerializedPlayer,
         doBlast: (position: Vector, color: string, id: number) => void,
-        doProjectile: (projectileType: ProjectileType,
+        doProjectile: (
+            projectileType: ProjectileType,
             damageType: string,
             damage: number,
             id: number,
@@ -24,15 +24,18 @@ export class ClientPlayer extends Player {
             knockback: number,
             range: number,
             life: number,
-            inGround: boolean) => void,
-        doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,
+            inGround: boolean,
+        ) => void,
+        doTargetedProjectile: (
+            targetedProjectileType: TargetedProjectileType,
             id: number,
             team: number,
             position: Vector,
             momentum: Vector,
             destination: Vector,
             isDead: boolean,
-            life: number,) => void,
+            life: number,
+        ) => void,
         private readonly serverTalker: ServerTalker,
         private readonly isClientPlayer: number,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
@@ -65,6 +68,8 @@ export class ClientPlayer extends Player {
             info.isStealthed,
             info.facing,
             info.moveSpeedModifier,
+            info.healthModifier,
+            info.level,
             doBlast,
             doProjectile,
             doTargetedProjectile,
@@ -93,7 +98,6 @@ export class ClientPlayer extends Player {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
-
         if (this.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
@@ -122,8 +126,6 @@ export class ClientPlayer extends Player {
         }
 
         //reset
-        
-
 
         //renders the gear
         if (this.classType === 0) {
@@ -132,9 +134,7 @@ export class ClientPlayer extends Player {
             this.renderWizard(ctx);
         } else if (this.classType === 2) {
             this.renderTemplar(ctx);
-        };
-
-
+        }
 
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
@@ -146,13 +146,11 @@ export class ClientPlayer extends Player {
     }
 
     public renderFirestrikePointer(ctx: CanvasRenderingContext2D, platforms: Platform[]) {
-
         let x = this.focusPosition.x - 4;
         let y = this.config.ySize;
 
-        platforms.forEach(platform => {
-            if (platform.position.x < x && platform.position.x + platform.size.width > x && 
-                platform.position.y > this.focusPosition.y - 4) {
+        platforms.forEach((platform) => {
+            if (platform.position.x < x && platform.position.x + platform.size.width > x && platform.position.y > this.focusPosition.y - 4) {
                 y = platform.position.y;
             }
         });
@@ -196,22 +194,24 @@ export class ClientPlayer extends Player {
 
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
-
     }
 
     public renderInvisiblePlayer(ctx: CanvasRenderingContext2D) {
-
         ctx.fillStyle = "black";
         ctx.shadowColor = "black";
         ctx.shadowBlur = 100;
         ctx.globalAlpha = 0.7;
 
-
         ctx.globalCompositeOperation = "destination-in";
         ctx.beginPath(); // circle
-        ctx.arc(this.position.x + this.size.width / 2 - this.momentum.x / 50, this.position.y + this.size.height / 2 - this.momentum.y / 50, 300, 0, 2 * Math.PI);
+        ctx.arc(
+            this.position.x + this.size.width / 2 - this.momentum.x / 50,
+            this.position.y + this.size.height / 2 - this.momentum.y / 50,
+            300,
+            0,
+            2 * Math.PI,
+        );
         ctx.fill();
-
 
         ctx.globalCompositeOperation = "source-over";
         ctx.shadowBlur = 10;
@@ -223,7 +223,6 @@ export class ClientPlayer extends Player {
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
-
     }
 
     public renderName(ctx: CanvasRenderingContext2D) {
@@ -236,25 +235,28 @@ export class ClientPlayer extends Player {
         //ctx.fillText(this.killCount.toString(), this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
 
         ctx.fillStyle = "red";
-        ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * 3 / 4), 4);
+        ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (this.size.width * 3) / 4, 4);
         if (this.isHit) {
             ctx.shadowBlur = 2;
             ctx.fillStyle = "white";
             ctx.shadowColor = "white";
-            ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, ((this.size.width * this.health / (100 + this.healthModifier)) * 3 / 4) + 2, 4);
+            ctx.fillRect(
+                this.position.x + this.size.width / 8,
+                this.position.y - 10,
+                (((this.size.width * this.health) / (100 + this.healthModifier)) * 3) / 4 + 2,
+                4,
+            );
         }
         ctx.fillStyle = "#32a852";
-        ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * this.health / (100 + this.healthModifier)) * 3 / 4, 4);
+        ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (((this.size.width * this.health) / (100 + this.healthModifier)) * 3) / 4, 4);
 
         ctx.shadowColor = "gray";
         ctx.shadowBlur = 2;
     }
 
     public renderFocus(ctx: CanvasRenderingContext2D) {
-        
         ctx.fillStyle = "red";
         ctx.fillRect(this.focusPosition.x - 6, this.focusPosition.y - 6, 6, 6);
-
     }
 
     public renderNinja(ctx: CanvasRenderingContext2D) {
@@ -284,7 +286,6 @@ export class ClientPlayer extends Player {
     }
 
     public renderWizard(ctx: CanvasRenderingContext2D) {
-
         ctx.shadowBlur = 0;
 
         //beard
@@ -323,14 +324,12 @@ export class ClientPlayer extends Player {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-
         //reset
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
     }
 
     public renderTemplar(ctx: CanvasRenderingContext2D) {
-
         ctx.shadowBlur = 0;
 
         //scarf
@@ -360,29 +359,44 @@ export class ClientPlayer extends Player {
         } else if (this.classType === 2) {
             this.renderWeaponTemplate(ctx, "images/hammer.png", 0.25);
         } else if (this.classType === -1) {
-            this.renderWeaponTemplate(ctx, "images/axe.png", 0.20);
+            this.renderWeaponTemplate(ctx, "images/axe.png", 0.2);
         }
     }
 
     public renderWeaponTemplate(ctx: CanvasRenderingContext2D, imgSrc: string, scale: number) {
         ctx.shadowBlur = 0;
 
-        let rotation: number = Math.atan((this.focusPosition.y - this.position.y - this.size.height / 2)
-         / (this.focusPosition.x - this.position.x - this.size.width / 2));
+        let rotation: number = Math.atan(
+            (this.focusPosition.y - this.position.y - this.size.height / 2) / (this.focusPosition.x - this.position.x - this.size.width / 2),
+        );
 
         var imgDagger = new Image();
         imgDagger.src = imgSrc;
 
-        if ((this.focusPosition.x - this.position.x - this.size.width / 2) < 0) {
+        if (this.focusPosition.x - this.position.x - this.size.width / 2 < 0) {
             scale *= -1;
             rotation *= -1;
-            ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 - 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
+            ctx.setTransform(
+                scale,
+                0,
+                0,
+                Math.abs(scale),
+                this.position.x + this.size.width / 2 - 40 * Math.cos(rotation),
+                this.position.y + this.size.height / 2 + 40 * Math.sin(rotation),
+            );
         } else {
-            ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 + 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
+            ctx.setTransform(
+                scale,
+                0,
+                0,
+                Math.abs(scale),
+                this.position.x + this.size.width / 2 + 40 * Math.cos(rotation),
+                this.position.y + this.size.height / 2 + 40 * Math.sin(rotation),
+            );
         }
-        
+
         ctx.rotate(rotation + Math.PI / 4 + this.animationFrame);
-        ctx.drawImage(imgDagger, -imgDagger.width * 2 / 3, -imgDagger.height * 3 / 4 - (this.animationFrame * 60));
+        ctx.drawImage(imgDagger, (-imgDagger.width * 2) / 3, (-imgDagger.height * 3) / 4 - this.animationFrame * 60);
         ctx.resetTransform();
 
         ctx.shadowBlur = 2;
@@ -478,5 +492,4 @@ export class ClientPlayer extends Player {
             id: this.id,
         });
     }
-
 }

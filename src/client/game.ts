@@ -13,6 +13,7 @@ import { ClientPlatform } from "./platform";
 import { ClientPlayer } from "./player";
 import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
+import { createTextChangeRange } from "typescript";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
@@ -60,7 +61,8 @@ export class Game {
                     (position: Vector, color: string, id: number) => {
                         this.blast(position, color, id);
                     },
-                    (projectileType: ProjectileType,
+                    (
+                        projectileType: ProjectileType,
                         damageType: string,
                         damage: number,
                         id: number,
@@ -71,17 +73,20 @@ export class Game {
                         knockback: number,
                         range: number,
                         life: number,
-                        inGround: boolean) => {
+                        inGround: boolean,
+                    ) => {
                         this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
                     },
-                    (targetedProjectileType: TargetedProjectileType,
+                    (
+                        targetedProjectileType: TargetedProjectileType,
                         id: number,
                         team: number,
                         position: Vector,
                         momentum: Vector,
                         destination: Vector,
                         isDead: boolean,
-                        life: number) => {
+                        life: number,
+                    ) => {
                         this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
                     },
                     this.serverTalker,
@@ -108,7 +113,6 @@ export class Game {
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
         safeGetElementById("slider").onmousedown = (e: MouseEvent) => {
-
             const playerWithId = this.findPlayer();
 
             if (e.button === 0) {
@@ -121,28 +125,27 @@ export class Game {
                     this.animationFrame = 2;
                     this.leftClickCounter = this.leftClickCooldown;
 
-                    playerWithId.attemptBasicAttack(this.players)
+                    playerWithId.attemptBasicAttack(this.players);
                 }
-
             } else if (e.button === 2) {
                 //right mouse button click
                 this.cancelAbilites();
-                if (!playerWithId.isDead && playerWithId.classType != 1 && this.rightClickCounter <= 0 ) {
+                if (!playerWithId.isDead && playerWithId.classType != 1 && this.rightClickCounter <= 0) {
                     playerWithId.attemptSecondaryAttack(this.players);
                     this.rightClickCounter = this.rightClickCooldown;
                 } else if (playerWithId.classType === 1) this.isRightClicking = true;
             }
         };
         window.onmouseup = (e: MouseEvent) => {
-
             const playerWithId = this.findPlayer();
 
-            if (e.button === 0 && this.isLeftClicking) { // left mouse release
+            if (e.button === 0 && this.isLeftClicking) {
+                // left mouse release
                 this.isLeftClicking = false;
                 this.isLeftCharging = 0;
                 this.animationFrame = 0;
-
-            } else if (e.button === 2 && this.isRightClicking) { // right mouse release
+            } else if (e.button === 2 && this.isRightClicking) {
+                // right mouse release
 
                 this.isRightClicking = false;
                 //add right mouse charged ability register that passes isRightCharging
@@ -151,7 +154,6 @@ export class Game {
                     this.rightClickCounter = this.rightClickCooldown;
                 }
                 this.isRightCharging = 0;
-
             }
         };
         window.onmousemove = (e: MouseEvent) => {
@@ -159,11 +161,8 @@ export class Game {
             this.mousePos.y = e.clientY;
         };
         window.onkeydown = (e: KeyboardEvent) => {
-            
-            if (e.code === "ShiftLeft")  {
-                if (!this.keyState["ShiftLeft"] &&
-                !this.isRightClicking &&
-                !this.isLeftClicking){
+            if (e.code === "ShiftLeft") {
+                if (!this.keyState["ShiftLeft"] && !this.isRightClicking && !this.isLeftClicking) {
                     const playerWithId = this.findPlayer();
                     this.cancelAbilites();
                     if (!playerWithId.isDead && playerWithId.classType === 2 && this.firstAbilityCounter <= 0) {
@@ -173,8 +172,7 @@ export class Game {
                         this.keyState[e.code] = true;
                     }
                 }
-            }
-            else this.keyState[e.code] = true;
+            } else this.keyState[e.code] = true;
         };
         window.onkeyup = (e: KeyboardEvent) => {
             if (e.code === "ShiftLeft") {
@@ -187,8 +185,7 @@ export class Game {
                     this.keyState["ShiftLeft"] = false;
                     this.firstAbilityCharging = 0;
                 }
-            }
-            else this.keyState[e.code] = false;
+            } else this.keyState[e.code] = false;
         };
     }
 
@@ -225,7 +222,6 @@ export class Game {
     }
 
     private update(elapsedTime: number) {
-
         const playerWithId = this.findPlayer();
 
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPos;
@@ -234,11 +230,10 @@ export class Game {
 
         this.updateMouse(elapsedTime, playerWithId);
 
-        this.updateCooldowns(elapsedTime, playerWithId);
-        
+        this.updateHTML(elapsedTime, playerWithId);
+
         this.updateSlider();
 
-        
         if (this.keyState[this.config.playerKeys.up]) {
             playerWithId.attemptJump();
             this.keyState[this.config.playerKeys.up] = false;
@@ -249,7 +244,7 @@ export class Game {
         if (this.keyState[this.config.playerKeys.right]) {
             playerWithId.attemptMoveRight(elapsedTime);
         }
-        
+
         /*if (this.keyState[this.config.playerKeys.down]) {
             playerWithId.attemptBlast(elapsedTime);
             this.keyState[this.config.playerKeys.down] = false;
@@ -281,7 +276,6 @@ export class Game {
     }
 
     private updateMouse(elapsedTime: number, player: Player) {
-
         if (player.isDead) {
             this.isRightCharging = 0;
             this.isLeftCharging = 0;
@@ -298,7 +292,6 @@ export class Game {
                 else if (this.firstAbilityCharging > 1) this.firstAbilityCharging = 1;
             }
         }
-
     }
 
     private render() {
@@ -319,7 +312,7 @@ export class Game {
             if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
             }
-            if (!player.isDead && !player.isStealthed){
+            if (!player.isDead && !player.isStealthed) {
                 player.renderWeapon(Game.ctx);
             }
         });
@@ -330,7 +323,6 @@ export class Game {
         if (playerWithId.isStealthed) {
             playerWithId.renderInvisiblePlayer(Game.ctx);
         }
-        //this.blasts.forEach((blast) => blast.render(Game.ctx));
     }
 
     private updateSlider() {
@@ -365,72 +357,77 @@ export class Game {
         //safeGetElementById("slideBackground").style.left = (this.screenPos * 2 / 3) + "px";
     }
 
-    private setCooldowns(player: Player) { // sets cooldowns based on player class
+    private setCooldowns(player: Player) {
+        // sets cooldowns based on player class
         if (player.classType === 0) {
             this.leftClickCooldown = 0.2; // ninja shank
             this.rightClickCooldown = 3; // shuriken
             this.firstAbilityCooldown = 12; // stealth
-            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/swordBasicAttack.png");
-            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shurikenSecondary.png");
-            safeGetElementById('firstAbilityImg').setAttribute('src', "images/abilites/stealth.png");
+            safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/swordBasicAttack.png");
+            safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shurikenSecondary.png");
+            safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/stealth.png");
         } else if (player.classType === 1) {
             this.leftClickCooldown = 0.3; // fireball
             this.rightClickCooldown = 4; // ice spike
             this.firstAbilityCooldown = 4.5; // //firestrike
-            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/fireballBasicAttack.png");
-            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/iceSecondary.png");
-            safeGetElementById('firstAbilityImg').setAttribute('src', "images/abilites/firestrike.png");
+            safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/fireballBasicAttack.png");
+            safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/iceSecondary.png");
+            safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/firestrike.png");
         } else if (player.classType === 2) {
             this.leftClickCooldown = 0.3; // hammer bash
             this.rightClickCooldown = 1.5; // shield bash
             this.firstAbilityCooldown = 2.5; //
-            safeGetElementById('basicAttackImg').setAttribute('src', "images/abilites/hammerBasicAttack.png");
-            safeGetElementById('secondaryAttackImg').setAttribute('src', "images/abilites/shieldSecondary.png");
-            safeGetElementById('firstAbilityImg').setAttribute('src', "images/abilites/chains.png");
+            safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/hammerBasicAttack.png");
+            safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shieldSecondary.png");
+            safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/chains.png");
         }
 
         this.isRightCharging = 0;
         safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
     }
 
-    private updateCooldowns(elapsedTime: number, player: Player) { // updates player's cooldown icons
-        
-        safeGetElementById("health").style.width = (player.health + player.healthModifier) / (100 + player.healthModifier) * 102 + "%";
+    private updateHTML(elapsedTime: number, player: Player) {
+        // updates player's cooldown icons
+
+        safeGetElementById("health").style.width = (player.health / (100 + player.healthModifier)) * 102 + "%";
         if (player.isShielded) safeGetElementById("health").style.background = "cyan";
         else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
+
+        safeGetElementById("healthText").innerText = Math.round(player.health) + " / " + (100 + player.healthModifier);
 
         safeGetElementById("charge").style.background = "rgb(20, 200, 0)";
         if (this.isRightCharging > 0) {
             safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
             if (this.isRightCharging < 1) safeGetElementById("charge").style.background = "rgb(24, 100, 14)";
-        }
-        else if (this.firstAbilityCharging > 0) {
+        } else if (this.firstAbilityCharging > 0) {
             safeGetElementById("charge").style.width = this.firstAbilityCharging * 102 + "%";
             if (this.firstAbilityCharging < 1) safeGetElementById("charge").style.background = "rgb(24, 100, 14)";
         } else {
             safeGetElementById("charge").style.width = "0%";
         }
 
-        if (this.leftClickCounter > 0 ) {
+        if (this.leftClickCounter > 0) {
             this.leftClickCounter -= elapsedTime;
-            safeGetElementById("basicAttack").style.top = (((this.leftClickCounter / this.leftClickCooldown) * -55 ) - 3 ) + "px";
+            safeGetElementById("basicAttack").style.top = (this.leftClickCounter / this.leftClickCooldown) * -55 - 3 + "px";
         } else if (this.leftClickCounter < 0) {
             this.leftClickCounter = 0;
         }
 
-        if (this.rightClickCounter > 0 ) {
+        if (this.rightClickCounter > 0) {
             this.rightClickCounter -= elapsedTime;
-            safeGetElementById("secondaryAttack").style.top = (((this.rightClickCounter / this.rightClickCooldown) * -50 ) - 3 ) + "px";
+            safeGetElementById("secondaryAttack").style.top = (this.rightClickCounter / this.rightClickCooldown) * -50 - 3 + "px";
         } else if (this.rightClickCounter < 0) {
             this.rightClickCounter = 0;
         }
 
-        if (this.firstAbilityCounter > 0 ) {
+        if (this.firstAbilityCounter > 0) {
             this.firstAbilityCounter -= elapsedTime;
-            safeGetElementById("firstAbility").style.top = (((this.firstAbilityCounter / this.firstAbilityCooldown) * -50 ) - 3 ) + "px";
+            safeGetElementById("firstAbility").style.top = (this.firstAbilityCounter / this.firstAbilityCooldown) * -50 - 3 + "px";
         } else if (this.firstAbilityCounter < 0) {
             this.firstAbilityCounter = 0;
         }
+
+        safeGetElementById("level").innerText = "Level: " + player.level;
     }
 
     private updateObjects(elapsedTime: number) {
@@ -446,13 +443,11 @@ export class Game {
         this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms));
         this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
 
-
         this.players.forEach((player1) => {
             this.platforms.forEach((platform) => {
                 player1.checkCollisionWithRectangularObject(platform, elapsedTime);
             });
         });
-
     }
 
     private calculateArrow() {
@@ -495,7 +490,8 @@ export class Game {
         });
     }
 
-    private projectile(projectileType: ProjectileType,
+    private projectile(
+        projectileType: ProjectileType,
         damageType: string,
         damage: number,
         id: number,
@@ -506,7 +502,8 @@ export class Game {
         knockback: number,
         range: number,
         life: number,
-        inGround: boolean) {
+        inGround: boolean,
+    ) {
         const projectile = new ClientProjectile(this.config, {
             projectileType,
             damageType,
@@ -524,14 +521,16 @@ export class Game {
         this.projectiles.push(projectile);
     }
 
-    private targetedProjectile(targetedProjectileType: TargetedProjectileType,
+    private targetedProjectile(
+        targetedProjectileType: TargetedProjectileType,
         id: number,
         team: number,
         position: Vector,
         momentum: Vector,
         destination: Vector,
         isDead: boolean,
-        life: number) {
+        life: number,
+    ) {
         const targetedProjectile = new ClientTargetedProjectile(this.config, {
             targetedProjectileType,
             id,
@@ -544,5 +543,4 @@ export class Game {
         });
         this.targetedProjectiles.push(targetedProjectile);
     }
-
 }

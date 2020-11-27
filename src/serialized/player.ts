@@ -29,4 +29,6 @@ export interface SerializedPlayer {
     isStealthed: boolean;
     facing: boolean;
     moveSpeedModifier: number;
+    healthModifier: number;
+    level: number;
 }
