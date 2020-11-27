@@ -325,6 +325,7 @@ export class Game {
         });
         this.players.forEach((player) => {
             if (!player.isStealthed && player.id != this.id && !player.isDead) player.renderName(Game.ctx);
+            //player.renderFocus(Game.ctx); //FOR DEBUGGING
         });
         if (playerWithId.isStealthed) {
             playerWithId.renderInvisiblePlayer(Game.ctx);
@@ -394,7 +395,7 @@ export class Game {
 
     private updateCooldowns(elapsedTime: number, player: Player) { // updates player's cooldown icons
         
-        safeGetElementById("health").style.width = player.health * 1.02 + "%";
+        safeGetElementById("health").style.width = (player.health + player.healthModifier) / (100 + player.healthModifier) * 102 + "%";
         if (player.isShielded) safeGetElementById("health").style.background = "cyan";
         else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
 
@@ -434,6 +435,7 @@ export class Game {
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
+        this.players = this.players.filter((player) => player.deathCooldown > 0 || player.classType >= 0);
 
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);

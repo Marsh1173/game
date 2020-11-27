@@ -97,7 +97,7 @@ export class ClientPlayer extends Player {
         if (this.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
-        } else if (this.health >= 100) {
+        } else if (this.health >= 100 + this.healthModifier) {
             ctx.shadowBlur = 16;
             ctx.shadowColor = this.color;
         } else if (!this.isDead) {
@@ -122,9 +122,7 @@ export class ClientPlayer extends Player {
         }
 
         //reset
-        ctx.globalAlpha = 1.0;
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
+        
 
 
         //renders the gear
@@ -136,6 +134,11 @@ export class ClientPlayer extends Player {
             this.renderTemplar(ctx);
         };
 
+
+
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "gray";
     }
 
     public renderFirstAbilityPointer(ctx: CanvasRenderingContext2D, platforms: Platform[]) {
@@ -229,44 +232,33 @@ export class ClientPlayer extends Player {
         //ctx.fillStyle = "white";
         //ctx.fillText(this.name, this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
 
+        //ctx.fillStyle = "white";
+        //ctx.fillText(this.killCount.toString(), this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
+
         ctx.fillStyle = "red";
         ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * 3 / 4), 4);
         if (this.isHit) {
             ctx.shadowBlur = 2;
             ctx.fillStyle = "white";
             ctx.shadowColor = "white";
-            ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, ((this.size.width * this.health / 100) * 3 / 4) + 2, 4);
+            ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, ((this.size.width * this.health / (100 + this.healthModifier)) * 3 / 4) + 2, 4);
         }
         ctx.fillStyle = "#32a852";
-        ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * this.health / 100) * 3 / 4, 4);
+        ctx.fillRect(this.position.x + (this.size.width / 8), this.position.y - 10, (this.size.width * this.health / (100 + this.healthModifier)) * 3 / 4, 4);
 
         ctx.shadowColor = "gray";
         ctx.shadowBlur = 2;
     }
 
-    public renderMouseCharge(ctx: CanvasRenderingContext2D, isCharging: number) {
-        let xComputed = isCharging * this.focusPosition.x + (this.position.x + this.size.width / 2) * (1 - isCharging) - 3;
-        let yComputed = isCharging * this.focusPosition.y + (this.position.y + this.size.height / 2) * (1 - isCharging) - 3;
+    public renderFocus(ctx: CanvasRenderingContext2D) {
+        
+        ctx.fillStyle = "red";
+        ctx.fillRect(this.focusPosition.x - 6, this.focusPosition.y - 6, 6, 6);
 
-        ctx.shadowBlur = 0;
-
-        ctx.beginPath();
-        ctx.moveTo(this.position.x + this.size.width / 2 - 3, this.position.y + this.size.height / 2 - 3); // from player position
-        ctx.lineTo(xComputed, yComputed); // pointing towards cursor, based on percentage of charge
-        if (isCharging < 1) ctx.strokeStyle = "#555";
-        // charging is gray
-        else ctx.strokeStyle = "#11d100"; // completed is green
-        ctx.lineWidth = 5;
-        ctx.stroke();
-
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
     }
 
     public renderNinja(ctx: CanvasRenderingContext2D) {
         //headband
-        const opacity = this.isDead ? 0.2 : 0.9;
-        ctx.globalAlpha = opacity;
         ctx.shadowBlur = 0;
         ctx.fillStyle = "black";
         ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
@@ -287,14 +279,12 @@ export class ClientPlayer extends Player {
         ctx.stroke();
 
         //reset
-        ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
     }
 
     public renderWizard(ctx: CanvasRenderingContext2D) {
-        const opacity = this.isDead ? 0.2 : 0.9;
-        ctx.globalAlpha = opacity;
+
         ctx.shadowBlur = 0;
 
         //beard
@@ -335,14 +325,12 @@ export class ClientPlayer extends Player {
 
 
         //reset
-        ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
     }
 
     public renderTemplar(ctx: CanvasRenderingContext2D) {
-        const opacity = this.isDead ? 0.2 : 0.9;
-        ctx.globalAlpha = opacity;
+
         ctx.shadowBlur = 0;
 
         //scarf
@@ -360,9 +348,7 @@ export class ClientPlayer extends Player {
         ctx.lineTo(xStart - this.momentum.x / 60, this.position.y + this.size.height / 2 + 10 - this.momentum.y / 80);
         ctx.stroke();
 
-
         //reset
-        ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
     }
 
@@ -373,7 +359,9 @@ export class ClientPlayer extends Player {
             this.renderWeaponTemplate(ctx, "images/staff.png", 0.24);
         } else if (this.classType === 2) {
             this.renderWeaponTemplate(ctx, "images/hammer.png", 0.25);
-        };
+        } else if (this.classType === -1) {
+            this.renderWeaponTemplate(ctx, "images/axe.png", 0.20);
+        }
     }
 
     public renderWeaponTemplate(ctx: CanvasRenderingContext2D, imgSrc: string, scale: number) {
@@ -393,7 +381,7 @@ export class ClientPlayer extends Player {
             ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x + this.size.width / 2 + 40 * Math.cos(rotation), this.position.y  + this.size.height / 2  + 40 * Math.sin(rotation));
         }
         
-        ctx.rotate(rotation + Math.PI / 8 + this.animationFrame);
+        ctx.rotate(rotation + Math.PI / 4 + this.animationFrame);
         ctx.drawImage(imgDagger, -imgDagger.width * 2 / 3, -imgDagger.height * 3 / 4 - (this.animationFrame * 60));
         ctx.resetTransform();
 

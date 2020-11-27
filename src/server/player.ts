@@ -13,6 +13,7 @@ export class ServerPlayer extends Player {
         name: string,
         color: string,
         classType: number,
+        position: Vector,
         doBlast: (position: Vector, color: string, id: number) => void,
         doProjectile: (projectileType: ProjectileType,
             damageType: string,
@@ -43,8 +44,8 @@ export class ServerPlayer extends Player {
             0,
             0,
             {
-                x: config.playerStart.x,
-                y: config.playerStart.y,
+                x: position.x,
+                y: position.y,
             },
             { x: 0, y: 0 },
             color,

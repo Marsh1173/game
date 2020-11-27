@@ -10,6 +10,8 @@ import { Vector } from "../vector";
 import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
+import { PlayerAI } from "./playerai";
+import { Player } from "../objects/player";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -22,7 +24,13 @@ export class Game {
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
     public readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
 
-    constructor(public readonly config: Config) {}
+    private aiId: number;
+
+    constructor(public readonly config: Config) {
+        //this.newPlayerAI(-2, "AI", "#516687", -1, {x: config.xSize / 2, y: config.ySize * 3 / 4 - 90});
+        this.aiId = -2;
+        this.makePlayer();
+    }
 
     public start() {
         this.intervalId = setInterval(() => {
@@ -78,6 +86,7 @@ export class Game {
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
+        this.players = this.players.filter((player) => player.deathCooldown > 0 || player.classType >= 0);
 
         this.blasts.forEach((blast) => blast.update(elapsedTime));
         this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
@@ -101,13 +110,14 @@ export class Game {
 
     }
 
-    public newPlayer(id: number, name: string, color: string, classType: number) {
+    public newPlayer(id: number, name: string, color: string, classType: number, position: Vector) {
         const newPlayer = new ServerPlayer(
             this.config,
             id,
             name,
             color,
             classType,
+            position,
             (position: Vector, color: string, id: number) => {
                 this.blast(position, color, id);
             },
@@ -137,6 +147,45 @@ export class Game {
             },
         );
         this.players.push(newPlayer);
+    }
+
+    public newPlayerAI(id: number, name: string, color: string, classType: number, position: Vector) {
+        const newPlayerAI = new PlayerAI(
+            this.config,
+            id,
+            name,
+            color,
+            classType,
+            position,
+            (position: Vector, color: string, id: number) => {
+                this.blast(position, color, id);
+            },
+            (projectileType: ProjectileType,
+                damageType: string,
+                damage: number,
+                id: number,
+                team: number,
+                position: Vector,
+                momentum: Vector,
+                fallSpeed: number,
+                knockback: number,
+                range: number,
+                life: number,
+                inGround: boolean) => {
+                this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
+            },
+            (targetedProjectileType: TargetedProjectileType,
+                id: number,
+                team: number,
+                position: Vector,
+                momentum: Vector,
+                destination: Vector,
+                isDead: boolean,
+                life: number) => {
+                this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
+            },
+        );
+        this.players.push(newPlayerAI);
     }
 
     public removePlayer(id: number) {
@@ -289,5 +338,13 @@ export class Game {
             life,
         });
         this.targetedProjectiles.push(targetedProjectile);
+    }
+
+    private makePlayer() {
+        this.newPlayerAI(this.aiId, "AI", "#800d0d", -1, {x: this.config.xSize / 3 + Math.random() * 800, y: this.config.ySize * 3 / 4 - 90});
+        this.aiId--;
+        setTimeout(() => {
+            this.makePlayer();
+        }, 4000);
     }
 }

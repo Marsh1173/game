@@ -1,3 +1,4 @@
+import { SerializedPlayer } from "./player";
 import { Vector } from "../vector";
 
 export interface SerializedBlast {

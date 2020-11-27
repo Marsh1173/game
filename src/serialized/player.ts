@@ -1,3 +1,4 @@
+import { Player } from "../objects/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 

@@ -1,5 +1,6 @@
 import { Vector } from "../vector";
 import { ProjectileType } from "../objects/projectile";
+import { SerializedPlayer } from "./player";
 
 export interface SerializedProjectile {
     projectileType: ProjectileType,

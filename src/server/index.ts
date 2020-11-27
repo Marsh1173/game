@@ -6,6 +6,8 @@ import * as expressWs from "express-ws";
 import { defaultConfig } from "../config";
 import { JoinRequest, JoinResponse } from "../api/join";
 import { ClientMessage, ServerMessage } from "../api/message";
+import { Player } from "../objects/player";
+import { Vector } from "../vector";
 
 const game = new Game(defaultConfig);
 game.start();
@@ -19,11 +21,10 @@ app.get("/bundle.js", (request, response) => {
     response.sendFile(path.join(__dirname, "../../dist/client/bundle.js"));
 });
 
-let nextId = 0;
 app.post("/join", (request, response) => {
     const joinRequest: JoinRequest = request.body;
-    const newId = nextId++;
-    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType);
+    const newId = Player.getNextId();
+    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType, {x: defaultConfig.playerStart.x, y: defaultConfig.playerStart.y});
     const joinResponse: JoinResponse = {
         id: newId,
         config: game.config,
