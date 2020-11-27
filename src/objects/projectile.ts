@@ -19,7 +19,7 @@ export abstract class Projectile {
         public fallSpeed: number, // multiplier for fallspeed based on player fallspeed (zero negates it)
         public knockback: number, // force exerted on player upon hitting (avg. 400)
         public range: number, // hit range extending around projectile. Default is 0
-        public life: number, // life span in miliseconds, filter decider (normally decremented if it's stuck in the ground)
+        public life: number, // life span in seconds, filter decider (normally decremented if it's stuck in the ground)
         public inGround: boolean // self explanatory
         ) {}
 
@@ -214,13 +214,14 @@ export abstract class Projectile {
                 this.position.x += this.momentum.x * elapsedTime;
                 this.position.y += this.momentum.y * elapsedTime;
             }
+            if (this.projectileType == "fire") {
+                this.life  -= elapsedTime;
+            }
         } else {
             if (this.projectileType == "fire") {
                 this.life = 0;
             } else {
-                setTimeout(() => {
-                    this.life = 0;
-                }, 2000);
+                this.life -= elapsedTime;
             }
         }
     }

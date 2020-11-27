@@ -356,7 +356,7 @@ export abstract class Player {
         this.doProjectile(
             "fire",
             "fire",
-            8 + this.AttackModifier * 2,
+            12 + this.AttackModifier * 2,
             this.id,
             this.id,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
@@ -364,7 +364,7 @@ export abstract class Player {
             0,
             0,
             0,
-            1,
+            0.6,
             false,
         );
 
@@ -414,7 +414,7 @@ export abstract class Player {
 
         this.doProjectile(
             "ice",
-            "elemental",
+            "ranged",
             15,
             this.id,
             this.id,
@@ -631,20 +631,20 @@ export abstract class Player {
 
     private getAKill() {
         this.killCount++;
-        if (this.killCount % 4 === 0) this.levelUp();
+        if (this.killCount % 5 === 0) this.levelUp();
     }
 
     private levelUp() {
         const rand: number = Math.floor(Math.random() * 3);
         switch (rand) {
             case 0:
-                this.AttackModifier++;
+                this.AttackModifier += 2;
                 break;
             case 1:
-                this.healthModifier += 5;
+                this.healthModifier += 10;
                 break;
             case 2:
-                this.moveSpeedModifier *= 1.05;
+                this.moveSpeedModifier *= 1.10;
                 break;
         }
         this.healPlayer(100 + this.healthModifier);
@@ -653,6 +653,7 @@ export abstract class Player {
     }
 
     public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
+
         // Action handling
         if (this.actionsNextFrame.jump) {
             this.attemptJump();

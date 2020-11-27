@@ -153,14 +153,14 @@ p {
     height: 50px;
 }
 #healthContainer,
-#chargeContainer,
-#level {
+#chargeContainer {
     width: 300px;
     height: 45px;
     background-color: #33424d;
     border: 2px solid #33424d;
     border-radius: 5px;
     overflow: hidden;
+    margin: 2px;
 }
 #health,
 #charge {
@@ -178,13 +178,20 @@ p {
     font-size: 20pt;
     left: 90px;
     color: white;
+    text-shadow: 1px 1px black;
 }
 
 #level {
+    width: 25px;
+    height: 25px;
+    border: 2px solid #27343d;
+    border-radius: 30px;
     color: white;
-    background-color: black;
-    font-size: 20pt;
+    font-size: 15pt;
     text-align: center;
+    overflow: hidden;
+    padding: 1px;
+    text-shadow: 1px 1px black;
 }
 
 #chargeContainer {

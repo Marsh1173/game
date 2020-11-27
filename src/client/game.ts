@@ -193,9 +193,12 @@ export class Game {
         Game.menuDiv.style.display = "none";
         Game.gameDiv.style.display = "block";
 
+        const playerWithId = this.findPlayer();
+
         safeGetElementById("slideContainer").style.height = this.config.ySize + "px";
         safeGetElementById("slider").style.width = this.config.xSize + "px";
         safeGetElementById("slider").style.left = this.screenPos + "px";
+        safeGetElementById("level").style.backgroundColor = playerWithId.color;
 
         this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
@@ -427,7 +430,7 @@ export class Game {
             this.firstAbilityCounter = 0;
         }
 
-        safeGetElementById("level").innerText = "Level: " + player.level;
+        safeGetElementById("level").innerText = player.level.toString();
     }
 
     private updateObjects(elapsedTime: number) {

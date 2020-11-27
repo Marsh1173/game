@@ -60,22 +60,22 @@ export class PlayerAI extends ServerPlayer {
         if (!this.isDead){
             if (this.targetedPlayer) {
 
-                this.animationFrame = (this.animationFrameCounter + this.animationFrame) / 2;
+                this.animationFrame = (this.animationFrameCounter + this.animationFrame * 2) / 3;
 
-                const newX: number = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 2) / 3;
-                const newY: number = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * 2) / 3;
+                /*const newX: number = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 5) / 6;
+                const newY: number = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * 5) / 6;
 
                 setTimeout(() => {
                     this.focusPosition.x = newX;
                     this.focusPosition.y = newY;
-                }, 60);
+                }, 20);*/
 
-                //this.focusPosition.x = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 2) / 3;
-                //this.focusPosition.y = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * 2) / 3;
+                this.focusPosition.x = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 5) / 6;
+                this.focusPosition.y = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * 5) / 6;
 
             } else {
                 //this.focusPosition.x = this.position.x + this.size.width / 2;
-                //this.focusPosition.y = this.position.y + this.size.height / 2;
+                this.focusPosition.y = this.position.y + this.size.height / 2;
                 this.healPlayer(elapsedTime * 40);
             }
 
@@ -93,7 +93,7 @@ export class PlayerAI extends ServerPlayer {
                         this.basicAttackCounter = this.basicAttackCooldown;
                         setTimeout(() => {
                             this.animationFrameCounter = 0;
-                        }, 100);
+                        }, 150);
                         
                     }
                     else this.basicAttackCounter -= elapsedTime;
@@ -118,37 +118,3 @@ export class PlayerAI extends ServerPlayer {
     }*/
 
 }
-
-
-//TO AGGRO
-//if someone attacks from inside leave range and is pacified, sets them to target
-//if someone attacks  from inside leave range and is closer than target, set them to target
-
-
-//two ranges? one for player enter and one for player leave
-
-//to aggro, attack or enter enter-range
-//attacks closest player to him inside leave range
-
-
-//aggroed
-
-//target closest player
-//if they're close enough, do melee attack
-//if they're too far away from AI (or dead), become pacified
-
-//pathfind for if they're standing on a different height?
-//if so, check for nearest place to get onto (a higher) platform
-//if not, actionsNextFrame is move towards them
-
-//pacified
-
-//check for baddies around AI
-//if at station, patrol
-//if not, pathfind back to station
-
-//dead
-
-//award kills
-//drop loot?
-//despawn
