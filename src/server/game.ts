@@ -348,6 +348,6 @@ export class Game {
         this.aiId--;
         setTimeout(() => {
             this.makePlayer();
-        }, 4000);
+        }, 6000);
     }
 }

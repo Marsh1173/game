@@ -76,7 +76,7 @@ export class ServerPlayer extends Player {
             true,
             1,
             0,
-            1,
+            0,
             doBlast,
             doProjectile,
             doTargetedProjectile,

@@ -1,13 +1,17 @@
 import { Distribution } from "../distribution";
+import { Platform } from "../objects/platform";
 import { Random } from "../random";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type ParticleType = "smoke";
+export type ParticleType = "smoke" | "fire";
+export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "explosion";
 
 class Particle {
+    public originalLife: number;
     public static readonly images: Record<ParticleType, HTMLImageElement> = {
         smoke: new Image(),
+        fire: new Image(),
     };
     /**
      * @param position the _center_ of where the particle is
@@ -21,9 +25,34 @@ class Particle {
         public lifetime: number,
         public rotation: number,
         public rotationMomentum: number,
-    ) {}
+    ) {
+        this.originalLife = this.lifetime;
+    }
 
-    public update(elapsedTime: number) {
+    public checkCollisionWithRectangularObject(object: { size: Size; position: Vector }, elapsedTime: number) {
+        let futurePosX = this.position.x + this.momentum.x * elapsedTime;
+        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
+        if (
+            futurePosX < object.position.x + object.size.width &&
+            futurePosX > object.position.x &&
+            futurePosY < object.position.y + object.size.height &&
+            futurePosY > object.position.y
+        ) {
+            if (this.momentum.y < 0) {
+                this.position.y = object.position.y + object.size.height;
+                this.momentum.y *= -1;
+            } else {
+                this.position.y = object.position.y + this.momentum.y * -elapsedTime;
+                this.momentum.y /= -1.5;
+            }
+        }
+    }
+
+    public update(elapsedTime: number, platforms: Platform[]) {
+        platforms.forEach((platform) => {
+            this.checkCollisionWithRectangularObject(platform, elapsedTime);
+        });
+        this.momentum.y += elapsedTime * 1200;
         this.position.x += this.momentum.x * elapsedTime;
         this.position.y += this.momentum.y * elapsedTime;
         this.rotation += this.rotationMomentum * elapsedTime;
@@ -31,7 +60,8 @@ class Particle {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
-        ctx.save();
+        /*ctx.save();
+        ctx.globalAlpha = 0.05;
         ctx.translate(this.position.x, this.position.y);
         ctx.rotate(this.rotation);
         ctx.translate(-this.position.x, -this.position.y);
@@ -42,7 +72,15 @@ class Particle {
             this.size.width,
             this.size.height,
         );
-        ctx.restore();
+        ctx.restore();*/
+        ctx.globalAlpha = (this.lifetime / this.originalLife);
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = "yellow";
+        ctx.fillStyle = "white";
+        ctx.fillRect(this.position.x - 2, this.position.y - 2, 4, 4);
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "gray";
+        ctx.globalAlpha = 1;
     }
 }
 Object.keys(Particle.images).forEach((imageKey) => {
@@ -58,6 +96,13 @@ interface ParticleEffectInfo {
     particleAmt: number;
 }
 
+/*interface ParticleEffectInfo {
+    particleEffectType: ParticleEffectType;
+    position: Vector;
+    direction: Vector;
+    color: string;
+}*/
+
 class ParticleEffect {
     public particles: Particle[];
     constructor(private readonly info: ParticleEffectInfo) {
@@ -67,6 +112,7 @@ class ParticleEffect {
             const speed = Random.nextGaussian(info.particleSpeed.mean, info.particleSpeed.stdev);
             direction.x *= speed;
             direction.y *= speed;
+            direction.y -= 300;
             this.particles.push(
                 new Particle(
                     { x: this.info.position.x, y: this.info.position.y },
@@ -81,8 +127,8 @@ class ParticleEffect {
         }
     }
 
-    public update(elapsedTime: number) {
-        this.particles.forEach((particle) => particle.update(elapsedTime));
+    public update(elapsedTime: number, platforms: Platform[]) {
+        this.particles.forEach((particle) => particle.update(elapsedTime, platforms));
         this.particles = this.particles.filter((particle) => particle.lifetime > 0);
     }
 
@@ -97,8 +143,8 @@ class ParticleEffect {
 export class ParticleSystem {
     private effects: ParticleEffect[] = [];
 
-    public update(elapsedTime: number) {
-        this.effects.forEach((effect) => effect.update(elapsedTime));
+    public update(elapsedTime: number, platforms: Platform[]) {
+        this.effects.forEach((effect) => effect.update(elapsedTime, platforms));
         this.effects = this.effects.filter((effect) => effect.particles.length > 0);
     }
 

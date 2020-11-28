@@ -1,6 +1,7 @@
 import { Config } from "../config";
 import { TargetedProjectile } from "../objects/targetedProjectile";
 import { SerializedTargetedProjectile } from "../serialized/targetedProjectile";
+import { Game } from "./game";
 
 export class ClientTargetedProjectile extends TargetedProjectile {
 

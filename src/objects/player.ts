@@ -5,6 +5,7 @@ import { Vector } from "../vector";
 import { ProjectileType } from "./projectile";
 import { TargetedProjectileType } from "./targetedProjectile";
 import { Platform } from "./platform";
+import { ParticleSystem } from "../client/particle";
 
 export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "basicAttack" | "secondaryAttack" | "firstAbility";
 
@@ -274,6 +275,7 @@ export abstract class Player {
         this.basicAttack(players);
     }
     public basicAttack(players: Player[]) {
+
         let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
         let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
         let angle: number = Math.atan(newY / newX);
@@ -328,7 +330,7 @@ export abstract class Player {
                 distance < meleeRange
             ) {
                 if (this.classType === 0) {
-                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier, this.id, "poison", "elemental", 250, 6);
+                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 4, this.id, "poison", "elemental", 250, 6);
                     if (
                         (player.facing && angle >= Math.PI / -2 && angle <= Math.PI / 2) ||
                         (!player.facing && angle >= Math.PI / 2 && angle <= (Math.PI * 3) / 2)
@@ -631,7 +633,7 @@ export abstract class Player {
 
     private getAKill() {
         this.killCount++;
-        while (Math.floor(this.killCount / 4) > this.level) {
+        while (Math.floor(this.killCount / 2) > this.level) {
             this.levelUp();
         }
     }
@@ -640,13 +642,13 @@ export abstract class Player {
         const rand: number = Math.floor(Math.random() * 3);
         switch (rand) {
             case 0:
-                this.AttackModifier += 2;
+                this.AttackModifier += 1;
                 break;
             case 1:
-                this.healthModifier += 10;
+                this.healthModifier += 5;
                 break;
             case 2:
-                this.moveSpeedModifier *= 1.10;
+                this.moveSpeedModifier *= 1.03;
                 break;
         }
         this.healPlayer(100 + this.healthModifier);
@@ -655,6 +657,8 @@ export abstract class Player {
     }
 
     public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
+
+        //if (this.name != "Nate" && this.classType >= 0) return; // for debugging...
 
         // Action handling
         if (this.actionsNextFrame.jump) {

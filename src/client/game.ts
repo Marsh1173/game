@@ -112,11 +112,11 @@ export class Game {
                 case "levelUp":
                     const player = this.players.find((player) => player.id === msg.id)!;
                     Game.particleHandler.newEffect({
-                        particleType: "smoke",
-                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2 },
-                        particleSize: { width: 50, height: 50 },
-                        particleSpeed: { mean: 300, stdev: 200 },
-                        particleLifetime: { mean: 0.4, stdev: 0.3 },
+                        particleType: "fire",
+                        position: { x: player.position.x + player.size.width / 2 + player.momentum.x / 100, y: player.position.y + player.size.height / 2 + player.momentum.y / 100 },
+                        particleSize: { width: 150, height: 150 },
+                        particleSpeed: { mean: 150, stdev: 110 },
+                        particleLifetime: { mean: 0.6, stdev: 0.4 },
                         particleAmt: 70,
                     });
                     break;
@@ -269,7 +269,7 @@ export class Game {
             playerWithId.attemptMoveRight(elapsedTime);
         }
 
-        Game.particleHandler.update(elapsedTime);
+        Game.particleHandler.update(elapsedTime, this.platforms);
 
         /*if (this.keyState[this.config.playerKeys.down]) {
             playerWithId.attemptBlast(elapsedTime);
@@ -344,7 +344,7 @@ export class Game {
         });
         Game.particleHandler.render(Game.ctx);
         this.players.forEach((player) => {
-            if (!player.isStealthed && player.id != this.id && !player.isDead) player.renderName(Game.ctx);
+            if (!player.isStealthed && !player.isDead && player.health < player.healthModifier + 100) player.renderName(Game.ctx);
             //player.renderFocus(Game.ctx); //FOR DEBUGGING
         });
         if (playerWithId.isStealthed) {
@@ -384,7 +384,7 @@ export class Game {
         //safeGetElementById("slideBackground").style.left = (this.screenPos * 2 / 3) + "px";
     }
 
-    private setCooldowns(player: Player) {
+    private setCooldowns(player: ClientPlayer) {
         // sets cooldowns based on player class
         if (player.classType === 0) {
             this.leftClickCooldown = 0.2; // ninja shank

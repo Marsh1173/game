@@ -86,7 +86,7 @@ export class PlayerAI extends ServerPlayer {
                     this.actionsNextFrame.moveRight = true;
                 } else if (this.targetedPlayer.position.x < this.position.x - 100) {
                     this.actionsNextFrame.moveLeft = true;
-                } else {
+                } else if (this.targetedPlayer.position.y < this.position.y + 25 && this.targetedPlayer.position.y > this.position.y - 75) {
                     if (this.basicAttackCounter < 0 ){
                         this.actionsNextFrame.basicAttack = true;
                         this.animationFrameCounter = 1;

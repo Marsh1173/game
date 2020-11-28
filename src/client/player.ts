@@ -6,6 +6,8 @@ import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Platform } from "../objects/platform";
+import { ParticleSystem } from "./particle";
+import { Game } from "./game";
 
 export class ClientPlayer extends Player {
     constructor(
@@ -364,6 +366,7 @@ export class ClientPlayer extends Player {
     }
 
     public renderWeaponTemplate(ctx: CanvasRenderingContext2D, imgSrc: string, scale: number) {
+
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan(
@@ -466,7 +469,20 @@ export class ClientPlayer extends Player {
         });
     }*/
 
+    /*public attemptBasicAttack(players: Player[]) {
+
+        super.attemptBasicAttack(players);
+    }*/
+
     public basicAttack(players: Player[]) {
+        /*Game.particleHandler.newEffect({
+            particleType: "smoke",
+            position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            particleSize: { width: 150, height: 150 },
+            particleSpeed: { mean: 100, stdev: 60 },
+            particleLifetime: { mean: 0.4, stdev: 0.3 },
+            particleAmt: 70,
+        });*/
         super.basicAttack(players);
         this.serverTalker.sendMessage({
             type: "action",
