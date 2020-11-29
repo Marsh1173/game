@@ -242,7 +242,7 @@ export class Game {
         }
         const elapsedTime = (timestamp - this.lastFrame) / 1000;
         this.lastFrame = timestamp;
-        this.update(elapsedTime);
+        this.update(elapsedTime * this.config.gameSpeed);
         if (this.going) {
             window.requestAnimationFrame((timestamp) => this.loop(timestamp));
         }

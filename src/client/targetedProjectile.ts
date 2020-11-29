@@ -1,4 +1,5 @@
 import { Config } from "../config";
+import { Player } from "../objects/player";
 import { TargetedProjectile } from "../objects/targetedProjectile";
 import { SerializedTargetedProjectile } from "../serialized/targetedProjectile";
 import { ParticleSystem } from "./particle";
@@ -33,13 +34,23 @@ export class ClientTargetedProjectile extends TargetedProjectile {
 
     public renderFirestrike(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
 
-        particleHandler.newEffect({
-            particleEffectType: "firestrikeIdle",
-            position: { x: this.position.x, y: this.position.y - 50},
-            momentum: this.momentum,
-            direction: { x: 0, y: 0 },
-            color: "orange",
-        });
+        if (this.life != 0){
+            particleHandler.newEffect({
+                particleEffectType: "firestrikeIdle",
+                position: { x: this.position.x, y: this.position.y - 50},
+                momentum: this.momentum,
+                direction: { x: 0, y: 0 },
+                color: "orange",
+            });
+        } else {
+            particleHandler.newEffect({
+                particleEffectType: "firestrikeExplode",
+                position: { x: this.position.x, y: this.position.y},
+                momentum: this.momentum,
+                direction: { x: 0, y: 0 },
+                color: "orange",
+            });
+        }
 
         ctx.shadowBlur = 0;
 
@@ -111,4 +122,17 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.shadowColor = "gray";
         ctx.shadowBlur = 2;
     }
+
+    /*public firestrikeExplode(players: Player[]) {
+
+        particleHandler.newEffect({
+            particleEffectType: "firestrikeIdle",
+            position: { x: this.position.x, y: this.position.y - 50},
+            momentum: this.momentum,
+            direction: { x: 0, y: 0 },
+            color: "orange",
+        });
+
+        super.firestrikeExplode(players);
+    }*/
 }

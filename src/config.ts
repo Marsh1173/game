@@ -30,6 +30,7 @@ export interface Config {
     nonStandingSidewaysAcceleration: number;
     maxSidewaysMomentum: number;
     arrowPower: number;
+    gameSpeed: number;
 }
 
 export const defaultConfig: Config = {
@@ -59,4 +60,5 @@ export const defaultConfig: Config = {
     nonStandingSidewaysAcceleration: 2000,
     maxSidewaysMomentum: 900,
     arrowPower: 2000,
+    gameSpeed: 1,
 };

@@ -60,7 +60,7 @@ export class ClientProjectile extends Projectile {
         else if (this.projectileType === "fire") {
             particleHandler.newEffect({
                 particleEffectType: "fireballIdle",
-                position: { x: this.position.x - this.momentum.x / 100, y: this.position.y - this.momentum.y / 100},
+                position: { x: this.position.x, y: this.position.y},
                 momentum: this.momentum,
                 direction: { x: 0, y: 0 },
                 color: "orange",

@@ -66,7 +66,7 @@ export class Game {
         }
         const elapsedTime = (timestamp - this.lastFrame) / 1000;
         this.lastFrame = timestamp;
-        this.update(elapsedTime);
+        this.update(elapsedTime * this.config.gameSpeed);
         const data: InfoMessage = {
             type: "info",
             info: this.allInfo(),
@@ -344,8 +344,10 @@ export class Game {
     }
 
     private makePlayer() {
-        this.newPlayerAI(this.aiId, "AI", "#800d0d", -1, { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
-        this.aiId--;
+        if (this.players.length < 10){
+            this.newPlayerAI(this.aiId, "AI", "#800d0d", -1, { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
+            this.aiId--;
+        }
         setTimeout(() => {
             this.makePlayer();
         }, 6000);

@@ -5,8 +5,8 @@ import { Random } from "../random";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type ParticleType = "ice particle" | "smoke particle" | "fire particle" | "levelUp particle" | "levelUp glow" | "colored particle" | "text particle";
-export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "stealth" | "firestrikeIdle" | "fireballIdle" | "iceIdle";
+export type ParticleType = "ice particle" | "smoke particle" | "red fire particle" | "orange fire particle" | "levelUp particle" | "levelUp glow" | "colored particle" | "text particle";
+export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "stealth" | "firestrikeIdle" | "fireballIdle" | "iceIdle" | "firestrikeExplode";
 
 class Particle {
     public originalLife: number;
@@ -25,7 +25,7 @@ class Particle {
         private size: Size,
         private gravity: number,
         private ifPhysics: number,
-        private ifMomentumDampening: number,
+        private ifMomentumDampen: number,
         private color: string,
         public lifetime: number,
         public rotation: number,
@@ -47,10 +47,10 @@ class Particle {
         ) {
             if (this.momentum.y < 0) {
                 this.position.y = object.position.y + object.size.height;
-                this.momentum.y *= -bounce * Random.nextGaussian(1, 0.3);
+                this.momentum.y *= -bounce * Random.nextGaussian(1, 0.7);
             } else {
                 this.position.y = object.position.y + this.momentum.y * -elapsedTime - this.size.height / 2;
-                this.momentum.y *= -bounce * Random.nextGaussian(0.6, 0.1);
+                this.momentum.y *= -bounce * Random.nextGaussian(0.6, 0.5);
             }
         }
     }
@@ -63,12 +63,12 @@ class Particle {
         this.rotation += this.rotationMomentum * elapsedTime;
 
         if (this.targetPosition) {
-            this.momentum.x += Math.random() * ((this.targetPosition.x + 25) - this.position.x) / 8;
-            this.momentum.y += Math.random() * ((this.targetPosition.y + 25) - this.position.y) / 8;
+            this.momentum.x += Math.random() * ((this.targetPosition.x + 25) - this.position.x) * elapsedTime;
+            this.momentum.y += Math.random() * ((this.targetPosition.y + 25) - this.position.y) * elapsedTime;
         }
-        if (this.ifMomentumDampening != 1) {
-            this.momentum.x *= this.ifMomentumDampening;
-            if (this.gravity === 0)this.momentum.y *= this.ifMomentumDampening;
+        if (this.ifMomentumDampen != 1) {
+            this.momentum.x *= 1 - (this.ifMomentumDampen * elapsedTime);
+            this.momentum.y *= 1 - (this.ifMomentumDampen * elapsedTime);
         }
         this.lifetime -= elapsedTime;
     }
@@ -102,14 +102,20 @@ class Particle {
                 ctx.shadowColor = "yellow";
                 ctx.fillStyle = "white";
                 break;
-            case "fire particle" :
+            case "red fire particle" :
+                ctx.globalAlpha = this.lifetime / (this.originalLife * 3);
+                ctx.shadowBlur = 7;
+                ctx.shadowColor = "red";
+                ctx.fillStyle = "#ff5900";
+                break;
+            case "orange fire particle" :
                 ctx.globalAlpha = this.lifetime / this.originalLife;
                 ctx.shadowBlur = 7;
                 ctx.shadowColor = "orange";
-                ctx.fillStyle = "red";
+                ctx.fillStyle = "#ff7b00";
                 break;
             case "smoke particle" :
-                ctx.globalAlpha = this.lifetime / (this.originalLife * 3);
+                ctx.globalAlpha = this.lifetime / (this.originalLife * 8);
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = "white";
                 ctx.fillStyle = "lightgray";
@@ -117,8 +123,8 @@ class Particle {
             case "ice particle" :
                 ctx.globalAlpha = this.lifetime / (this.originalLife * 3);
                 ctx.shadowBlur = 7;
-                ctx.shadowColor = "cyan";
-                ctx.fillStyle = "white";
+                ctx.shadowColor = "white";
+                ctx.fillStyle = "cyan";
                 break;
         }
         ctx.fillRect(this.position.x - this.size.width / 2, this.position.y - this.size.height / 2, this.size.width, this.size.height);
@@ -195,16 +201,11 @@ class ParticleEffect {
         else if (info.particleEffectType === "firestrikeIdle") this.firestrikeIdle(info);
         else if (info.particleEffectType === "fireballIdle") this.fireballIdle(info);
         else if (info.particleEffectType === "iceIdle") this.iceIdle(info);
+        else if (info.particleEffectType === "firestrikeExplode") this.firestrikeExplode(info);
     }
 
     public levelUp(info: ParticleEffectInfo) {
-        for (let i = 0; i < 70; i++) {
-
-            if (!info.targetPosition) {
-                console.log("particle error!");
-                return;
-            }
-
+        for (let i = 0; i < 140; i++) {
             const direction = Random.nextCircleVector();
             const speed = Random.nextGaussian(150, 45);
             direction.x *= speed;
@@ -214,10 +215,10 @@ class ParticleEffect {
                     { x: this.info.position.x, y: this.info.position.y },
                     {x: direction.x + info.momentum.x, y: direction.y + info.momentum.y},
                     "levelUp particle",
-                    {width: 6, height: 6},
+                    {width: 3, height: 3},
                     0,
                     0,
-                    0.95,
+                    5,
                     info.color,
                     Random.nextGaussian(0.9, 0.3),
                     Random.nextDouble() * Math.PI * 2,
@@ -260,7 +261,7 @@ class ParticleEffect {
                     {width: 5, height: 5},
                     1,
                     1,
-                    0.95,
+                    5,
                     info.color,
                     Random.nextGaussian(3, 0.2),
                     Random.nextDouble() * Math.PI * 2,
@@ -281,7 +282,7 @@ class ParticleEffect {
                     {width: 5, height: 5},
                     0,
                     0,
-                    0.95,
+                    3,
                     info.color,
                     Random.nextGaussian(0.5, 0.1),
                     Random.nextDouble() * Math.PI * 2,
@@ -294,18 +295,39 @@ class ParticleEffect {
     public firestrikeIdle(info: ParticleEffectInfo) {
         for (let i = 0; i < 5; i++) {
             const momentumFactor: number = Random.nextGaussian(1, 0.3);
-            const randomX: number = this.info.position.x + (Math.random() * 130 - 65);
-            const randomY: number = this.info.position.y + (Math.random() * 130 - 65);
+            const randomX: number = this.info.position.x + (Math.random() * 110 - 55);
+            const randomY: number = this.info.position.y + (Math.random() * 110 - 55);
 
             this.particles.push(
                 new Particle(
                     { x: randomX, y: randomY },
-                    {x: info.momentum.x * momentumFactor - (info.position.x - randomX), y: info.momentum.y * momentumFactor / 5},
-                    "fire particle",
+                    {x: info.momentum.x * momentumFactor - (info.position.x - randomX) * 5, y: info.momentum.y * momentumFactor  - (info.position.y - randomY)},
+                    "smoke particle",
+                    {width: 10, height: 10},
+                    -0.6,
+                    0,
+                    10,
+                    info.color,
+                    Random.nextGaussian(0.3, 0.1),
+                    Random.nextDouble() * Math.PI * 2,
+                    0,
+                ),
+            );
+        }
+        for (let i = 0; i < 10; i++) {
+            const momentumFactor: number = Random.nextGaussian(1, 0.3);
+            const randomX: number = this.info.position.x + (Math.random() * 100 - 50);
+            const randomY: number = this.info.position.y + (Math.random() * 100 - 50);
+
+            this.particles.push(
+                new Particle(
+                    { x: randomX, y: randomY },
+                    {x: info.momentum.x * momentumFactor - (info.position.x - randomX) * 5, y: info.momentum.y * momentumFactor / 5},
+                    "red fire particle",
                     {width: 7, height: 7},
                     0.1,
                     0,
-                    1,
+                    10,
                     info.color,
                     Random.nextGaussian(0.4, 0.2),
                     Random.nextDouble() * Math.PI * 2,
@@ -315,9 +337,75 @@ class ParticleEffect {
         }
     }
 
+    public firestrikeExplode(info: ParticleEffectInfo) {
+        for (let i = 0; i < 150; i++) {
+            const direction = Random.nextCircleVector();
+            const speed = Random.nextGaussian(1000, 650);
+            direction.x *= speed;
+            direction.y *= speed;
+            this.particles.push(
+                new Particle(
+                    { x: this.info.position.x, y: this.info.position.y },
+                    {x: direction.x, y: direction.y},
+                    "smoke particle",
+                    {width: 20, height: 20},
+                    -0.8,
+                    0,
+                    15,
+                    info.color,
+                    Random.nextGaussian(0.4, 0.1),
+                    Random.nextDouble() * Math.PI * 2,
+                    speed / 500,
+                ),
+            );
+        }
+        for (let i = 0; i < 150; i++) {
+            const direction = Random.nextCircleVector();
+            const speed = Random.nextGaussian(1000, 650);
+            direction.x *= speed;
+            direction.y *= speed;
+            this.particles.push(
+                new Particle(
+                    { x: this.info.position.x, y: this.info.position.y },
+                    {x: direction.x, y: direction.y},
+                    "red fire particle",
+                    {width: 10, height: 10},
+                    -0.6,
+                    0,
+                    15,
+                    info.color,
+                    Random.nextGaussian(0.4, 0.1),
+                    Random.nextDouble() * Math.PI * 2,
+                    speed / 500,
+                ),
+            );
+        }
+    }
+
     public fireballIdle(info: ParticleEffectInfo) {
-        for (let i = 0; i < 4; i++) {
-            const momentumFactor: number = Random.nextGaussian(1, 0.3);
+        for (let i = 0; i < 3; i++) {
+            const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
+            const randomX: number = this.info.position.x + (Math.random() * 14 - 7);
+            const randomY: number = this.info.position.y + (Math.random() * 14 - 7);
+
+            this.particles.push(
+                new Particle(
+                    { x: randomX, y: randomY },
+                    {x: info.momentum.x * momentumFactor - (info.position.x - randomX), y: info.momentum.y * momentumFactor  - (info.position.y - randomY)},
+                    "smoke particle",
+                    {width: 6, height: 6},
+                    -0.6,
+                    0.1,
+                    10,
+                    info.color,
+                    Random.nextGaussian(0.3, 0.1),
+                    Random.nextDouble() * Math.PI * 2,
+                    0,
+                ),
+            );
+        }
+        for (let i = 0; i < 3; i++) {
+            const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 20 - 10);
             const randomY: number = this.info.position.y + (Math.random() * 20 - 10);
 
@@ -325,11 +413,11 @@ class ParticleEffect {
                 new Particle(
                     { x: randomX, y: randomY },
                     {x: info.momentum.x * momentumFactor - (info.position.x - randomX), y: info.momentum.y * momentumFactor  - (info.position.y - randomY)},
-                    "fire particle",
-                    {width: 3, height: 3},
-                    0,
+                    "orange fire particle",
+                    {width: 4, height: 4},
+                    -0.3,
                     0.1,
-                    0.9,
+                    10,
                     info.color,
                     Random.nextGaussian(0.3, 0.1),
                     Random.nextDouble() * Math.PI * 2,
@@ -353,7 +441,7 @@ class ParticleEffect {
                     {width: 3, height: 3},
                     0,
                     0.01,
-                    0.85,
+                    10,
                     info.color,
                     Random.nextGaussian(0.5, 0.1),
                     Random.nextDouble() * Math.PI * 2,
@@ -374,7 +462,8 @@ class ParticleEffect {
             else {
                 if (particle.type === "levelUp particle" ||
                 particle.type === "colored particle" ||
-                particle.type === "fire particle" ||
+                particle.type === "red fire particle" ||
+                particle.type === "orange fire particle" ||
                 particle.type === "smoke particle" ||
                 particle.type === "ice particle"
                 )particle.renderParticle(ctx);
