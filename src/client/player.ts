@@ -6,8 +6,8 @@ import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Platform } from "../objects/platform";
-import { ParticleSystem } from "./particle";
-import { Game } from "./game";
+import { assetManager } from "./assetmanager";
+import { Size } from "../size";
 
 export class ClientPlayer extends Player {
     constructor(
@@ -93,7 +93,6 @@ export class ClientPlayer extends Player {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
-
         if (this.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
@@ -109,7 +108,7 @@ export class ClientPlayer extends Player {
 
         if (this.isShielded) ctx.fillStyle = "white";
         else if (this.isDead) ctx.fillStyle = "black";
-        else ctx.fillStyle = this.isHit? "red":this.color;
+        else ctx.fillStyle = this.isHit ? "red" : this.color;
 
         //square
         const opacity = this.isDead ? 0.1 : 0.9;
@@ -248,11 +247,14 @@ export class ClientPlayer extends Player {
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = "lightgray";
-        ctx.fillText("(" + this.level + ") " + this.name, this.position.x + this.size.width / 2 - ("(" + this.level + ") " + this.name).length * 2.4, this.position.y - 11);
+        ctx.fillText(
+            "(" + this.level + ") " + this.name,
+            this.position.x + this.size.width / 2 - ("(" + this.level + ") " + this.name).length * 2.4,
+            this.position.y - 11,
+        );
 
         //ctx.fillStyle = "white";
         //ctx.fillText(this.killCount.toString(), this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
-
     }
 
     public renderFocus(ctx: CanvasRenderingContext2D) {
@@ -289,41 +291,21 @@ export class ClientPlayer extends Player {
     public renderWizard(ctx: CanvasRenderingContext2D) {
         ctx.shadowBlur = 0;
 
-        //beard
-        ctx.beginPath();
-        ctx.fillStyle = "lightgray";
-        if (!this.facing) {
-            ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
-            ctx.lineTo(this.position.x + this.size.width / 5, this.position.y + (this.size.height * 5) / 6);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(this.position.x + this.size.width, this.position.y);
-            ctx.lineTo(this.position.x + this.size.width, this.position.y + this.size.height / 3);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + this.size.height / 6);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(this.position.x + 3, this.position.y + (this.size.height * 2) / 5);
-            ctx.lineTo(this.position.x + this.size.width / 4, this.position.y + this.size.height / 3);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
-        } else {
-            ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + (this.size.height * 2) / 5);
-            ctx.lineTo(this.position.x + (this.size.width * 4) / 5, this.position.y + (this.size.height * 5) / 6);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(this.position.x, this.position.y);
-            ctx.lineTo(this.position.x, this.position.y + this.size.height / 3);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + this.size.height / 6);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(this.position.x + this.size.width - 3, this.position.y + (this.size.height * 2) / 5);
-            ctx.lineTo(this.position.x + (this.size.width * 3) / 4, this.position.y + this.size.height / 3);
-            ctx.lineTo(this.position.x + this.size.width / 2, this.position.y + (this.size.height * 2) / 5 + 3);
-        }
-        ctx.strokeStyle = "lightgray";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        const imagePosition: Vector = {
+            x: this.position.x + this.size.width * 0.15,
+            y: this.position.y - this.size.height * 1.0,
+        };
+        const imageSize: Size = {
+            width: this.size.width * 1.1,
+            height: this.size.height * 1.1,
+        };
+        const rotation = 0.3;
+        ctx.save();
+        ctx.translate(imagePosition.x, imagePosition.y);
+        ctx.rotate(rotation);
+        ctx.translate(-imagePosition.x, -imagePosition.y);
+        ctx.drawImage(assetManager.images["wizard-hat"], imagePosition.x, imagePosition.y, imageSize.width, imageSize.height);
+        ctx.restore();
 
         //reset
         ctx.shadowBlur = 2;
@@ -365,7 +347,6 @@ export class ClientPlayer extends Player {
     }
 
     public renderWeaponTemplate(ctx: CanvasRenderingContext2D, imgSrc: string, scale: number) {
-
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan(
