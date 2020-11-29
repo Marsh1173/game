@@ -98,31 +98,31 @@ class Particle {
                 break;
             case "levelUp particle":
                 ctx.globalAlpha = Math.sqrt(this.lifetime / this.originalLife);
-                ctx.shadowBlur = 5;
+                ctx.shadowBlur = 7;
                 ctx.shadowColor = "yellow";
                 ctx.fillStyle = "white";
                 break;
             case "red fire particle" :
                 ctx.globalAlpha = this.lifetime / (this.originalLife * 3);
-                ctx.shadowBlur = 7;
-                ctx.shadowColor = "red";
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = "none";
                 ctx.fillStyle = "#ff5900";
                 break;
             case "orange fire particle" :
                 ctx.globalAlpha = this.lifetime / this.originalLife;
-                ctx.shadowBlur = 7;
-                ctx.shadowColor = "orange";
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = "none";
                 ctx.fillStyle = "#ff7b00";
                 break;
             case "smoke particle" :
                 ctx.globalAlpha = this.lifetime / (this.originalLife * 8);
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = "white";
-                ctx.fillStyle = "lightgray";
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = "none";
+                ctx.fillStyle = "darkgray";
                 break;
             case "ice particle" :
                 ctx.globalAlpha = this.lifetime / (this.originalLife * 3);
-                ctx.shadowBlur = 7;
+                ctx.shadowBlur = 1;
                 ctx.shadowColor = "white";
                 ctx.fillStyle = "cyan";
                 break;
@@ -361,20 +361,20 @@ class ParticleEffect {
         }
         for (let i = 0; i < 150; i++) {
             const direction = Random.nextCircleVector();
-            const speed = Random.nextGaussian(1000, 650);
+            const speed = Random.nextGaussian(600, 100);
             direction.x *= speed;
             direction.y *= speed;
             this.particles.push(
                 new Particle(
                     { x: this.info.position.x, y: this.info.position.y },
-                    {x: direction.x, y: direction.y},
+                    {x: direction.x, y: direction.y - 100},
                     "red fire particle",
                     {width: 10, height: 10},
-                    -0.6,
-                    0,
-                    15,
+                    0.3,
+                    1,
+                    3,
                     info.color,
-                    Random.nextGaussian(0.4, 0.1),
+                    Random.nextGaussian(0.6, 0.1),
                     Random.nextDouble() * Math.PI * 2,
                     speed / 500,
                 ),
@@ -383,7 +383,7 @@ class ParticleEffect {
     }
 
     public fireballIdle(info: ParticleEffectInfo) {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 2; i++) {
             const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 14 - 7);
             const randomY: number = this.info.position.y + (Math.random() * 14 - 7);
@@ -404,7 +404,7 @@ class ParticleEffect {
                 ),
             );
         }
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 2; i++) {
             const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 20 - 10);
             const randomY: number = this.info.position.y + (Math.random() * 20 - 10);

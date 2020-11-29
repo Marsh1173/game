@@ -367,11 +367,12 @@ export class Game {
             if (!player.isStealthed && !player.isDead && player.classType >= 0) player.renderName(Game.ctx);
             //player.renderFocus(Game.ctx); //FOR DEBUGGING
         });
+
+        Game.particleHandler.render(Game.ctx);
+
         if (playerWithId.isStealthed) {
             playerWithId.renderInvisiblePlayer(Game.ctx);
         }
-
-        Game.particleHandler.render(Game.ctx);
     }
 
     private updateSlider() {
@@ -495,6 +496,9 @@ export class Game {
         this.players.forEach((player1) => {
             this.platforms.forEach((platform) => {
                 player1.checkCollisionWithRectangularObject(platform, elapsedTime);
+            });
+            this.players.forEach((player2) => {
+                if (player2.id != player1.id) player1.checkCollisionWithPlayer(player2, elapsedTime);
             });
         });
     }

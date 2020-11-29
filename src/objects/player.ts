@@ -189,6 +189,22 @@ export abstract class Player {
         }
     }
 
+    public checkCollisionWithPlayer(object: { size: Size; position: Vector }, elapsedTime: number) {
+        return;
+        let futurePosX = this.position.x + this.momentum.x * elapsedTime;
+        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
+        if (
+            futurePosX < object.position.x + object.size.width &&
+            futurePosX + this.size.width > object.position.x &&
+            futurePosY < object.position.y + object.size.height &&
+            futurePosY + this.size.height > object.position.y
+        ) {
+
+            
+
+        }
+    }
+
     public attemptJump() {
         if (!this.isDead && this.alreadyJumped <= 0 && this.canJump) {
             this.jump();
