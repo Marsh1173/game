@@ -1,6 +1,7 @@
 import { Config } from "../config";
 import { Projectile } from "../objects/projectile";
 import { SerializedProjectile } from "../serialized/projectile";
+import { ParticleSystem } from "./particle";
 
 export class ClientProjectile extends Projectile {
 
@@ -29,7 +30,7 @@ export class ClientProjectile extends Projectile {
 
     }
 
-    public render(ctx: CanvasRenderingContext2D) {
+    public render(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
@@ -42,11 +43,29 @@ export class ClientProjectile extends Projectile {
             scale = 0.17;
         }
         else if (this.projectileType === "ice") {
+            if (!this.inGround){
+                particleHandler.newEffect({
+                    particleEffectType: "iceIdle",
+                    position: { x: this.position.x - this.momentum.x / 100, y: this.position.y - this.momentum.y / 100},
+                    momentum: this.momentum,
+                    direction: { x: 0, y: 0 },
+                    color: "white",
+                });
+            }
+
             ctx.shadowColor = "white";
             ctx.shadowBlur = 1;
             scale = 0.17;
         }
         else if (this.projectileType === "fire") {
+            particleHandler.newEffect({
+                particleEffectType: "fireballIdle",
+                position: { x: this.position.x - this.momentum.x / 100, y: this.position.y - this.momentum.y / 100},
+                momentum: this.momentum,
+                direction: { x: 0, y: 0 },
+                color: "orange",
+            });
+
             ctx.shadowColor = "orange";
             ctx.shadowBlur = 4;
             scale = 0.25;

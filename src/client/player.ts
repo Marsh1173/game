@@ -89,17 +89,11 @@ export class ClientPlayer extends Player {
             this.prevFocusPosition.y = this.focusPosition.y;
         }
 
-        if (this.id === this.isClientPlayer) {
-            this.serverTalker.sendMessage({
-                type: "animate",
-                id: this.id,
-                animationFrame: this.animationFrame,
-            });
-        }
         super.update(elapsedTime, players, platforms);
     }
 
     public render(ctx: CanvasRenderingContext2D) {
+
         if (this.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
@@ -115,10 +109,10 @@ export class ClientPlayer extends Player {
 
         if (this.isShielded) ctx.fillStyle = "white";
         else if (this.isDead) ctx.fillStyle = "black";
-        else ctx.fillStyle = this.color;
+        else ctx.fillStyle = this.isHit? "red":this.color;
 
         //square
-        const opacity = this.isDead ? 0.2 : 0.9;
+        const opacity = this.isDead ? 0.1 : 0.9;
         ctx.globalAlpha = opacity;
         ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
         if (this.isShielded || this.isDead) {
@@ -227,14 +221,8 @@ export class ClientPlayer extends Player {
         ctx.shadowColor = "gray";
     }
 
-    public renderName(ctx: CanvasRenderingContext2D) {
+    public renderHealth(ctx: CanvasRenderingContext2D) {
         ctx.shadowBlur = 0;
-
-        //ctx.fillStyle = "white";
-        //ctx.fillText(this.name, this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
-
-        //ctx.fillStyle = "white";
-        //ctx.fillText(this.killCount.toString(), this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
 
         ctx.fillStyle = "red";
         ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (this.size.width * 3) / 4, 4);
@@ -254,6 +242,17 @@ export class ClientPlayer extends Player {
 
         ctx.shadowColor = "gray";
         ctx.shadowBlur = 2;
+    }
+
+    public renderName(ctx: CanvasRenderingContext2D) {
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = "lightgray";
+        ctx.fillText("(" + this.level + ") " + this.name, this.position.x + this.size.width / 2 - ("(" + this.level + ") " + this.name).length * 2.4, this.position.y - 11);
+
+        //ctx.fillStyle = "white";
+        //ctx.fillText(this.killCount.toString(), this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
+
     }
 
     public renderFocus(ctx: CanvasRenderingContext2D) {
@@ -467,11 +466,6 @@ export class ClientPlayer extends Player {
             life: 800, // test
             inGround: false,
         });
-    }*/
-
-    /*public attemptBasicAttack(players: Player[]) {
-
-        super.attemptBasicAttack(players);
     }*/
 
     public basicAttack(players: Player[]) {

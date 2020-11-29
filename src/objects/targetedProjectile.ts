@@ -4,6 +4,7 @@ import { Vector } from "../vector";
 import { Size } from "../size";
 import { Player } from "./player";
 import { Platform } from "./platform";
+import { Game } from "../client/game";
 
 export type TargetedProjectileType = "firestrike" | "chains";
 
@@ -62,6 +63,7 @@ export abstract class TargetedProjectile {
     }
 
     private updateFirestrike(elapsedTime: number, players: Player[]) {
+
         this.momentum.y += 20;
 
         this.position.y += this.momentum.y * elapsedTime;
@@ -105,6 +107,7 @@ export abstract class TargetedProjectile {
             if (this.id != player.id && distance < 100) {
                 player.momentum.x += this.momentum.x / 2;
                 player.momentum.y += this.momentum.y / 2;
+                if (!player.isDead) player.lastHitBy = this.id;
             }
         });
 

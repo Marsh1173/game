@@ -21,6 +21,8 @@ export interface Config {
         down: string;
         left: string;
         right: string;
+        basicAttack: string,
+        secondAttack: string,
     };
     platformColor: string;
     fallingAcceleration: number;
@@ -48,6 +50,8 @@ export const defaultConfig: Config = {
         down: "KeyS",
         left: "KeyA",
         right: "KeyD",
+        basicAttack: "leftMouseDown",
+        secondAttack: "rightMouseDown",
     },
     platformColor: "grey",
     fallingAcceleration: 3500,

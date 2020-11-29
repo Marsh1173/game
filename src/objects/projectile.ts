@@ -130,9 +130,11 @@ export abstract class Projectile {
             if (!player.isDead && !this.inGround) {
                 if (!player.isShielded){
 
-                    player.damagePlayer(this.damage, this.id, "projectile", this.damageType);
-                    if (this.damageType === "poison") player.dotPlayer(2, this.id, "poison", "elemental", 300, 5);
-                    if (this.damageType === "fire") player.dotPlayer(2, this.id, "fire", "elemental", 500, 2);
+                    if (this.damageType != "fire") {
+                        player.dotPlayer(2, this.id, "fire", "elemental", 500, 2);
+                        player.damagePlayer(this.damage, this.id, "projectile", this.damageType);
+                    } else player.dotPlayer(2, this.id, "poison", "elemental", 300, 5);
+                    
                 }
                 this.life = 0;
                 this.inGround = true;
@@ -184,14 +186,19 @@ export abstract class Projectile {
                             setTimeout(() => {
                                 player.moveSpeedModifier *= 2;
                             }, 2000);
-                        }
-
-                        if (this.projectileType === "shuriken") {
+                        } else if (this.projectileType === "shuriken") {
                             players.forEach((player2) => {
                                 if (player2.id === this.id) {
                                     player2.revealStealthed(500);
                                     if (player.facing) player2.movePlayer((player.position.x - player2.position.x - 60), (player.position.y - player2.position.y), true);
                                     else player2.movePlayer((player.position.x - player2.position.x + 60), (player.position.y - player2.position.y), true);
+                                }
+                            });
+                        } else if (this.projectileType === "fire") {
+                            players.forEach((player2) => {
+                                const distance: number = Math.sqrt(Math.pow(player2.position.x - this.position.x, 2) + Math.pow(player2.position.y - this.position.y, 2))
+                                if (player2.id != this.id && distance < 70) {
+                                    player2.damagePlayer(this.damage, this.id, "projectile", this.damageType);
                                 }
                             });
                         }

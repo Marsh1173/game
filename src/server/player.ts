@@ -90,4 +90,20 @@ export class ServerPlayer extends Player {
             id: this.id,
         });
     }
+
+    public die() {
+        super.die();
+        Game.broadcastMessage({
+            type: "die",
+            id: this.id,
+        });
+    }
+
+    public ninjaFirstAbility() {
+        super.ninjaFirstAbility();
+        Game.broadcastMessage({
+            type: "stealth",
+            id: this.id,
+        });
+    }
 }

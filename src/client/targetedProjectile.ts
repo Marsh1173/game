@@ -1,7 +1,7 @@
 import { Config } from "../config";
 import { TargetedProjectile } from "../objects/targetedProjectile";
 import { SerializedTargetedProjectile } from "../serialized/targetedProjectile";
-import { Game } from "./game";
+import { ParticleSystem } from "./particle";
 
 export class ClientTargetedProjectile extends TargetedProjectile {
 
@@ -26,12 +26,21 @@ export class ClientTargetedProjectile extends TargetedProjectile {
 
     }
 
-    public render(ctx: CanvasRenderingContext2D) {
-        if (this.targetedProjectileType === "firestrike") this.renderFirestrike(ctx);
+    public render(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
+        if (this.targetedProjectileType === "firestrike") this.renderFirestrike(ctx, particleHandler);
         if (this.targetedProjectileType === "chains") this.renderChains(ctx);
     }
 
-    public renderFirestrike(ctx: CanvasRenderingContext2D) {
+    public renderFirestrike(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
+
+        particleHandler.newEffect({
+            particleEffectType: "firestrikeIdle",
+            position: { x: this.position.x, y: this.position.y - 50},
+            momentum: this.momentum,
+            direction: { x: 0, y: 0 },
+            color: "orange",
+        });
+
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan(this.momentum.y / this.momentum.x);

@@ -33,7 +33,7 @@ export class Game {
     private mousePos: Vector = { x: 0, y: 0 };
     private animationFrame: number = 0;
 
-    private isLeftClicking: boolean = false;
+    //private isLeftClicking: boolean = false;
     private isLeftCharging: number = 0;
     private leftClickCooldown: number = 0;
     private leftClickCounter: number = 0;
@@ -105,21 +105,41 @@ export class Game {
         this.setCooldowns(this.findPlayer());
 
         this.serverTalker.messageHandler = (msg: ServerMessage) => {
+            let player;
             switch (msg.type) {
                 case "info":
                     this.constructGame(msg.info);
                     break;
                 case "levelUp":
-                    const player = this.players.find((player) => player.id === msg.id)!;
+                    player = this.players.find((player) => player.id === msg.id)!;
                     Game.particleHandler.newEffect({
-                        particleType: "fire",
-                        position: { x: player.position.x + player.size.width / 2 + player.momentum.x / 100, y: player.position.y + player.size.height / 2 + player.momentum.y / 100 },
-                        particleSize: { width: 150, height: 150 },
-                        particleSpeed: { mean: 150, stdev: 110 },
-                        particleLifetime: { mean: 0.6, stdev: 0.4 },
-                        particleAmt: 70,
+                        particleEffectType: "levelUp",
+                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
+                        momentum: player.momentum,
+                        direction: { x: 0, y: 0 },
+                        color: player.color,
+                        targetPosition: player.position,
                     });
                     break;
+                case "die":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    Game.particleHandler.newEffect({
+                        particleEffectType: "die",
+                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
+                        momentum: player.momentum,
+                        direction: { x: 0, y: 0 },
+                        color: player.color,
+                    });
+                    break;
+                case "stealth":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    Game.particleHandler.newEffect({
+                        particleEffectType: "stealth",
+                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
+                        momentum: player.momentum,
+                        direction: { x: 0, y: 0 },
+                        color: player.color,
+                    });
                 case "playerLeaving":
                     // We don't do anything here yet
                     break;
@@ -138,42 +158,25 @@ export class Game {
 
             if (e.button === 0) {
                 //left mouse button click
-
                 this.cancelAbilites();
-                this.isLeftClicking = true;
+                this.keyState[config.playerKeys.basicAttack] = true;
 
-                if (this.leftClickCounter <= 0 && !playerWithId.isDead) {
-                    this.animationFrame = 2;
-                    this.leftClickCounter = this.leftClickCooldown;
-
-                    playerWithId.attemptBasicAttack(this.players);
-                }
             } else if (e.button === 2) {
                 //right mouse button click
                 this.cancelAbilites();
-                if (!playerWithId.isDead && playerWithId.classType != 1 && this.rightClickCounter <= 0) {
-                    playerWithId.attemptSecondaryAttack(this.players);
-                    this.rightClickCounter = this.rightClickCooldown;
-                } else if (playerWithId.classType === 1) this.isRightClicking = true;
+                this.keyState[config.playerKeys.secondAttack] = true;
             }
         };
         window.onmouseup = (e: MouseEvent) => {
             const playerWithId = this.findPlayer();
 
-            if (e.button === 0 && this.isLeftClicking) {
+            if (e.button === 0 && this.keyState[config.playerKeys.basicAttack]) {
                 // left mouse release
-                this.isLeftClicking = false;
                 this.isLeftCharging = 0;
-                this.animationFrame = 0;
-            } else if (e.button === 2 && this.isRightClicking) {
+                this.keyState[config.playerKeys.basicAttack] = false;
+            } else if (e.button === 2 && this.keyState[config.playerKeys.secondAttack]) {
                 // right mouse release
-
-                this.isRightClicking = false;
-                //add right mouse charged ability register that passes isRightCharging
-                if (this.rightClickCounter <= 0 && this.isRightCharging >= 1) {
-                    playerWithId.attemptSecondaryAttack(this.players);
-                    this.rightClickCounter = this.rightClickCooldown;
-                }
+                this.keyState[config.playerKeys.secondAttack] = false;
                 this.isRightCharging = 0;
             }
         };
@@ -183,7 +186,7 @@ export class Game {
         };
         window.onkeydown = (e: KeyboardEvent) => {
             if (e.code === "ShiftLeft") {
-                if (!this.keyState["ShiftLeft"] && !this.isRightClicking && !this.isLeftClicking) {
+                if (!this.keyState["ShiftLeft"] && !this.keyState[config.playerKeys.basicAttack]) {
                     const playerWithId = this.findPlayer();
                     this.cancelAbilites();
                     if (!playerWithId.isDead && playerWithId.classType === 2 && this.firstAbilityCounter <= 0) {
@@ -250,7 +253,7 @@ export class Game {
 
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPos;
         playerWithId.focusPosition.y = this.mousePos.y;
-        playerWithId.animationFrame += (this.animationFrame - playerWithId.animationFrame) / 2;
+        //playerWithId.animationFrame += (this.animationFrame - playerWithId.animationFrame) / 2;
 
         this.updateMouse(elapsedTime, playerWithId);
 
@@ -267,6 +270,22 @@ export class Game {
         }
         if (this.keyState[this.config.playerKeys.right]) {
             playerWithId.attemptMoveRight(elapsedTime);
+        }
+        if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
+            this.leftClickCounter = this.leftClickCooldown;
+            playerWithId.attemptBasicAttack(this.players);
+        }
+        if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
+
+            if (playerWithId.classType != 1 && this.rightClickCounter <= 0) {
+                playerWithId.attemptSecondaryAttack(this.players);
+                this.rightClickCounter = this.rightClickCooldown;
+                this.isRightCharging = 0;
+            } else if (playerWithId.classType === 1 && this.rightClickCounter <= 0 && this.isRightCharging >= 1) {
+                playerWithId.attemptSecondaryAttack(this.players);
+                this.rightClickCounter = this.rightClickCooldown;
+                this.isRightCharging = 0;
+            }
         }
 
         Game.particleHandler.update(elapsedTime, this.platforms);
@@ -290,8 +309,8 @@ export class Game {
     }
 
     private cancelAbilites() {
-        this.isRightClicking = false;
-        this.isLeftClicking = false;
+        this.keyState[this.config.playerKeys.secondAttack] = false;
+        this.keyState[this.config.playerKeys.basicAttack] = false;
         this.keyState["ShiftLeft"] = false;
 
         this.animationFrame = 0;
@@ -307,10 +326,10 @@ export class Game {
             this.isLeftCharging = 0;
             this.firstAbilityCharging = 0;
         } else {
-            if (this.isRightClicking && this.rightClickCounter <= 0) {
+            if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
                 if (this.isRightCharging < 1) this.isRightCharging += elapsedTime * 2;
                 else if (this.isRightCharging > 1) this.isRightCharging = 1;
-            } else if (this.isLeftClicking && this.leftClickCounter <= 0) {
+            } else if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
                 if (this.isLeftCharging < 1) this.isLeftCharging += elapsedTime * 2;
                 else if (this.isLeftCharging > 1) this.isLeftCharging = 1;
             } else if (this.keyState["ShiftLeft"] && this.firstAbilityCounter <= 0) {
@@ -324,16 +343,17 @@ export class Game {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
 
         const playerWithId = this.findPlayer();
-
         if (!playerWithId.isStealthed && Game.canvas.style.background != "#2e3133") Game.canvas.style.background = "#2e3133";
         else if (playerWithId.isStealthed && Game.canvas.style.background != "#191b1c") Game.canvas.style.background = "#191b1c";
 
-        this.projectiles.forEach((projectile) => projectile.render(Game.ctx));
-        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.render(Game.ctx));
-        this.platforms.forEach((platform) => platform.render(Game.ctx));
         this.players.forEach((player) => {
             if (!player.isStealthed) player.render(Game.ctx);
         });
+
+        this.projectiles.forEach((projectile) => projectile.render(Game.ctx, Game.particleHandler));
+        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.render(Game.ctx, Game.particleHandler));
+        this.platforms.forEach((platform) => platform.render(Game.ctx));
+
         this.players.forEach((player) => {
             if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
@@ -342,14 +362,16 @@ export class Game {
                 player.renderWeapon(Game.ctx);
             }
         });
-        Game.particleHandler.render(Game.ctx);
         this.players.forEach((player) => {
-            if (!player.isStealthed && !player.isDead && player.health < player.healthModifier + 100) player.renderName(Game.ctx);
+            if (!player.isStealthed && !player.isDead) player.renderHealth(Game.ctx);
+            if (!player.isStealthed && !player.isDead && player.classType >= 0) player.renderName(Game.ctx);
             //player.renderFocus(Game.ctx); //FOR DEBUGGING
         });
         if (playerWithId.isStealthed) {
             playerWithId.renderInvisiblePlayer(Game.ctx);
         }
+
+        Game.particleHandler.render(Game.ctx);
     }
 
     private updateSlider() {

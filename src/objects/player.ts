@@ -272,7 +272,13 @@ export abstract class Player {
     }
 
     public attemptBasicAttack(players: Player[]) {
-        this.basicAttack(players);
+        if (!this.isDead) {
+            this.basicAttack(players);
+            this.animationFrame = 1.5;
+            setTimeout(() => {
+                this.animationFrame = 0;
+            }, 50);
+        }
     }
     public basicAttack(players: Player[]) {
 
@@ -377,7 +383,7 @@ export abstract class Player {
     }
 
     public attemptSecondaryAttack(players: Player[]) {
-        this.secondaryAttack(players);
+        if (!this.isDead) this.secondaryAttack(players);
     }
     public secondaryAttack(players: Player[]) {
         if (this.classType === 0) this.ninjaSecondaryAttack();
@@ -545,14 +551,10 @@ export abstract class Player {
         }, time);
     }
 
-    public wasHit(changePlayerColor: boolean = true) {
-        if (changePlayerColor) {
-            this.color = "red";
-        }
+    public wasHit() {
         this.isHit = true;
         setTimeout(() => {
             this.isHit = false;
-            this.color = this.oldColor;
         }, 55);
     }
 
@@ -583,7 +585,7 @@ export abstract class Player {
         if (ifStrong) {
             this.revealStealthed();
             this.wasHit();
-        } else this.wasHit(false);
+        }
 
         if (this.health <= 0) {
             this.die();
@@ -623,7 +625,7 @@ export abstract class Player {
         this.health = 100 + this.healthModifier;
         this.momentum.x = 0;
         this.momentum.y = 0;
-        this.lastHitBy = -1;
+        this.lastHitBy = this.id;
 
         this.isShielded = true;
         this.shieldCount = setTimeout(() => {
@@ -750,21 +752,21 @@ export abstract class Player {
 
         // get damaged if you hit the bottom of the screen
         if (!this.isDead && this.position.y >= this.config.ySize - this.size.height) {
-            this.damagePlayer(elapsedTime * 120, -1, "unblockable", "lava");
+            this.damagePlayer(elapsedTime * 120, this.id, "unblockable", "lava");
         } else if (!this.isDead) {
             this.healPlayer(elapsedTime * 1);
         }
 
         // Respawn timer
         if (this.isDead) {
-            if (this.lastHitBy != -1) {
+            if (this.lastHitBy != this.id && this.lastHitBy != -1) {
                 players.forEach((player) => {
                     if (player.id === this.lastHitBy) {
                         player.getAKill();
                         console.log(player.id + " has " + player.killCount + " kills");
                     }
                 });
-                this.lastHitBy = -1;
+                this.lastHitBy = this.id;
             }
             this.deathCooldown -= elapsedTime * 60;
             if (this.deathCooldown <= 0 && this.classType >= 0) {

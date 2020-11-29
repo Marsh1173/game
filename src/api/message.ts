@@ -25,8 +25,17 @@ export interface LevelUpMessage {
     type: "levelUp";
     id: number;
 }
+export interface DieMessage {
+    type: "die";
+    id: number;
+}
 
-export type ServerMessage = PlayerInfoMessage | PlayerLeavingMessage | InfoMessage | LevelUpMessage;
+export interface StealthMessage {
+    type: "stealth";
+    id: number;
+}
+
+export type ServerMessage = PlayerInfoMessage | PlayerLeavingMessage | InfoMessage | LevelUpMessage | DieMessage | StealthMessage;
 
 export interface ActionMessage {
     type: "action";
