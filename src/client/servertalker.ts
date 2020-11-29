@@ -2,7 +2,7 @@ import { JoinRequest, JoinResponse } from "../api/join";
 import { ClientMessage, ServerMessage } from "../api/message";
 
 export class ServerTalker {
-    private static readonly hostName = window.location.host;
+    public static readonly hostName = window.location.host;
     public readonly serverTalkerReady: Promise<JoinResponse>;
     private websocket?: WebSocket;
     constructor(joinRequest: JoinRequest, public messageHandler: (data: ServerMessage) => void = () => {}) {
