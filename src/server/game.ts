@@ -96,17 +96,14 @@ export class Game {
     }
 
     private updateObjectsSecondary(elapsedTime: number) {
-        this.players.forEach((player1) => {
-            this.platforms.forEach((platform) => {
-                player1.checkCollisionWithRectangularObject(platform, elapsedTime);
-            });
-        });
+
     }
 
     public newPlayer(id: number, name: string, color: string, classType: number, position: Vector) {
         const newPlayer = new ServerPlayer(
             this.config,
             id,
+            1,
             name,
             color,
             classType,
@@ -150,6 +147,7 @@ export class Game {
         const newPlayerAI = new PlayerAI(
             this.config,
             id,
+            -1,
             name,
             color,
             classType,

@@ -33,7 +33,7 @@ export abstract class Player {
     constructor(
         public readonly config: Config,
         public id: number,
-        //public team: number,
+        public team: number,
         public name: string,
         public classType: number,
         public weaponEquipped: number, //NOT BEING USED ATM
@@ -87,14 +87,14 @@ export abstract class Player {
             isDead: boolean,
             life: number,
         ) => void,
-
-        public oldColor: string = color,
-    ) {}
+    ) {
+        if (this.classType === 0) this.moveSpeedModifier *= 1.05;
+    }
 
     public serialize(): SerializedPlayer {
         return {
             id: this.id,
-            //team: this.team,
+            team: this.team,
             name: this.name,
             classType: this.classType,
             weaponEquipped: this.weaponEquipped,
@@ -190,7 +190,6 @@ export abstract class Player {
     }
 
     public checkCollisionWithPlayer(object: { size: Size; position: Vector }, elapsedTime: number) {
-        return;
         let futurePosX = this.position.x + this.momentum.x * elapsedTime;
         let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
@@ -200,7 +199,10 @@ export abstract class Player {
             futurePosY + this.size.height > object.position.y
         ) {
 
-            
+            const xDistance: number = (object.position.x - this.position.x);
+            if (xDistance > 0) this.momentum.x -= 30;
+            else this.momentum.x += 30;
+            //this.momentum.x -= 100 / (object.position.x - this.position.x);
 
         }
     }
@@ -276,7 +278,7 @@ export abstract class Player {
             "piercing",
             15,
             this.id,
-            this.id,
+            this.team,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             { x: newX, y: newY },
             10, // should be tested
@@ -308,13 +310,13 @@ export abstract class Player {
         if (this.classType === 1) this.wizardBasicAttack();
         else {
             players.forEach((player) => {
-                if (player.id != this.id) {
+                if (player.id != this.id && player.team != this.team) {
                     if (this.classType === -1)
-                        this.basicAttackTemplate(player, 7 + this.AttackModifier * 5, "physical", "melee", angle, 100, Math.PI / 8, 5, this.id, 200);
+                        this.basicAttackTemplate(player, 5 + this.AttackModifier * 5, "physical", "melee", angle, 100, Math.PI / 8, 5, 100);
                     if (this.classType === 0)
-                        this.basicAttackTemplate(player, 7 + this.AttackModifier, "poison", "melee", angle, 100, Math.PI / 6, 10, this.id, 300);
+                        this.basicAttackTemplate(player, 7 + this.AttackModifier, "poison", "melee", angle, 100, Math.PI / 6, 10, 300);
                     else if (this.classType === 2)
-                        this.basicAttackTemplate(player, 15 + this.AttackModifier * 2, "crushing", "melee", angle, 130, Math.PI / 3, 30, this.id, 900);
+                        this.basicAttackTemplate(player, 15 + this.AttackModifier * 2, "crushing", "melee", angle, 130, Math.PI / 3, 30, 700);
                     //if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this, 200);
                 }
             });
@@ -329,7 +331,6 @@ export abstract class Player {
         range: number,
         spread: number,
         meleeRange: number,
-        id: number,
         knockback: number,
         //on hit effect methods?)
     ) {
@@ -352,7 +353,7 @@ export abstract class Player {
                 distance < meleeRange
             ) {
                 if (this.classType === 0) {
-                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 4, this.id, "poison", "elemental", 250, 6);
+                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 4, this.id, this.team, "poison", "elemental", 250, 6);
                     if (
                         (player.facing && angle >= Math.PI / -2 && angle <= Math.PI / 2) ||
                         (!player.facing && angle >= Math.PI / 2 && angle <= (Math.PI * 3) / 2)
@@ -362,7 +363,7 @@ export abstract class Player {
                     }
                 }
 
-                player.damagePlayer(damage, id, type, damageType);
+                player.damagePlayer(damage, this.id, this.team, type, damageType);
                 player.knockbackPlayer(angle, knockback);
 
                 this.revealStealthed(20);
@@ -382,19 +383,19 @@ export abstract class Player {
             "fire",
             12 + this.AttackModifier * 2,
             this.id,
-            this.id,
+            this.team,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             { x: 1200 * Math.cos(angle), y: 1200 * Math.sin(angle) },
             0,
             0,
             0,
-            0.6,
+            0.5 + this.AttackModifier /  50,
             false,
         );
 
-        this.moveSpeedModifier /= 1.2;
+        this.moveSpeedModifier /= 1.5;
         setTimeout(() => {
-            this.moveSpeedModifier *= 1.2;
+            this.moveSpeedModifier *= 1.5;
         }, 500);
     }
 
@@ -420,7 +421,7 @@ export abstract class Player {
             "poison",
             5,
             this.id,
-            this.id,
+            this.team,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             { x: 2500 * Math.cos(angle), y: 2500 * Math.sin(angle) },
             0.05,
@@ -441,7 +442,7 @@ export abstract class Player {
             "ranged",
             15,
             this.id,
-            this.id,
+            this.team,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
             { x: 1300 * Math.cos(angle), y: 1300 * Math.sin(angle) - 100 },
             0.15,
@@ -451,9 +452,9 @@ export abstract class Player {
             false,
         );
 
-        this.moveSpeedModifier /= 1.5;
+        this.moveSpeedModifier /= 2;
         setTimeout(() => {
-            this.moveSpeedModifier *= 1.5;
+            this.moveSpeedModifier *= 2;
         }, 500);
     }
     public knightSecondaryAttack(players: Player[]) {
@@ -473,10 +474,10 @@ export abstract class Player {
         }, 100);
 
         players.forEach((player) => {
-            if (player != this && player.position.y > this.position.y - 50 && player.position.y < this.position.y + 50) {
+            if (player.team != this.team &&player.id != this.id && player.position.y > this.position.y - 50 && player.position.y < this.position.y + 50) {
                 if (this.facing && player.position.x > this.position.x - 25 && player.position.x < this.position.x + range) {
                     setTimeout(() => {
-                        player.damagePlayer(damage, this.id, "crushing", "melee");
+                        player.damagePlayer(damage, this.id, this.team, "crushing", "melee");
                         player.knockbackPlayer(0, knockbackMomentum);
                         player.momentum.y -= 500; // knocks them slightly upwards
 
@@ -487,7 +488,7 @@ export abstract class Player {
                     }, 30);
                 } else if (!this.facing && player.position.x > this.position.x - range && player.position.x < this.position.x + 25) {
                     setTimeout(() => {
-                        player.damagePlayer(damage, this.id, "crushing", "melee");
+                        player.damagePlayer(damage, this.id, this.team, "crushing", "melee");
                         player.knockbackPlayer(0, knockbackMomentum);
                         player.momentum.y -= 500; // knocks them slightly upwards
 
@@ -526,7 +527,7 @@ export abstract class Player {
         this.doTargetedProjectile(
             "firestrike",
             this.id,
-            this.id,
+            this.team,
             { x: this.focusPosition.x - 4, y: y - this.config.ySize },
             { x: 0, y: 600 },
             { x: this.focusPosition.x - 4, y: y },
@@ -541,16 +542,27 @@ export abstract class Player {
         let angle: number = Math.atan(newY / newX);
         if (newX < 0) angle += Math.PI;
 
-        this.doTargetedProjectile(
+        /*this.doTargetedProjectile(
             "chains",
             this.id,
-            this.id,
+            this.team,
             { x: this.position.x + Math.cos(angle) * 500, y: this.position.y + Math.sin(angle) * 500 },
             { x: 0, y: 0 },
             this.position,
             //{x: this.position.x, y: this.position.y},
             false,
             1,
+        );*/
+        this.doTargetedProjectile(
+            "healingAura",
+            this.id,
+            this.team,
+            {x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2},
+            { x: Math.cos(angle) * 50, y: Math.sin(angle) * 50 },
+            { x: this.position.x + Math.cos(angle) * 500, y: this.position.y + Math.sin(angle) * 500 },
+            //{x: this.position.x, y: this.position.y},
+            false,
+            3,
         );
     }
 
@@ -581,19 +593,20 @@ export abstract class Player {
         }
     }
 
-    public dotPlayer(quantity: number, id: number, type: String, damageType: String, spacing: number, amount: number) {
+    public dotPlayer(quantity: number, id: number, team: number, type: String, damageType: String, spacing: number, amount: number) {
         if (amount === 0 || this.isDead) return;
         setTimeout(() => {
-            this.damagePlayer(quantity, id, type, damageType, false);
-            this.dotPlayer(quantity, id, type, damageType, spacing, amount - 1);
+            this.damagePlayer(quantity, id, team, type, damageType, false);
+            this.dotPlayer(quantity, id, team, type, damageType, spacing, amount - 1);
         }, spacing);
     }
 
-    public damagePlayer(quantity: number, id: number, type: String, damageType: String, ifStrong: boolean = true): boolean {
+    public damagePlayer(quantity: number, id: number, team: number, type: String, damageType: String, ifStrong: boolean = true): boolean {
+        if (this.isDead || this.team === team) {
+            return false;
+        }
         if (this.isShielded) {
             if (type != "unblockable") return false;
-        } else if (this.isDead) {
-            return false;
         }
 
         if (id != this.id) this.lastHitBy = id;
@@ -651,7 +664,7 @@ export abstract class Player {
 
     private getAKill() {
         this.killCount++;
-        while (Math.floor(this.killCount / 2) > this.level) {
+        while (Math.floor(this.killCount / 1) > this.level) {
             this.levelUp();
         }
     }
@@ -669,14 +682,35 @@ export abstract class Player {
                 this.moveSpeedModifier *= 1.03;
                 break;
         }
-        this.healPlayer(100 + this.healthModifier);
+        this.healPlayer((100 + this.healthModifier - this.health) / 2);
         this.level++;
         console.log(this.id + " is level " + this.level + "!");
     }
 
     public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
 
-        //if (this.name != "Nate" && this.classType >= 0) return; // for debugging...
+        if (this.isDead) {
+
+            this.momentum.x *= 0.9;
+            this.momentum.y *= 0.9;
+            this.position.x += this.momentum.x * elapsedTime;
+            this.position.y += this.momentum.y * elapsedTime;
+
+            if (this.lastHitBy != this.id && this.lastHitBy != -1) {
+                players.forEach((player) => {
+                    if (player.id === this.lastHitBy) {
+                        player.getAKill();
+                        console.log(player.id + " has " + player.killCount + " kills");
+                    }
+                });
+                this.lastHitBy = this.id;
+            }
+            this.deathCooldown -= elapsedTime * 60;
+            if (this.deathCooldown <= 0 && this.classType >= 0) {
+                this.resurrect();
+            }
+            return;
+        }
 
         // Action handling
         if (this.actionsNextFrame.jump) {
@@ -733,7 +767,7 @@ export abstract class Player {
         else if (!this.isDead) this.facing = false;
 
         // Update position based on momentum
-        this.position.x += this.momentum.x * elapsedTime * 1.1;
+        this.position.x += this.momentum.x * elapsedTime;
         this.position.y += this.momentum.y * elapsedTime;
 
         // Check collision with sides of area
@@ -768,32 +802,22 @@ export abstract class Player {
 
         // get damaged if you hit the bottom of the screen
         if (!this.isDead && this.position.y >= this.config.ySize - this.size.height) {
-            this.damagePlayer(elapsedTime * 120, this.id, "unblockable", "lava");
+            this.damagePlayer(elapsedTime * 120, this.id, -this.team, "unblockable", "lava");
         } else if (!this.isDead) {
             this.healPlayer(elapsedTime * 1);
-        }
-
-        // Respawn timer
-        if (this.isDead) {
-            if (this.lastHitBy != this.id && this.lastHitBy != -1) {
-                players.forEach((player) => {
-                    if (player.id === this.lastHitBy) {
-                        player.getAKill();
-                        console.log(player.id + " has " + player.killCount + " kills");
-                    }
-                });
-                this.lastHitBy = this.id;
-            }
-            this.deathCooldown -= elapsedTime * 60;
-            if (this.deathCooldown <= 0 && this.classType >= 0) {
-                this.resurrect();
-            }
         }
 
         // Blast cooldown timer
         if (this.blastCounter > 0) {
             this.blastCounter -= elapsedTime * 60;
         }
+
+        platforms.forEach((platform) => {
+            this.checkCollisionWithRectangularObject(platform, elapsedTime);
+        });
+        players.forEach((player2) => {
+            if (!player2.isDead && player2.id != this.id && !this.isStealthed && !player2.isStealthed) this.checkCollisionWithPlayer(player2, elapsedTime);
+        });
 
         Object.keys(this.actionsNextFrame).forEach((key) => (this.actionsNextFrame[key as PlayerActions] = false));
     }

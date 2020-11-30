@@ -15,7 +15,7 @@ export class PlayerAI extends ServerPlayer {
         x: this.position.x,
         y: this.position.y
     };
-    public basicAttackCounter: number = 0.8; // time between AI attacks in seconds
+    public basicAttackCounter: number = 0.4; // time between AI attacks in seconds
     public basicAttackCooldown: number = this.basicAttackCounter;
 
     public animationFrameCounter: number = 0;
@@ -60,61 +60,44 @@ export class PlayerAI extends ServerPlayer {
         if (!this.isDead){
             if (this.targetedPlayer) {
 
-                this.animationFrame = (this.animationFrameCounter + this.animationFrame * 2) / 3;
+                this.animationFrame = (this.animationFrameCounter + this.animationFrame * 2) / 3; // smooth rudimentary attack animation
 
-                /*const newX: number = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 5) / 6;
-                const newY: number = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * 5) / 6;
-
-                setTimeout(() => {
-                    this.focusPosition.x = newX;
-                    this.focusPosition.y = newY;
-                }, 20);*/
-
-                this.focusPosition.x = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 5) / 6;
+                this.focusPosition.x = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * 5) / 6; // track player
                 this.focusPosition.y = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * 5) / 6;
 
             } else {
                 //this.focusPosition.x = this.position.x + this.size.width / 2;
-                this.focusPosition.y = this.position.y + this.size.height / 2;
-                this.healPlayer(elapsedTime * 40);
+                this.focusPosition.y = this.position.y + this.size.height / 2; // level ai focus but keep them facing in the same direction
+                this.healPlayer(elapsedTime * 50); // out of combat regen
             }
 
             this.checkProximity(players);
 
             if (this.targetedPlayer) {
-                if (this.targetedPlayer.position.x > this.position.x + 100) {
+                if (this.targetedPlayer.position.x > this.position.x + 75) {
                     this.actionsNextFrame.moveRight = true;
-                } else if (this.targetedPlayer.position.x < this.position.x - 100) {
+                } else if (this.targetedPlayer.position.x < this.position.x - 75) {
                     this.actionsNextFrame.moveLeft = true;
-                } else if (this.targetedPlayer.position.y < this.position.y + 25 && this.targetedPlayer.position.y > this.position.y - 75) {
+                } else if (this.targetedPlayer.position.y < this.position.y + 25 && this.targetedPlayer.position.y > this.position.y - 75) { // if they're close enough y-wise
                     if (this.basicAttackCounter < 0 ){
                         this.actionsNextFrame.basicAttack = true;
                         this.animationFrameCounter = 1;
-                        this.basicAttackCounter = this.basicAttackCooldown;
+                        this.basicAttackCounter = this.basicAttackCooldown / this.moveSpeedModifier;
                         setTimeout(() => {
                             this.animationFrameCounter = 0;
-                        }, 150);
-                        
+                        }, 150); 
                     }
-                    else this.basicAttackCounter -= elapsedTime;
                 }
             } else {
-                if (this.station.x > this.position.x + 15) {
+                if (this.station.x > this.position.x + 50) {
                     this.actionsNextFrame.moveRight = true;
-                } else if (this.station.x < this.position.x - 15) {
+                } else if (this.station.x < this.position.x - 50) {
                     this.actionsNextFrame.moveLeft = true;
                 }
             }
         }
 
+        this.basicAttackCounter -= elapsedTime;
         super.update(elapsedTime, players, platforms);
     }
-
-   /*damagePlayer(quantity: number, id: number, type: String, damageType: String, ifStrong: boolean = true): boolean {
-
-        const distance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
-
-        return super.damagePlayer(quantity, id, type, damageType, ifStrong);
-    }*/
-
 }

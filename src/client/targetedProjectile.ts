@@ -2,14 +2,10 @@ import { Config } from "../config";
 import { Player } from "../objects/player";
 import { TargetedProjectile } from "../objects/targetedProjectile";
 import { SerializedTargetedProjectile } from "../serialized/targetedProjectile";
+import { assetManager } from "./assetmanager";
 import { ParticleSystem } from "./particle";
 
 export class ClientTargetedProjectile extends TargetedProjectile {
-
-    public targetedProjectileImage= new Image();
-
-    //private projectileImage = new Image();
-    //projectileImage.src = info.image;
 
     constructor(config: Config, info: SerializedTargetedProjectile) {
 
@@ -23,13 +19,12 @@ export class ClientTargetedProjectile extends TargetedProjectile {
             info.isDead,
             info.life);
 
-        if (this.targetedProjectileType === "firestrike") this.targetedProjectileImage.src = "images/targetedProjectiles/" + this.targetedProjectileType + ".png";
-
     }
 
     public render(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
         if (this.targetedProjectileType === "firestrike") this.renderFirestrike(ctx, particleHandler);
-        if (this.targetedProjectileType === "chains") this.renderChains(ctx);
+        else if (this.targetedProjectileType === "chains") this.renderChains(ctx);
+        else if (this.targetedProjectileType === "healingAura") this.renderHealingAura(ctx);
     }
 
     public renderFirestrike(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
@@ -66,18 +61,18 @@ export class ClientTargetedProjectile extends TargetedProjectile {
 
         ctx.rotate(rotation + Math.PI / 4);
 
-        ctx.drawImage(this.targetedProjectileImage, -this.targetedProjectileImage.width / 2, -this.targetedProjectileImage.height / 2);
+        ctx.drawImage(assetManager.images["firestrike"], -assetManager.images["firestrike"].width / 2, -assetManager.images["firestrike"].height / 2);
         ctx.resetTransform();
 
 
-        ctx.globalAlpha = 0.1;
+        /*ctx.globalAlpha = 0.1;
         ctx.fillStyle = "orange";
         ctx.beginPath(); // pillar
         ctx.moveTo(this.destination.x - 60, this.destination.y - this.config.ySize - 50);
         ctx.lineTo(this.destination.x + 60, this.destination.y - this.config.ySize - 50);
         ctx.lineTo(this.destination.x + 65, this.destination.y);
         ctx.lineTo(this.destination.x - 65, this.destination.y);
-        ctx.fill();
+        ctx.fill();*/
         ctx.globalAlpha = 1.0;
 
 
@@ -96,6 +91,25 @@ export class ClientTargetedProjectile extends TargetedProjectile {
 
         ctx.beginPath(); // circle
         ctx.arc(this.position.x, this.position.y, 45, 0, 2 * Math.PI);
+        ctx.fill();
+
+
+        ctx.globalAlpha = 1.0;
+        ctx.shadowColor = "gray";
+        ctx.shadowBlur = 2;
+    }
+
+    public renderHealingAura(ctx: CanvasRenderingContext2D) {
+
+        //let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
+        ctx.shadowColor = "white";
+        ctx.shadowBlur = 50;
+
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = "yellow";
+
+        ctx.beginPath(); // circle
+        ctx.arc(this.position.x, this.position.y, 95, 0, 2 * Math.PI);
         ctx.fill();
 
 

@@ -131,9 +131,9 @@ export abstract class Projectile {
                 if (!player.isShielded){
 
                     if (this.damageType != "fire") {
-                        player.dotPlayer(2, this.id, "fire", "elemental", 500, 2);
-                        player.damagePlayer(this.damage, this.id, "projectile", this.damageType);
-                    } else player.dotPlayer(2, this.id, "poison", "elemental", 300, 5);
+                        player.dotPlayer(2, this.id, this.team, "fire", "elemental", 500, 2);
+                        player.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
+                    } else player.dotPlayer(2, this.id, this.team, "poison", "elemental", 300, 5);
                     
                 }
                 this.life = 0;
@@ -174,7 +174,7 @@ export abstract class Projectile {
             if (this.fallSpeed != 0 ) this.momentum.y += (this.config.fallingAcceleration * elapsedTime) * this.fallSpeed;
 
             players.forEach((player) => {
-                if(this.id != player.id){
+                if(this.id != player.id && this.team != player.team){
                     if (this.checkCollisionWithPlayer(player, elapsedTime)) {
 
                         let angle: number = Math.atan(this.momentum.y / this.momentum.x);
@@ -197,8 +197,8 @@ export abstract class Projectile {
                         } else if (this.projectileType === "fire") {
                             players.forEach((player2) => {
                                 const distance: number = Math.sqrt(Math.pow(player2.position.x - this.position.x, 2) + Math.pow(player2.position.y - this.position.y, 2))
-                                if (player2.id != this.id && distance < 70) {
-                                    player2.damagePlayer(this.damage, this.id, "projectile", this.damageType);
+                                if (player2.id != this.id && this.team != player.team && distance < 70) {
+                                    player2.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
                                 }
                             });
                         }

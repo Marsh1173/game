@@ -6,7 +6,7 @@ import { Player } from "./player";
 import { Platform } from "./platform";
 import { Game } from "../client/game";
 
-export type TargetedProjectileType = "firestrike" | "chains";
+export type TargetedProjectileType = "firestrike" | "chains" | "healingAura";
 
 export abstract class TargetedProjectile {
 
@@ -43,7 +43,6 @@ export abstract class TargetedProjectile {
     }
 
     public checkSideCollision(elapsedTime: number) {
-
     }
 
     public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
@@ -55,10 +54,12 @@ export abstract class TargetedProjectile {
 
         let distance = Math.sqrt(Math.pow(this.destination.x - this.position.x, 2) + Math.pow(this.destination.y - this.position.y, 2))
         if (distance < 50) this.isDead = true;*/
+        if (this.isDead) return;
         if (this.life <= 0) this.isDead = true;
         this.life -= elapsedTime;
         if(this.targetedProjectileType === "firestrike") this.updateFirestrike(elapsedTime, players);
         else if(this.targetedProjectileType === "chains") this.updateChains(elapsedTime, players);
+        else if(this.targetedProjectileType === "healingAura") this.updateHealingAura(elapsedTime, players);
 
     }
 
@@ -69,10 +70,10 @@ export abstract class TargetedProjectile {
         this.position.y += this.momentum.y * elapsedTime;
 
         players.forEach(player=> {
-            if (!player.isDead) {// && player.id != this.id) {
+            if (!player.isDead && player.id != this.id && player.team != this.team) {
                 let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
                 if (distance < 70) {
-                    if (this.id != player.id) player.damagePlayer(2, this.id, "fire", "ranged");
+                    player.damagePlayer(2, this.id, this.team, "fire", "ranged");
                     player.momentum.y += 200;
                 }
             }
@@ -86,9 +87,9 @@ export abstract class TargetedProjectile {
     public firestrikeExplode(players: Player[]) {
         players.forEach(player=> {
             let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
-            if (!player.isDead && distance < 100) {
+            if (this.team != player.team && this.id != player.id && !player.isDead && distance < 100) {
 
-                if (this.id != player.id) player.damagePlayer(40, this.id, "fire", "ranged");
+                player.damagePlayer(40, this.id, this.team, "fire", "ranged");
 
                 let newX: number = (player.position.x + player.size.width / 2 - this.position.x);
                 let newY: number = (player.position.y + player.size.height / 2 - this.position.y);
@@ -100,6 +101,7 @@ export abstract class TargetedProjectile {
         });
 
         this.life = 0;
+        this.isDead = true;
     }
 
     private updateChains(elapsedTime: number, players: Player[]) {
@@ -108,7 +110,7 @@ export abstract class TargetedProjectile {
 
         players.forEach(player => {
             let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
-            if (this.id != player.id && distance < 100) {
+            if (this.team != player.team && this.id != player.id && distance < 100) {
                 player.momentum.x += this.momentum.x / 2;
                 player.momentum.y += this.momentum.y / 2;
                 if (!player.isDead) player.lastHitBy = this.id;
@@ -122,6 +124,18 @@ export abstract class TargetedProjectile {
         if (distance < 70) {
             this.isDead = true;
         }
+    }
+
+    private updateHealingAura(elapsedTime: number, players: Player[]) {
+        players.forEach(player => {
+            let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
+            if (this.team === player.team && distance < 100) {
+                if (!player.isDead) player.healPlayer(0.5);
+            }
+        });
+
+        this.position.x += this.momentum.x * elapsedTime;
+        this.position.y += this.momentum.y * elapsedTime;
     }
 
     private updateGravity(elapsedTime: number, players: Player[]) {

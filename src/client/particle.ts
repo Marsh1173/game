@@ -249,7 +249,7 @@ class ParticleEffect {
 
     public die(info: ParticleEffectInfo) {
         for (let i = 0; i < 50; i++) {
-            const momentumFactor: number = Random.nextGaussian(1, 0.3);
+            const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 40 - 20);
             const randomY: number = this.info.position.y + (Math.random() * 40 - 20);
 
@@ -261,7 +261,7 @@ class ParticleEffect {
                     {width: 5, height: 5},
                     1,
                     1,
-                    5,
+                    4,
                     info.color,
                     Random.nextGaussian(3, 0.2),
                     Random.nextDouble() * Math.PI * 2,

@@ -1,8 +1,16 @@
 import { ServerTalker } from "./servertalker";
 
-export type ImageName = "wizard-hat";
+export type ImageName = "wizard-hat" | "hammer" | "sword" | "staff" | "axe" | "fire" | "ice" | "shuriken" | "firestrike";
 const imageInformation: Record<ImageName, string> = {
     "wizard-hat": `http://${ServerTalker.hostName}/images/wizard-hat.png`,
+    "hammer": `http://${ServerTalker.hostName}/images/hammer.png`,
+    "sword": `http://${ServerTalker.hostName}/images/sword.png`,
+    "staff": `http://${ServerTalker.hostName}/images/staff.png`,
+    "axe": `http://${ServerTalker.hostName}/images/axe.png`,
+    "fire": `http://${ServerTalker.hostName}/images/projectiles/fire.png`,
+    "ice": `http://${ServerTalker.hostName}/images/projectiles/ice.png`,
+    "shuriken": `http://${ServerTalker.hostName}/images/projectiles/shuriken.png`,
+    "firestrike": `http://${ServerTalker.hostName}/images/targetedProjectiles/firestrike.png`,
 };
 
 class AssetManager {

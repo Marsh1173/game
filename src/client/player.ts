@@ -45,6 +45,7 @@ export class ClientPlayer extends Player {
         super(
             config,
             info.id,
+            info.team,
             info.name,
             info.classType,
             info.weaponEquipped,
@@ -336,25 +337,22 @@ export class ClientPlayer extends Player {
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
         if (this.classType === 0) {
-            this.renderWeaponTemplate(ctx, "images/sword.png", 0.17);
+            this.renderWeaponTemplate(ctx, assetManager.images["sword"], 0.17);
         } else if (this.classType === 1) {
-            this.renderWeaponTemplate(ctx, "images/staff.png", 0.24);
+            this.renderWeaponTemplate(ctx, assetManager.images["staff"], 0.24);
         } else if (this.classType === 2) {
-            this.renderWeaponTemplate(ctx, "images/hammer.png", 0.25);
+            this.renderWeaponTemplate(ctx, assetManager.images["hammer"], 0.25);
         } else if (this.classType === -1) {
-            this.renderWeaponTemplate(ctx, "images/axe.png", 0.2);
+            this.renderWeaponTemplate(ctx, assetManager.images["axe"], 0.2);
         }
     }
 
-    public renderWeaponTemplate(ctx: CanvasRenderingContext2D, imgSrc: string, scale: number) {
+    public renderWeaponTemplate(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number) {
         ctx.shadowBlur = 0;
 
         let rotation: number = Math.atan(
             (this.focusPosition.y - this.position.y - this.size.height / 2) / (this.focusPosition.x - this.position.x - this.size.width / 2),
         );
-
-        var imgDagger = new Image();
-        imgDagger.src = imgSrc;
 
         if (this.focusPosition.x - this.position.x - this.size.width / 2 < 0) {
             scale *= -1;
@@ -379,7 +377,7 @@ export class ClientPlayer extends Player {
         }
 
         ctx.rotate(rotation + Math.PI / 4 + this.animationFrame);
-        ctx.drawImage(imgDagger, (-imgDagger.width * 2) / 3, (-imgDagger.height * 3) / 4 - this.animationFrame * 60);
+        ctx.drawImage(img, (-img.width * 2) / 3, (-img.height * 3) / 4 - this.animationFrame * 60);
         ctx.resetTransform();
 
         ctx.shadowBlur = 2;

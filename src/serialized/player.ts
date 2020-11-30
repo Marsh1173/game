@@ -4,6 +4,7 @@ import { Vector } from "../vector";
 
 export interface SerializedPlayer {
     id: number;
+    team: number;
     name: string;
     classType: number;
     weaponEquipped: number;

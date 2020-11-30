@@ -1,6 +1,7 @@
 import { Config } from "../config";
 import { Projectile } from "../objects/projectile";
 import { SerializedProjectile } from "../serialized/projectile";
+import { assetManager } from "./assetmanager";
 import { ParticleSystem } from "./particle";
 
 export class ClientProjectile extends Projectile {
@@ -79,7 +80,9 @@ export class ClientProjectile extends Projectile {
         if (this.projectileType != 'shuriken') ctx.rotate(rotation + Math.PI / 4);
         else ctx.rotate(this.position.x / 150);
 
-        ctx.drawImage(this.projectileImage, -this.projectileImage.width / 2, -this.projectileImage.height / 2);
+        if (this.projectileType === "ice") ctx.drawImage(assetManager.images["ice"], -assetManager.images["ice"].width / 2, -assetManager.images["ice"].height / 2);
+        else if (this.projectileType === "fire") ctx.drawImage(assetManager.images["fire"], -assetManager.images["fire"].width / 2, -assetManager.images["fire"].height / 2);
+        else if (this.projectileType === "shuriken") ctx.drawImage(assetManager.images["shuriken"], -assetManager.images["shuriken"].width / 2, -assetManager.images["shuriken"].height / 2);
         ctx.resetTransform();
 
         ctx.shadowColor = "gray";

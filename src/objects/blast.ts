@@ -44,7 +44,7 @@ export abstract class Blast {
             player.momentum.x -= (Math.sin(angle) * this.config.blastPower) / Math.pow(distance, 1.3);
             player.momentum.y -= (Math.cos(angle) * this.config.blastPower) / Math.pow(distance, 1.4) + (100 * this.config.blastRadius) / distance;
             if (!player.isDead && !player.isShielded) {
-                player.damagePlayer(15, this.id, "none", "explosive");
+                player.damagePlayer(15, this.id, this.id, "none", "explosive");
             }
         }
     }

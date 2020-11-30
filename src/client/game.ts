@@ -347,7 +347,7 @@ export class Game {
         else if (playerWithId.isStealthed && Game.canvas.style.background != "#191b1c") Game.canvas.style.background = "#191b1c";
 
         this.players.forEach((player) => {
-            if (!player.isStealthed) player.render(Game.ctx);
+            if (!player.isStealthed && !player.isDead) player.render(Game.ctx);
         });
 
         this.projectiles.forEach((projectile) => projectile.render(Game.ctx, Game.particleHandler));
@@ -358,7 +358,7 @@ export class Game {
             if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
             }
-            if (!player.isDead && !player.isStealthed) {
+            if (!player.isDead && !player.isStealthed && !player.isDead) {
                 player.renderWeapon(Game.ctx);
             }
         });
@@ -412,21 +412,21 @@ export class Game {
         if (player.classType === 0) {
             this.leftClickCooldown = 0.2; // ninja shank
             this.rightClickCooldown = 3; // shuriken
-            this.firstAbilityCooldown = 12; // stealth
+            this.firstAbilityCooldown = 10; // stealth
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/swordBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shurikenSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/stealth.png");
         } else if (player.classType === 1) {
-            this.leftClickCooldown = 0.3; // fireball
+            this.leftClickCooldown = 0.35; // fireball
             this.rightClickCooldown = 4; // ice spike
             this.firstAbilityCooldown = 4.5; // //firestrike
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/fireballBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/iceSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/firestrike.png");
         } else if (player.classType === 2) {
-            this.leftClickCooldown = 0.3; // hammer bash
-            this.rightClickCooldown = 1.5; // shield bash
-            this.firstAbilityCooldown = 2.5; //
+            this.leftClickCooldown = 0.5; // hammer bash
+            this.rightClickCooldown = 1.2; // shield bash
+            this.firstAbilityCooldown = 2.7; //
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/hammerBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shieldSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/chains.png");
@@ -490,17 +490,8 @@ export class Game {
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);
 
-        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms));
         this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
-
-        this.players.forEach((player1) => {
-            this.platforms.forEach((platform) => {
-                player1.checkCollisionWithRectangularObject(platform, elapsedTime);
-            });
-            this.players.forEach((player2) => {
-                if (player2.id != player1.id) player1.checkCollisionWithPlayer(player2, elapsedTime);
-            });
-        });
+        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms));
     }
 
     private calculateArrow() {

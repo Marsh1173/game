@@ -11,6 +11,7 @@ export class ServerPlayer extends Player {
     constructor(
         config: Config,
         id: number,
+        team: number,
         name: string,
         color: string,
         classType: number,
@@ -44,6 +45,7 @@ export class ServerPlayer extends Player {
         super(
             config,
             id,
+            team,
             name,
             classType,
             0,
