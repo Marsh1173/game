@@ -109,7 +109,7 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.fillStyle = "yellow";
 
         ctx.beginPath(); // circle
-        ctx.arc(this.position.x, this.position.y, 95, 0, 2 * Math.PI);
+        ctx.arc(this.position.x, this.position.y, 150, 0, 2 * Math.PI);
         ctx.fill();
 
 

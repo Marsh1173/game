@@ -6,11 +6,6 @@ import { ParticleSystem } from "./particle";
 
 export class ClientProjectile extends Projectile {
 
-    public projectileImage= new Image();
-
-    //private projectileImage = new Image();
-    //projectileImage.src = info.image;
-
     constructor(config: Config, info: SerializedProjectile) {
 
         super(config,          
@@ -26,8 +21,6 @@ export class ClientProjectile extends Projectile {
             info.range,
             info.life,
             info.inGround,);
-
-        this.projectileImage.src = "images/projectiles/" + this.projectileType + ".png";
 
     }
 
@@ -83,6 +76,7 @@ export class ClientProjectile extends Projectile {
         if (this.projectileType === "ice") ctx.drawImage(assetManager.images["ice"], -assetManager.images["ice"].width / 2, -assetManager.images["ice"].height / 2);
         else if (this.projectileType === "fire") ctx.drawImage(assetManager.images["fire"], -assetManager.images["fire"].width / 2, -assetManager.images["fire"].height / 2);
         else if (this.projectileType === "shuriken") ctx.drawImage(assetManager.images["shuriken"], -assetManager.images["shuriken"].width / 2, -assetManager.images["shuriken"].height / 2);
+        else if (this.projectileType === "arrow") ctx.drawImage(assetManager.images["arrow"], -assetManager.images["arrow"].width / 2, -assetManager.images["arrow"].height / 2);
         ctx.resetTransform();
 
         ctx.shadowColor = "gray";

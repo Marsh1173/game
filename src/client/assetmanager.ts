@@ -1,6 +1,6 @@
 import { ServerTalker } from "./servertalker";
 
-export type ImageName = "wizard-hat" | "hammer" | "sword" | "staff" | "axe" | "fire" | "ice" | "shuriken" | "firestrike";
+export type ImageName = "wizard-hat" | "hammer" | "sword" | "staff" | "axe" | "fire" | "ice" | "shuriken" | "firestrike" | "arrow";
 const imageInformation: Record<ImageName, string> = {
     "wizard-hat": `http://${ServerTalker.hostName}/images/wizard-hat.png`,
     "hammer": `http://${ServerTalker.hostName}/images/hammer.png`,
@@ -10,6 +10,7 @@ const imageInformation: Record<ImageName, string> = {
     "fire": `http://${ServerTalker.hostName}/images/projectiles/fire.png`,
     "ice": `http://${ServerTalker.hostName}/images/projectiles/ice.png`,
     "shuriken": `http://${ServerTalker.hostName}/images/projectiles/shuriken.png`,
+    "arrow": `http://${ServerTalker.hostName}/images/projectiles/arrow.png`,
     "firestrike": `http://${ServerTalker.hostName}/images/targetedProjectiles/firestrike.png`,
 };
 

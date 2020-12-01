@@ -129,7 +129,7 @@ export abstract class TargetedProjectile {
     private updateHealingAura(elapsedTime: number, players: Player[]) {
         players.forEach(player => {
             let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
-            if (this.team === player.team && distance < 100) {
+            if (this.team === player.team && distance < 160) {
                 if (!player.isDead) player.healPlayer(0.5);
             }
         });

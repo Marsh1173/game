@@ -32,7 +32,7 @@ export class Game {
     constructor(public readonly config: Config) {
         //this.newPlayerAI(-2, "AI", "#516687", -1, {x: config.xSize / 2, y: config.ySize * 3 / 4 - 90});
         this.aiId = -2;
-        this.makePlayer();
+        this.makeNewAI();
     }
 
     public start() {
@@ -341,13 +341,14 @@ export class Game {
         this.targetedProjectiles.push(targetedProjectile);
     }
 
-    private makePlayer() {
+    private makeNewAI() {
+        const classType = -1 - Math.floor(Math.random() * 2);
         if (this.players.length < 10){
-            this.newPlayerAI(this.aiId, "AI", "#800d0d", -1, { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
+            this.newPlayerAI(this.aiId, "AI", "#800d0d", classType, { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
             this.aiId--;
         }
         setTimeout(() => {
-            this.makePlayer();
+            this.makeNewAI();
         }, 6000);
     }
 }

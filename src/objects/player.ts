@@ -89,6 +89,7 @@ export abstract class Player {
         ) => void,
     ) {
         if (this.classType === 0) this.moveSpeedModifier *= 1.05;
+        else if (this.classType < 0) this.moveSpeedModifier *= 0.9;
     }
 
     public serialize(): SerializedPlayer {
@@ -308,6 +309,7 @@ export abstract class Player {
         //console.log(players); //DEBUGGING
 
         if (this.classType === 1) this.wizardBasicAttack();
+        else if (this.classType === -2) this.archerBasicAttack();
         else {
             players.forEach((player) => {
                 if (player.id != this.id && player.team != this.team) {
@@ -398,6 +400,32 @@ export abstract class Player {
             this.moveSpeedModifier *= 1.5;
         }, 500);
     }
+    public archerBasicAttack() {
+        let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
+        let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
+        let angle: number = Math.atan(newY / newX);
+        if (newX < 0) angle += Math.PI;
+
+        this.doProjectile(
+            "arrow",
+            "ranged",
+            5 + this.AttackModifier * 5,
+            this.id,
+            this.team,
+            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
+            { x: 1400 * Math.cos(angle), y: 1200 * Math.sin(angle) - 100},
+            0.1,
+            200,
+            0,
+            0.5,
+            false
+        );
+
+        this.moveSpeedModifier /= 2;
+        setTimeout(() => {
+            this.moveSpeedModifier *= 2;
+        }, 500);
+    }
 
     public attemptSecondaryAttack(players: Player[]) {
         if (!this.isDead) this.secondaryAttack(players);
@@ -459,7 +487,7 @@ export abstract class Player {
     }
     public knightSecondaryAttack(players: Player[]) {
         let momentum: number = 3000;
-        let knockbackMomentum: number = 2000;
+        let knockbackMomentum: number = 500;
         let range: number = 250;
         let damage: number = 5;
 
@@ -475,27 +503,17 @@ export abstract class Player {
 
         players.forEach((player) => {
             if (player.team != this.team &&player.id != this.id && player.position.y > this.position.y - 50 && player.position.y < this.position.y + 50) {
-                if (this.facing && player.position.x > this.position.x - 25 && player.position.x < this.position.x + range) {
+                if ((this.facing && player.position.x > this.position.x - 25 && player.position.x < this.position.x + range) || 
+                    (!this.facing && player.position.x > this.position.x - range && player.position.x < this.position.x + 25)) {
                     setTimeout(() => {
                         player.damagePlayer(damage, this.id, this.team, "crushing", "melee");
                         player.knockbackPlayer(0, knockbackMomentum);
-                        player.momentum.y -= 500; // knocks them slightly upwards
+                        player.momentum.y -= 200; // knocks them slightly upwards
 
                         player.moveSpeedModifier /= 5; // slows them by 80%
                         setTimeout(() => {
                             player.moveSpeedModifier *= 5;
-                        }, 800);
-                    }, 30);
-                } else if (!this.facing && player.position.x > this.position.x - range && player.position.x < this.position.x + 25) {
-                    setTimeout(() => {
-                        player.damagePlayer(damage, this.id, this.team, "crushing", "melee");
-                        player.knockbackPlayer(0, knockbackMomentum);
-                        player.momentum.y -= 500; // knocks them slightly upwards
-
-                        player.moveSpeedModifier /= 5; // slows them by 80%
-                        setTimeout(() => {
-                            player.moveSpeedModifier *= 5;
-                        }, 800);
+                        }, 1500);
                     }, 30);
                 }
             }
@@ -816,7 +834,10 @@ export abstract class Player {
             this.checkCollisionWithRectangularObject(platform, elapsedTime);
         });
         players.forEach((player2) => {
-            if (!player2.isDead && player2.id != this.id && !this.isStealthed && !player2.isStealthed) this.checkCollisionWithPlayer(player2, elapsedTime);
+            if (!player2.isDead &&
+                player2.id != this.id &&
+                !this.isStealthed && !player2.isStealthed &&
+                this.classType != 0 && player2.classType != 0) this.checkCollisionWithPlayer(player2, elapsedTime);
         });
 
         Object.keys(this.actionsNextFrame).forEach((key) => (this.actionsNextFrame[key as PlayerActions] = false));
