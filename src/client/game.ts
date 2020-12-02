@@ -12,6 +12,7 @@ import { ClientPlayer } from "./player";
 import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
 import { ParticleSystem } from "./particle";
+import { isPlayerClassType } from "../classtype";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
@@ -174,7 +175,7 @@ export class Game {
                 this.keyState[config.playerKeys.basicAttack] = false;
             } else if (e.button === 2 && this.keyState[config.playerKeys.secondAttack]) {
                 // right mouse release
-                if (playerWithId.classType === 1 && this.isRightCharging >= 1) {
+                if (playerWithId.classType === "wizard" && this.isRightCharging >= 1) {
                     playerWithId.attemptSecondaryAttack(this.players);
                     this.rightClickCounter = this.rightClickCooldown;
                     this.isRightCharging = 0;
@@ -192,10 +193,10 @@ export class Game {
                 if (!this.keyState["ShiftLeft"] && !this.keyState[config.playerKeys.basicAttack]) {
                     const playerWithId = this.findPlayer();
                     this.cancelAbilites();
-                    if (!playerWithId.isDead && playerWithId.classType === 2 && this.firstAbilityCounter <= 0) {
+                    if (!playerWithId.isDead && playerWithId.classType === "templar" && this.firstAbilityCounter <= 0) {
                         playerWithId.attemptfirstAbility(this.players, this.platforms);
                         this.firstAbilityCounter = this.firstAbilityCooldown;
-                    } else if (playerWithId.classType != 2) {
+                    } else if (playerWithId.classType != "templar") {
                         this.keyState[e.code] = true;
                     }
                 }
@@ -282,7 +283,7 @@ export class Game {
         }
         if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
 
-            if (playerWithId.classType != 1) {
+            if (playerWithId.classType != "wizard") {
                 playerWithId.attemptSecondaryAttack(this.players);
                 this.rightClickCounter = this.rightClickCooldown;
                 this.isRightCharging = 0;
@@ -361,7 +362,7 @@ export class Game {
         });
         this.players.forEach((player) => {
             if (!player.isStealthed && !player.isDead) player.renderHealth(Game.ctx);
-            if (!player.isStealthed && !player.isDead && player.classType >= 0) {
+            if (!player.isStealthed && !player.isDead && isPlayerClassType(player.classType)) {
                 if (player === playerWithId) player.renderName(Game.ctx, "cyan");
                 else if (player.team === playerWithId.team) player.renderName(Game.ctx, "white");
                 else player.renderName(Game.ctx, "red");
@@ -446,21 +447,21 @@ export class Game {
 
     private setCooldowns(player: ClientPlayer) {
         // sets cooldowns based on player class
-        if (player.classType === 0) {
+        if (player.classType === "ninja") {
             this.leftClickCooldown = 0.3; // ninja shank
             this.rightClickCooldown = 2.5; // shuriken
             this.firstAbilityCooldown = 10; // stealth
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/swordBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shurikenSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/stealth.png");
-        } else if (player.classType === 1) {
+        } else if (player.classType === "wizard") {
             this.leftClickCooldown = 0.6; // fireball
             this.rightClickCooldown = 3.5; // ice spike
             this.firstAbilityCooldown = 4.5; // //firestrike
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/fireballBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/iceSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/firestrike.png");
-        } else if (player.classType === 2) {
+        } else if (player.classType === "templar") {
             this.leftClickCooldown = 0.35; // hammer bash
             this.rightClickCooldown = 1.2; // shield bash
             this.firstAbilityCooldown = 7; // chains or healing aura
@@ -522,7 +523,7 @@ export class Game {
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
-        this.players = this.players.filter((player) => player.deathCooldown > 0 || player.classType >= 0);
+        this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);

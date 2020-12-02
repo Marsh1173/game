@@ -1,4 +1,5 @@
 import { config } from "webpack";
+import { AiClassType, ClassType, isPlayerClassType } from "../classtype";
 import { Config } from "../config";
 import { Platform } from "../objects/platform";
 import { Player } from "../objects/player";
@@ -25,14 +26,14 @@ export class PlayerAI extends ServerPlayer {
     private animationFrameCounter: number = 0;
 
     constructor(
-        config: Config,id: number,team: number,name: string,color: string,classType: number,position: Vector,
+        config: Config,id: number,team: number,name: string,color: string,classType: AiClassType,position: Vector,
         doProjectile: (projectileType: ProjectileType,damageType: string,damage: number,id: number,team: number,position: Vector,momentum: Vector,fallSpeed: number,knockback: number,range: number,life: number,inGround: boolean) => void,
         doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,id: number,team: number,position: Vector,momentum: Vector,destination: Vector,isDead: boolean,life: number,) => void,
     ) {
 
         super(config,id,team,name,color,classType,{x: position.x,y: position.y},doProjectile,doTargetedProjectile,);
-        if (classType === -1) this.setClassStats(0.4, 10, 130, 100, 25); // axe
-        else if (classType === -2) this.setClassStats(2, 5, 500, 500, 50); // archer
+        if (classType === "axeai") this.setClassStats(0.4, 10, 130, 100, 25); // axe
+        else if (classType === "archerai") this.setClassStats(2, 5, 500, 500, 50); // archer
     }
 
     private setClassStats(basicAttackCounter: number, aiTargetCorrectionSpeed: number, basicAttackRange: number, maxPlayerXProximity: number, minPlayerXProximity: number) {
@@ -50,7 +51,7 @@ export class PlayerAI extends ServerPlayer {
 
         if (!this.targetedPlayer) {
             players.forEach((player) => {
-                if (player.classType >= 0 && !player.isDead && !player.isStealthed) {
+                if (isPlayerClassType(player.classType) && !player.isDead && !player.isStealthed) {
                     const distance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
                     if (distance < 400) {
                         this.targetedPlayer = player;
@@ -65,7 +66,7 @@ export class PlayerAI extends ServerPlayer {
             }
         } else {
             players.forEach((player) => {
-                if (player.classType >= 0 && this.targetedPlayer && !player.isDead && !player.isStealthed) {
+                if (isPlayerClassType(player.classType) && this.targetedPlayer && !player.isDead && !player.isStealthed) {
                     const stationDistance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
                     const distance: number = Math.sqrt(Math.pow(player.position.x - this.position.x, 2) + Math.pow(player.position.y - this.position.y, 2));
                     const targetDistance: number = Math.sqrt(Math.pow(this.targetedPlayer.position.x - this.position.x, 2) + Math.pow(this.targetedPlayer.position.y - this.position.y, 2));

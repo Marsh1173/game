@@ -1,10 +1,11 @@
+import { ClassType } from "../classtype";
 import { Config } from "../config";
 import { AllInfo } from "./allinfo";
 
 export interface JoinRequest {
     name: string;
     color: string;
-    classType: number;
+    classType: ClassType;
     team: number;
 }
 

@@ -4,6 +4,7 @@ import { Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
+import { ClassType } from "../classtype";
 
 export class ServerPlayer extends Player {
     public actionList: PlayerActions[] = [];
@@ -14,7 +15,7 @@ export class ServerPlayer extends Player {
         team: number,
         name: string,
         color: string,
-        classType: number,
+        classType: ClassType,
         position: Vector,
         doProjectile: (
             projectileType: ProjectileType,

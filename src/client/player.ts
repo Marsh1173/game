@@ -132,11 +132,11 @@ export class ClientPlayer extends Player {
         //reset
 
         //renders the gear
-        if (this.classType === 0) {
+        if (this.classType === "ninja") {
             this.renderNinja(ctx);
-        } else if (this.classType === 1) {
+        } else if (this.classType === "wizard") {
             this.renderWizard(ctx);
-        } else if (this.classType === 2) {
+        } else if (this.classType === "templar") {
             this.renderTemplar(ctx);
         }
 
@@ -146,7 +146,7 @@ export class ClientPlayer extends Player {
     }
 
     public renderFirstAbilityPointer(ctx: CanvasRenderingContext2D, platforms: Platform[]) {
-        if (this.classType === 1) this.renderFirestrikePointer(ctx, platforms);
+        if (this.classType === "wizard") this.renderFirestrikePointer(ctx, platforms);
     }
 
     public renderFirestrikePointer(ctx: CanvasRenderingContext2D, platforms: Platform[]) {
@@ -358,16 +358,16 @@ export class ClientPlayer extends Player {
     }
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
-        if (this.classType === 0) {
+        if (this.classType === "ninja") {
             this.renderWeaponTemplate(ctx, assetManager.images["sword"], 0.17);
-        } else if (this.classType === 1) {
+        } else if (this.classType === "wizard") {
             this.renderWeaponTemplate(ctx, assetManager.images["staff"], 0.24);
-        } else if (this.classType === 2) {
+        } else if (this.classType === "templar") {
             this.renderWeaponTemplate(ctx, assetManager.images["hammer"], 0.25);
-        } else if (this.classType === -1) {
+        } else if (this.classType === "axeai") {
             this.renderWeaponTemplate(ctx, assetManager.images["axe"], 0.2);
         }
-        else if (this.classType === -2) {
+        else if (this.classType === "archerai") {
             this.renderWeaponTemplate(ctx, assetManager.images["bow"], 0.2);
         }
     }

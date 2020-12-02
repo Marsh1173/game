@@ -1,3 +1,4 @@
+import { ClassType } from "../classtype";
 import { getRandomColor } from "../getrandomcolor";
 import { Game } from "./game";
 import { ServerTalker } from "./servertalker";
@@ -6,27 +7,46 @@ import { safeGetElementById } from "./util";
 const instructionDiv = safeGetElementById("instructionMenu");
 const instructionButton = safeGetElementById("instructions");
 
-var classType: number = 0;
+let classType: ClassType = "ninja";
+const storageClassType = localStorage.getItem('classType') as ClassType | null;
+if (storageClassType) {
+    changeClass(storageClassType);
+}
 
 
 safeGetElementById('ninja').onclick = () => {
-    classType = 0;
-    changeClass('ninja');
+    changeClass("ninja");
 };
 safeGetElementById('wizard').onclick = () => {
-    classType = 1;
-    changeClass('wizard');
+    changeClass("wizard");
 };
 safeGetElementById('templar').onclick = () => {
-    classType = 2;
-    changeClass('templar');
+    changeClass("templar");
 };
 
 
 safeGetElementById("gameDiv").style.display = "none";
 instructionDiv.style.display = "none";
 
+const savedFields = [
+    'name',
+    'team',
+    'color',
+];
+savedFields.forEach(id => {
+    const field = safeGetElementById(id) as HTMLInputElement;
+    const value = localStorage.getItem(id)
+    if (value) {
+        field.value = value
+    }
+});
+
+
 safeGetElementById("start").onclick = async () => {
+    savedFields.forEach(id => {
+        const field = safeGetElementById(id) as HTMLInputElement;
+        localStorage.setItem(id, field.value);
+    });
     //config.playerName = safeGetElementById("name").value; // shows an error but it works?
 
     let name: string = (safeGetElementById("name") as HTMLInputElement).value;
@@ -57,10 +77,12 @@ instructionButton.onclick = () => {
     }
 };
 
-function changeClass(id: string) {
+function changeClass(id: ClassType) {
+    classType = id;
+    localStorage.setItem('classType', id.toString());
     let Array = document.getElementsByClassName('classSelected');
     for (let i = 0; i < Array.length; i++) {
         Array[i].classList.remove('classSelected');
     }
-    safeGetElementById(id).classList.add('classSelected');
+    safeGetElementById(id.toString()).classList.add('classSelected');
 }

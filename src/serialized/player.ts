@@ -1,3 +1,4 @@
+import { ClassType } from "../classtype";
 import { Player } from "../objects/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
@@ -6,7 +7,7 @@ export interface SerializedPlayer {
     id: number;
     team: number;
     name: string;
-    classType: number;
+    classType: ClassType;
     weaponEquipped: number;
     animationFrame: number;
     position: Vector;

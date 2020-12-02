@@ -5,6 +5,7 @@ import { Vector } from "../vector";
 import { ProjectileType } from "./projectile";
 import { TargetedProjectileType } from "./targetedProjectile";
 import { Platform } from "./platform";
+import { ClassType, isPlayerClassType } from "../classtype";
 
 export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "basicAttack" | "secondaryAttack" | "firstAbility";
 
@@ -36,7 +37,7 @@ export abstract class Player {
         public id: number,
         public team: number,
         public name: string,
-        public classType: number,
+        public classType: ClassType,
         public weaponEquipped: number, //NOT BEING USED ATM
         public animationFrame: number,
         public position: Vector,
@@ -88,8 +89,8 @@ export abstract class Player {
             life: number,
         ) => void,
     ) {
-        if (this.classType === 0) this.moveSpeedModifier *= 1.1;
-        else if (this.classType < 0) this.moveSpeedModifier *= 0.9;
+        if (this.classType === "ninja") this.moveSpeedModifier *= 1.1;
+        else if (this.classType === "axeai" || this.classType === "archerai") this.moveSpeedModifier *= 0.9;
 
         this.XP = 0;
         this.XPuntilNextLevel = 50;
@@ -296,7 +297,7 @@ export abstract class Player {
     public attemptBasicAttack(players: Player[]) {
         if (!this.isDead) {
             this.basicAttack(players);
-            if (this.classType != -2) this.animationFrame = 1.5;
+            if (this.classType != "archerai") this.animationFrame = 1.5;
             setTimeout(() => {
                 this.animationFrame = 0;
             }, 50);
@@ -311,16 +312,16 @@ export abstract class Player {
 
         //console.log(players); //DEBUGGING
 
-        if (this.classType === 1) this.wizardBasicAttack();
-        else if (this.classType === -2) this.archerBasicAttack();
+        if (this.classType === "wizard") this.wizardBasicAttack();
+        else if (this.classType === "archerai") this.archerBasicAttack();
         else {
             players.forEach((player) => {
                 if (player.id != this.id && player.team != this.team) {
-                    if (this.classType === -1)
+                    if (this.classType === "axeai")
                         this.basicAttackTemplate(player, 5 + this.AttackModifier * 5, "physical", "melee", angle, 100, Math.PI / 8, 5, 100);
-                    if (this.classType === 0)
+                    if (this.classType === "ninja")
                         this.basicAttackTemplate(player, 6 + this.AttackModifier, "poison", "melee", angle, 100, Math.PI / 6, 10, 300);
-                    else if (this.classType === 2)
+                    else if (this.classType === "templar")
                         this.basicAttackTemplate(player, 13 + this.AttackModifier * 2, "crushing", "melee", angle, 150, Math.PI / 2, 30, 500);
                     //if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this, 200);
                 }
@@ -357,7 +358,7 @@ export abstract class Player {
                 (enemyAngle > angle - spread / 2 - Math.PI * 2 && enemyAngle < angle + spread / 2 - Math.PI * 2) ||
                 distance < meleeRange
             ) {
-                if (this.classType === 0) {
+                if (this.classType === "ninja") {
                     if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 2, this.id, this.team, "poison", "elemental", 250, 7);
                     if (
                         (player.facing && angle >= Math.PI / -2 && angle <= Math.PI / 2) ||
@@ -434,9 +435,9 @@ export abstract class Player {
         if (!this.isDead) this.secondaryAttack(players);
     }
     public secondaryAttack(players: Player[]) {
-        if (this.classType === 0) this.ninjaSecondaryAttack();
-        if (this.classType === 1) this.wizardSecondaryAttack();
-        if (this.classType === 2) this.knightSecondaryAttack(players);
+        if (this.classType === "ninja") this.ninjaSecondaryAttack();
+        if (this.classType === "wizard") this.wizardSecondaryAttack();
+        if (this.classType === "templar") this.knightSecondaryAttack(players);
     }
     public ninjaSecondaryAttack() {
         let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
@@ -527,9 +528,9 @@ export abstract class Player {
         this.firstAbility(players, platforms);
     }
     public firstAbility(players: Player[], platforms: Platform[]) {
-        if (this.classType === 0) this.ninjaFirstAbility();
-        if (this.classType === 1) this.wizardFirstAbility(platforms);
-        if (this.classType === 2) this.knightFirstAbility();
+        if (this.classType === "ninja") this.ninjaFirstAbility();
+        if (this.classType === "wizard") this.wizardFirstAbility(platforms);
+        if (this.classType === "templar") this.knightFirstAbility();
     }
 
     public wizardFirstAbility(platforms: Platform[]) {
@@ -732,7 +733,7 @@ export abstract class Player {
                 this.lastHitBy = this.id;
             }
             this.deathCooldown -= elapsedTime * 60;
-            if (this.deathCooldown <= 0 && this.classType >= 0) {
+            if (this.deathCooldown <= 0 && isPlayerClassType(this.classType)) {
                 this.resurrect();
             }
             return;
@@ -837,7 +838,7 @@ export abstract class Player {
             if (!player2.isDead &&
                 player2.id != this.id &&
                 !this.isStealthed && !player2.isStealthed &&
-                this.classType != 0 && player2.classType != 0) this.checkCollisionWithPlayer(player2, elapsedTime);
+                this.classType != "ninja" && player2.classType != "ninja") this.checkCollisionWithPlayer(player2, elapsedTime);
         });
 
         Object.keys(this.actionsNextFrame).forEach((key) => (this.actionsNextFrame[key as PlayerActions] = false));

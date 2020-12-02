@@ -9,6 +9,7 @@ import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { PlayerAI } from "./playerai";
+import { AiClassType, ClassType, isPlayerClassType, randomAiClassType } from "../classtype";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -78,7 +79,7 @@ export class Game {
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
-        this.players = this.players.filter((player) => player.deathCooldown > 0 || player.classType >= 0);
+        this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
@@ -93,7 +94,7 @@ export class Game {
 
     }
 
-    public newPlayer(id: number, name: string, color: string, classType: number, position: Vector, team: number) {
+    public newPlayer(id: number, name: string, color: string, classType: ClassType, position: Vector, team: number) {
         const newPlayer = new ServerPlayer(
             this.config,
             id,
@@ -135,7 +136,7 @@ export class Game {
         newPlayer.resurrect();
     }
 
-    public newPlayerAI(id: number, name: string, color: string, classType: number, position: Vector) {
+    public newPlayerAI(id: number, name: string, color: string, classType: AiClassType, position: Vector) {
         const newPlayerAI = new PlayerAI(
             this.config,
             id,
@@ -311,9 +312,8 @@ export class Game {
     }
 
     private makeNewAI() {
-        const classType = -1 - Math.floor(Math.random() * 2);
         if (this.players.length < 10){
-            this.newPlayerAI(this.aiId, "AI", "#800d0d", classType, { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
+            this.newPlayerAI(this.aiId, "AI", "#800d0d", randomAiClassType(), { x: this.config.xSize / 3 + Math.random() * 800, y: (this.config.ySize * 3) / 4 - 90 });
             this.aiId--;
         }
         setTimeout(() => {
