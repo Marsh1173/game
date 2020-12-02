@@ -1,13 +1,13 @@
 import { Vector } from "./vector";
 
-const xSize: number = 3000;
-const ySize: number = 600;
+const xSize: number = 4000;
+const ySize: number = 1000;
 
 export interface Config {
     /**
      * Decides player height and width
      */
-    playerSize: number;
+    playerSize: Vector;
     playerStart: Vector;
     blastRadius: number;
     blastDuration: number;
@@ -34,15 +34,15 @@ export interface Config {
 }
 
 export const defaultConfig: Config = {
-    playerSize: 50,
+    playerSize: {x: 48, y: 50},
     playerStart: {
-        x: xSize / 8 + (xSize * 3) / 16,
-        y: ySize * 11 / 20 - 30
+        x: 300,
+        y: 650
     },
     blastRadius: 180,
     blastDuration: 0.15,
     blastPower: 300000,
-    playerJumpHeight: 1000,
+    playerJumpHeight: 1050,
     blastCooldown: 20,
     xSize,
     ySize,
@@ -56,9 +56,9 @@ export const defaultConfig: Config = {
     },
     platformColor: "grey",
     fallingAcceleration: 3500,
-    standingSidewaysAcceleration: 13000,
+    standingSidewaysAcceleration: 15000,
     nonStandingSidewaysAcceleration: 2000,
-    maxSidewaysMomentum: 900,
+    maxSidewaysMomentum: 2000,
     arrowPower: 2000,
     gameSpeed: 1,
 };

@@ -25,6 +25,7 @@ export interface LevelUpMessage {
     type: "levelUp";
     id: number;
 }
+
 export interface DieMessage {
     type: "die";
     id: number;

@@ -1,7 +1,6 @@
 * {
     font-family: "Lato", sans-serif;
     margin: 0;
-    padding-right: 4px;
     cursor: crosshair;
     user-select: none;
 }
@@ -42,13 +41,13 @@ body {
     text-align: center;
     color: #33424d;
 }
+#gameDiv {
+    width: 100%;
+    height: 100%;
+}
 #slideContainer {
     width: 100%;
     position: relative;
-    border: 3px solid darkgray;
-    border-bottom: 10px solid orange;
-    border-radius: 5px;
-    background-color: white;
     overflow: hidden;
 }
 #slider {
@@ -180,7 +179,13 @@ p {
     color: white;
     text-shadow: 1px 1px black;
 }
-
+#xp {
+    width: 100%;
+    height: 10%;
+    background-color: rgb(218, 210, 137);
+    border: 1px solid #2f3e4b;
+    transform: translate(-6px, -36px);
+}
 #level {
     width: 25px;
     height: 25px;
@@ -235,7 +240,7 @@ p {
     border-radius: 3px;
     position: relative;
 
-    width: 46px;
+    width: 50px;
     height: 50px;
 
     left: 0px;

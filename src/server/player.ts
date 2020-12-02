@@ -16,7 +16,6 @@ export class ServerPlayer extends Player {
         color: string,
         classType: number,
         position: Vector,
-        doBlast: (position: Vector, color: string, id: number) => void,
         doProjectile: (
             projectileType: ProjectileType,
             damageType: string,
@@ -56,7 +55,7 @@ export class ServerPlayer extends Player {
             },
             { x: 0, y: 0 },
             color,
-            { width: config.playerSize, height: config.playerSize },
+            { width: config.playerSize.x, height: config.playerSize.y },
             0,
             0,
             true,
@@ -79,7 +78,6 @@ export class ServerPlayer extends Player {
             1,
             0,
             0,
-            doBlast,
             doProjectile,
             doTargetedProjectile,
         );

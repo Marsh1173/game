@@ -3,7 +3,6 @@ import { ServerMessage } from "../api/message";
 import { Config } from "../config";
 import { Player } from "../objects/player";
 import { Vector } from "../vector";
-import { ClientBlast } from "./blast";
 import { ClientProjectile } from "./projectile";
 import { ProjectileType } from "../objects/projectile";
 import { ClientTargetedProjectile } from "./targetedProjectile";
@@ -19,19 +18,22 @@ export class Game {
     private static readonly gameDiv = safeGetElementById("gameDiv");
     private static readonly canvas = safeGetElementById("canvas") as HTMLCanvasElement;
     private static readonly ctx = Game.canvas.getContext("2d")!;
+
+    private slideContainer = safeGetElementById("slideContainer");
+    private level = safeGetElementById("level");
+
     public static readonly particleHandler = new ParticleSystem();
     private readonly keyState: Record<string, boolean> = {};
     private players: ClientPlayer[] = [];
-    private blasts: ClientBlast[] = [];
     private projectiles: ClientProjectile[] = [];
     private targetedProjectiles: ClientTargetedProjectile[] = [];
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
 
-    private screenPos: number = 0;
+    private screenPosX: number = 0;
+    private screenPosY: number = 0;
 
     private mousePos: Vector = { x: 0, y: 0 };
-    private animationFrame: number = 0;
 
     //private isLeftClicking: boolean = false;
     private isLeftCharging: number = 0;
@@ -50,7 +52,6 @@ export class Game {
 
     private constructGame(info: AllInfo) {
         this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(this.config, platformInfo));
-        this.blasts = info.blasts.map((blastInfo) => new ClientBlast(this.config, blastInfo));
         this.projectiles = info.projectiles.map((projectileInfo) => new ClientProjectile(this.config, projectileInfo));
         this.targetedProjectiles = info.targetedProjectiles.map((targetedProjectileInfo) => new ClientTargetedProjectile(this.config, targetedProjectileInfo));
         this.players = info.players.map(
@@ -58,9 +59,6 @@ export class Game {
                 new ClientPlayer(
                     this.config,
                     playerInfo,
-                    (position: Vector, color: string, id: number) => {
-                        this.blast(position, color, id);
-                    },
                     (
                         projectileType: ProjectileType,
                         damageType: string,
@@ -153,7 +151,7 @@ export class Game {
 
         // use onkeydown and onkeyup instead of addEventListener because it's possible to add multiple event listeners per event
         // This would cause a bug where each time you press a key it creates multiple blasts or jumps
-        safeGetElementById("slider").onmousedown = (e: MouseEvent) => {
+        window.onmousedown = (e: MouseEvent) => {
             const playerWithId = this.findPlayer();
 
             if (e.button === 0) {
@@ -176,6 +174,11 @@ export class Game {
                 this.keyState[config.playerKeys.basicAttack] = false;
             } else if (e.button === 2 && this.keyState[config.playerKeys.secondAttack]) {
                 // right mouse release
+                if (playerWithId.classType === 1 && this.isRightCharging >= 1) {
+                    playerWithId.attemptSecondaryAttack(this.players);
+                    this.rightClickCounter = this.rightClickCooldown;
+                    this.isRightCharging = 0;
+                }
                 this.keyState[config.playerKeys.secondAttack] = false;
                 this.isRightCharging = 0;
             }
@@ -219,10 +222,12 @@ export class Game {
 
         const playerWithId = this.findPlayer();
 
-        safeGetElementById("slideContainer").style.height = this.config.ySize + "px";
+        // safeGetElementById("slideContainer").style.height = this.config.ySize + "px";
+        //safeGetElementById("canvas").style.height = this.config.ySize + "px";
+        this.slideContainer.style.height = (window.innerHeight - 150) + "px";
         safeGetElementById("slider").style.width = this.config.xSize + "px";
-        safeGetElementById("slider").style.left = this.screenPos + "px";
-        safeGetElementById("level").style.backgroundColor = playerWithId.color;
+        safeGetElementById("slider").style.left = this.screenPosX + "px";
+        this.level.style.backgroundColor = playerWithId.color;
 
         this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
@@ -251,15 +256,15 @@ export class Game {
     private update(elapsedTime: number) {
         const playerWithId = this.findPlayer();
 
-        playerWithId.focusPosition.x = this.mousePos.x - this.screenPos;
-        playerWithId.focusPosition.y = this.mousePos.y;
-        //playerWithId.animationFrame += (this.animationFrame - playerWithId.animationFrame) / 2;
+        playerWithId.focusPosition.x = this.mousePos.x - this.screenPosX;
+        playerWithId.focusPosition.y = this.mousePos.y - this.screenPosY;
 
         this.updateMouse(elapsedTime, playerWithId);
 
         this.updateHTML(elapsedTime, playerWithId);
 
-        this.updateSlider();
+        this.updateSliderX();
+        this.updateSliderY();
 
         if (this.keyState[this.config.playerKeys.up]) {
             playerWithId.attemptJump();
@@ -277,11 +282,7 @@ export class Game {
         }
         if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
 
-            if (playerWithId.classType != 1 && this.rightClickCounter <= 0) {
-                playerWithId.attemptSecondaryAttack(this.players);
-                this.rightClickCounter = this.rightClickCooldown;
-                this.isRightCharging = 0;
-            } else if (playerWithId.classType === 1 && this.rightClickCounter <= 0 && this.isRightCharging >= 1) {
+            if (playerWithId.classType != 1) {
                 playerWithId.attemptSecondaryAttack(this.players);
                 this.rightClickCounter = this.rightClickCooldown;
                 this.isRightCharging = 0;
@@ -290,12 +291,8 @@ export class Game {
 
         Game.particleHandler.update(elapsedTime, this.platforms);
 
-        /*if (this.keyState[this.config.playerKeys.down]) {
-            playerWithId.attemptBlast(elapsedTime);
-            this.keyState[this.config.playerKeys.down] = false;
-        }*/
-
         this.updateObjects(elapsedTime);
+        playerWithId.checkLineOfSight(this.platforms, playerWithId, elapsedTime);
 
         this.render();
     }
@@ -312,8 +309,6 @@ export class Game {
         this.keyState[this.config.playerKeys.secondAttack] = false;
         this.keyState[this.config.playerKeys.basicAttack] = false;
         this.keyState["ShiftLeft"] = false;
-
-        this.animationFrame = 0;
 
         this.isLeftCharging = 0;
         this.isRightCharging = 0;
@@ -342,91 +337,133 @@ export class Game {
     private render() {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
 
+        Game.ctx.setTransform(1, 0, 0, 1, this.screenPosX, this.screenPosY);
+
         const playerWithId = this.findPlayer();
         if (!playerWithId.isStealthed && Game.canvas.style.background != "#2e3133") Game.canvas.style.background = "#2e3133";
         else if (playerWithId.isStealthed && Game.canvas.style.background != "#191b1c") Game.canvas.style.background = "#191b1c";
 
         this.players.forEach((player) => {
-            if (!player.isStealthed && !player.isDead) player.render(Game.ctx);
+            if ((!player.isStealthed || this.id === player.id) && !player.isDead) player.render(Game.ctx);
         });
 
         this.projectiles.forEach((projectile) => projectile.render(Game.ctx, Game.particleHandler));
         this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.render(Game.ctx, Game.particleHandler));
-        this.platforms.forEach((platform) => platform.render(Game.ctx));
+        
 
         this.players.forEach((player) => {
             if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
             }
-            if (!player.isDead && !player.isStealthed && !player.isDead) {
+            if (!player.isDead && (!player.isStealthed || player.id === this.id)) {
                 player.renderWeapon(Game.ctx);
             }
         });
         this.players.forEach((player) => {
             if (!player.isStealthed && !player.isDead) player.renderHealth(Game.ctx);
-            if (!player.isStealthed && !player.isDead && player.classType >= 0) player.renderName(Game.ctx);
+            if (!player.isStealthed && !player.isDead && player.classType >= 0) {
+                if (player === playerWithId) player.renderName(Game.ctx, "cyan");
+                else if (player.team === playerWithId.team) player.renderName(Game.ctx, "white");
+                else player.renderName(Game.ctx, "red");
+            }
             //player.renderFocus(Game.ctx); //FOR DEBUGGING
         });
 
         Game.particleHandler.render(Game.ctx);
 
+        this.platforms.forEach((platform) => platform.render(Game.ctx));
         if (playerWithId.isStealthed) {
-            playerWithId.renderInvisiblePlayer(Game.ctx);
-        }
+            playerWithId.renderInvisibleScreen(Game.ctx);
+        } else if (playerWithId.isDead) {
+            playerWithId.renderDeadScreen(Game.ctx);
+        }//else {
+        //     this.platforms.forEach((platform) => platform.renderSight(Game.ctx, playerWithId)); //TESTING
+        //     this.platforms.forEach((platform) => platform.render(Game.ctx));
+        // }
+        
     }
 
-    private updateSlider() {
+    private updateSliderX() {
         const playerWithId = this.findPlayer();
 
         //check if screen is bigger than field
         if (this.config.xSize < window.innerWidth - 20) {
-            this.screenPos = 0;
+            this.screenPosX = 0;
         } else {
-            let temp = this.screenPos + (-playerWithId.position.x + window.innerWidth / 2 - this.screenPos) / 7;
+            let temp = this.screenPosX + (-playerWithId.position.x + window.innerWidth / 2 - this.screenPosX) / 7;
             //make a temp position to check where it would be updated to
-            if (this.screenPos < temp + 1 && this.screenPos > temp - 1) {
+            if (this.screenPosX < temp + 1 && this.screenPosX > temp - 1) {
                 return; //so it's not updating even while idle
             }
 
             if (temp > 0) {
                 // if they're too close to the left wall
-                if (this.screenPos === 0) return;
-                this.screenPos = 0;
-            } else if (temp < -(this.config.xSize - window.innerWidth + 6)) {
+                if (this.screenPosX === 0) return;
+                this.screenPosX = 0;
+            } else if (temp < -(this.config.xSize - window.innerWidth)) {
                 // or the right wall
-                if (this.screenPos === -(this.config.xSize - window.innerWidth + 6)) return;
-                this.screenPos = -(this.config.xSize - window.innerWidth + 6);
+                if (this.screenPosX === -(this.config.xSize - window.innerWidth)) return;
+                this.screenPosX = -(this.config.xSize - window.innerWidth);
             } else {
-                if (this.screenPos > temp + 1 || this.screenPos < temp - 1) {
-                    this.screenPos = temp; // otherwise the predicted position is fine
+                if (this.screenPosX > temp + 1 || this.screenPosX < temp - 1) {
+                    this.screenPosX = temp; // otherwise the predicted position is fine
+                }
+            }
+        }
+        //safeGetElementById("slider").style.left = this.screenPosX + "px"; CANVAS NOW UPDATED IN RENDER INSTEAD OF CHANGING THE SLIDER POS
+    }
+
+    private updateSliderY() {
+        const playerWithId = this.findPlayer();
+
+        //check if screen is bigger than field
+        if (this.config.ySize < (window.innerHeight - 150)) {
+            this.screenPosY = 0;
+        } else {
+            let temp = this.screenPosY + (-playerWithId.position.y + (window.innerHeight - 150) / 2 - this.screenPosY) / 7;
+            //make a temp position to check where it would be updated to
+            if (this.screenPosY < temp + 1 && this.screenPosY > temp - 1) {
+                return; //so it's not updating even while idle
+            }
+
+            if (temp > 0) {
+                // if they're too close to the left wall
+                if (this.screenPosY === 0) return;
+                this.screenPosY = 0;
+            } else if (temp < -(this.config.ySize - (window.innerHeight - 150))) {
+                // or the right wall
+                if (this.screenPosY === -(this.config.ySize - (window.innerHeight - 150))) return;
+                this.screenPosY = -(this.config.ySize - (window.innerHeight - 150));
+            } else {
+                if (this.screenPosY > temp + 1 || this.screenPosY < temp - 1) {
+                    this.screenPosY = temp; // otherwise the predicted position is fine
                 }
             }
         }
 
-        safeGetElementById("slider").style.left = this.screenPos + "px";
-        //safeGetElementById("slideBackground").style.left = (this.screenPos * 2 / 3) + "px";
+        //safeGetElementById("slider").style.top = this.screenPosY + "px"; CANVAS NOW UPDATED IN RENDER INSTEAD OF CHANGING THE SLIDER POS
     }
 
     private setCooldowns(player: ClientPlayer) {
         // sets cooldowns based on player class
         if (player.classType === 0) {
-            this.leftClickCooldown = 0.2; // ninja shank
-            this.rightClickCooldown = 3; // shuriken
+            this.leftClickCooldown = 0.3; // ninja shank
+            this.rightClickCooldown = 2.5; // shuriken
             this.firstAbilityCooldown = 10; // stealth
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/swordBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shurikenSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/stealth.png");
         } else if (player.classType === 1) {
-            this.leftClickCooldown = 0.35; // fireball
-            this.rightClickCooldown = 4; // ice spike
+            this.leftClickCooldown = 0.6; // fireball
+            this.rightClickCooldown = 3.5; // ice spike
             this.firstAbilityCooldown = 4.5; // //firestrike
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/fireballBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/iceSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/firestrike.png");
         } else if (player.classType === 2) {
-            this.leftClickCooldown = 0.5; // hammer bash
+            this.leftClickCooldown = 0.35; // hammer bash
             this.rightClickCooldown = 1.2; // shield bash
-            this.firstAbilityCooldown = 2.7; //
+            this.firstAbilityCooldown = 7; // chains or healing aura
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/hammerBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shieldSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/chains.png");
@@ -438,6 +475,8 @@ export class Game {
 
     private updateHTML(elapsedTime: number, player: Player) {
         // updates player's cooldown icons
+
+        //safeGetElementById("xp").style.width = (player.XP / (player.XPuntilNextLevel)) * 102 + "%";
 
         safeGetElementById("health").style.width = (player.health / (100 + player.healthModifier)) * 102 + "%";
         if (player.isShielded) safeGetElementById("health").style.background = "cyan";
@@ -477,15 +516,13 @@ export class Game {
             this.firstAbilityCounter = 0;
         }
 
-        safeGetElementById("level").innerText = player.level.toString();
+        if (player.level.toString() != this.level.innerText) this.level.innerText = player.level.toString();
+        if (parseInt(this.slideContainer.style.height, 10) != window.innerHeight - 150) this.slideContainer.style.height = (window.innerHeight - 150) + "px";
     }
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
         this.players = this.players.filter((player) => player.deathCooldown > 0 || player.classType >= 0);
-
-        this.blasts.forEach((blast) => blast.update(elapsedTime));
-        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);
@@ -497,8 +534,8 @@ export class Game {
     private calculateArrow() {
         const playerWithId = this.findPlayer();
 
-        let newX: number = this.mousePos.x - this.screenPos - playerWithId.position.x - this.config.playerSize / 2;
-        let newY: number = this.mousePos.y - playerWithId.position.y - this.config.playerSize / 2;
+        let newX: number = this.mousePos.x - this.screenPosX - playerWithId.position.x - playerWithId.size.height / 2;
+        let newY: number = this.mousePos.y - playerWithId.position.y - playerWithId.size.height / 2;
         //changes the player's mouse positions based on their location
 
         const angle: number = Math.atan(newX / newY);
@@ -506,7 +543,7 @@ export class Game {
         newX = Math.sin(angle) * this.config.arrowPower * this.isRightCharging;
         newY = Math.cos(angle) * this.config.arrowPower * this.isRightCharging;
 
-        if (this.mousePos.y - playerWithId.position.y - this.config.playerSize / 2 < 0) {
+        if (this.mousePos.y - playerWithId.position.y - playerWithId.size.height / 2 < 0) {
             newX *= -1;
             newY *= -1;
         }
@@ -515,23 +552,6 @@ export class Game {
         playerWithId.focusPosition.y = newY;
 
         if (playerWithId.isDead === false) playerWithId.attemptProjectile();
-    }
-
-    private blast(position: Vector, color: string, id: number) {
-        const blast = new ClientBlast(this.config, {
-            position,
-            color,
-            id,
-            opacity: 1,
-            size: 0,
-        });
-        this.blasts.push(blast);
-        this.players.forEach((player) => {
-            blast.blastPlayer(player);
-        });
-        this.projectiles.forEach((projectile) => {
-            if (!projectile.inGround) blast.blastProjectile(projectile);
-        });
     }
 
     private projectile(

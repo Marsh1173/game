@@ -5,6 +5,7 @@ export interface JoinRequest {
     name: string;
     color: string;
     classType: number;
+    team: number;
 }
 
 export interface JoinResponse {

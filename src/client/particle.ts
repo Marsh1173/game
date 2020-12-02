@@ -1,6 +1,5 @@
 import { Distribution } from "../distribution";
 import { Platform } from "../objects/platform";
-import { Player } from "../objects/player";
 import { Random } from "../random";
 import { Size } from "../size";
 import { Vector } from "../vector";
@@ -74,6 +73,7 @@ class Particle {
     }
 
     public renderLevelupGlow(ctx: CanvasRenderingContext2D) {
+        ctx.save();
         ctx.globalAlpha = this.lifetime / (this.originalLife * 6);
         ctx.shadowBlur = 3;
         ctx.shadowColor = "white";
@@ -83,12 +83,11 @@ class Particle {
         ctx.arc(this.position.x, this.position.y, this.size.width, 0, 2 * Math.PI);
         ctx.fill();
 
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
-        ctx.globalAlpha = 1;
+        ctx.restore()
     }
 
     public renderParticle(ctx: CanvasRenderingContext2D) {
+        ctx.save();
         switch (this.type) {
             case "colored particle":
                 ctx.globalAlpha = this.lifetime / this.originalLife;
@@ -103,7 +102,7 @@ class Particle {
                 ctx.fillStyle = "white";
                 break;
             case "red fire particle" :
-                ctx.globalAlpha = this.lifetime / (this.originalLife * 3);
+                ctx.globalAlpha = this.lifetime / (this.originalLife);
                 ctx.shadowBlur = 0;
                 ctx.shadowColor = "none";
                 ctx.fillStyle = "#ff5900";
@@ -115,7 +114,7 @@ class Particle {
                 ctx.fillStyle = "#ff7b00";
                 break;
             case "smoke particle" :
-                ctx.globalAlpha = this.lifetime / (this.originalLife * 8);
+                ctx.globalAlpha = this.lifetime / (this.originalLife * 6);
                 ctx.shadowBlur = 0;
                 ctx.shadowColor = "none";
                 ctx.fillStyle = "darkgray";
@@ -129,13 +128,11 @@ class Particle {
         }
         ctx.fillRect(this.position.x - this.size.width / 2, this.position.y - this.size.height / 2, this.size.width, this.size.height);
 
-        ctx.fillStyle = "gray";
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
-        ctx.globalAlpha = 1;
+        ctx.restore()
     }
 
     public renderTextParticle(ctx: CanvasRenderingContext2D) {
+        ctx.save();
         ctx.globalAlpha = this.lifetime / this.originalLife;
         ctx.shadowBlur = 2;
         ctx.shadowColor = "black";
@@ -145,8 +142,7 @@ class Particle {
         ctx.fillText(this.color, this.position.x - 3, this.position.y);
         ctx.font = "10px sans-serif";
 
-        ctx.shadowColor = "gray";
-        ctx.globalAlpha = 1;
+        ctx.restore();
     }
 
     public renderImage(ctx: CanvasRenderingContext2D) {
@@ -249,7 +245,7 @@ class ParticleEffect {
 
     public die(info: ParticleEffectInfo) {
         for (let i = 0; i < 50; i++) {
-            const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
+            const momentumFactor: number = Random.nextGaussian(0.6, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 40 - 20);
             const randomY: number = this.info.position.y + (Math.random() * 40 - 20);
 
@@ -261,7 +257,7 @@ class ParticleEffect {
                     {width: 5, height: 5},
                     1,
                     1,
-                    4,
+                    2,
                     info.color,
                     Random.nextGaussian(3, 0.2),
                     Random.nextDouble() * Math.PI * 2,

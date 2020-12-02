@@ -5,9 +5,8 @@ import { Vector } from "../vector";
 import { ProjectileType } from "./projectile";
 import { TargetedProjectileType } from "./targetedProjectile";
 import { Platform } from "./platform";
-import { ParticleSystem } from "../client/particle";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "blast" | "basicAttack" | "secondaryAttack" | "firstAbility";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "basicAttack" | "secondaryAttack" | "firstAbility";
 
 export abstract class Player {
     private static nextId = 0;
@@ -20,11 +19,13 @@ export abstract class Player {
 
     public AttackModifier: number = 0;
 
+    public XP: number;
+    public XPuntilNextLevel: number;
+
     public readonly actionsNextFrame: Record<PlayerActions, boolean> = {
         jump: false,
         moveLeft: false,
         moveRight: false,
-        blast: false,
         basicAttack: false,
         secondaryAttack: false,
         firstAbility: false,
@@ -62,7 +63,6 @@ export abstract class Player {
         public healthModifier: number,
         public level: number,
         //public damageMitigation: number, // divides the damage taken
-        public doBlast: (position: Vector, color: string, id: number) => void,
         public doProjectile: (
             projectileType: ProjectileType,
             damageType: string,
@@ -88,8 +88,11 @@ export abstract class Player {
             life: number,
         ) => void,
     ) {
-        if (this.classType === 0) this.moveSpeedModifier *= 1.05;
+        if (this.classType === 0) this.moveSpeedModifier *= 1.1;
         else if (this.classType < 0) this.moveSpeedModifier *= 0.9;
+
+        this.XP = 0;
+        this.XPuntilNextLevel = 50;
     }
 
     public serialize(): SerializedPlayer {
@@ -127,7 +130,7 @@ export abstract class Player {
         };
     }
 
-    public checkCollisionWithRectangularObject(object: { size: Size; position: Vector }, elapsedTime: number) {
+    private checkCollisionWithRectangularObject(object: { size: Size; position: Vector }, elapsedTime: number) {
         let futurePosX = this.position.x + this.momentum.x * elapsedTime;
         let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
@@ -190,7 +193,7 @@ export abstract class Player {
         }
     }
 
-    public checkCollisionWithPlayer(object: { size: Size; position: Vector }, elapsedTime: number) {
+    private checkCollisionWithPlayer(object: { size: Size; position: Vector }, elapsedTime: number) {
         let futurePosX = this.position.x + this.momentum.x * elapsedTime;
         let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
@@ -208,6 +211,23 @@ export abstract class Player {
         }
     }
 
+    public checkLineOfSight(platforms: Platform[], object: { size: Size; position: Vector }, elapsedTime: number) {
+        platforms.forEach((platform) => {
+            if (this.position.x + this.size.width / 2 > platform.position.x) {
+                platform.cornerPoints[3][1] = true;
+            } else platform.cornerPoints[3][1] = false;
+            if (this.position.x + this.size.width / 2 < platform.position.x + platform.size.width) {
+                platform.cornerPoints[1][1] = true;
+            } else platform.cornerPoints[1][1] = false;
+            if (this.position.y + this.size.height / 2 > platform.position.y) {
+                platform.cornerPoints[0][1] = true;
+            } else platform.cornerPoints[0][1] = false;
+            if (this.position.y + this.size.height / 2 < platform.position.y + platform.size.height) {
+                platform.cornerPoints[2][1] = true;
+            } else platform.cornerPoints[2][1] = false;
+        });
+    }
+
     public attemptJump() {
         if (!this.isDead && this.alreadyJumped <= 0 && this.canJump) {
             this.jump();
@@ -215,7 +235,7 @@ export abstract class Player {
     }
 
     public jump() {
-        this.momentum.y = -this.config.playerJumpHeight * this.moveSpeedModifier;
+        this.momentum.y = -this.config.playerJumpHeight * (this.moveSpeedModifier + 1) / 2;
         this.alreadyJumped = 2;
         this.canJump = false;
     }
@@ -243,23 +263,6 @@ export abstract class Player {
         } else {
             this.momentum.x += this.config.nonStandingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         }
-    }
-
-    public attemptBlast(elapsedTime: number) {
-        if (!this.isDead && this.blastCounter <= 0) {
-            this.blast(elapsedTime);
-        }
-    }
-    public blast(elapsedTime: number) {
-        this.blastCounter = this.config.blastCooldown;
-        this.doBlast(
-            {
-                x: this.position.x + this.momentum.x * elapsedTime + this.size.width / 2,
-                y: this.position.y + this.momentum.y * elapsedTime + this.size.height / 2,
-            },
-            this.color,
-            this.id,
-        );
     }
 
     public attemptProjectile() {
@@ -293,7 +296,7 @@ export abstract class Player {
     public attemptBasicAttack(players: Player[]) {
         if (!this.isDead) {
             this.basicAttack(players);
-            this.animationFrame = 1.5;
+            if (this.classType != -2) this.animationFrame = 1.5;
             setTimeout(() => {
                 this.animationFrame = 0;
             }, 50);
@@ -316,9 +319,9 @@ export abstract class Player {
                     if (this.classType === -1)
                         this.basicAttackTemplate(player, 5 + this.AttackModifier * 5, "physical", "melee", angle, 100, Math.PI / 8, 5, 100);
                     if (this.classType === 0)
-                        this.basicAttackTemplate(player, 7 + this.AttackModifier, "poison", "melee", angle, 100, Math.PI / 6, 10, 300);
+                        this.basicAttackTemplate(player, 6 + this.AttackModifier, "poison", "melee", angle, 100, Math.PI / 6, 10, 300);
                     else if (this.classType === 2)
-                        this.basicAttackTemplate(player, 15 + this.AttackModifier * 2, "crushing", "melee", angle, 130, Math.PI / 3, 30, 700);
+                        this.basicAttackTemplate(player, 13 + this.AttackModifier * 2, "crushing", "melee", angle, 150, Math.PI / 2, 30, 500);
                     //if (this.classType === 1) this.basicAttackTemplate(player, 5, "magic", "melee", angle, 200, Math.PI / 8, 50, this, 200);
                 }
             });
@@ -355,12 +358,12 @@ export abstract class Player {
                 distance < meleeRange
             ) {
                 if (this.classType === 0) {
-                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 4, this.id, this.team, "poison", "elemental", 250, 6);
+                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 2, this.id, this.team, "poison", "elemental", 250, 7);
                     if (
                         (player.facing && angle >= Math.PI / -2 && angle <= Math.PI / 2) ||
                         (!player.facing && angle >= Math.PI / 2 && angle <= (Math.PI * 3) / 2)
                     ) {
-                        if (this.isStealthed) damage *= 2;
+                        if (this.isStealthed) damage *= 3;
                         else damage *= 1.3;
                     }
                 }
@@ -383,7 +386,7 @@ export abstract class Player {
         this.doProjectile(
             "fire",
             "fire",
-            12 + this.AttackModifier * 2,
+            15 + this.AttackModifier,
             this.id,
             this.team,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
@@ -447,7 +450,7 @@ export abstract class Player {
         this.doProjectile(
             "shuriken",
             "poison",
-            5,
+            7,
             this.id,
             this.team,
             { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
@@ -483,13 +486,13 @@ export abstract class Player {
         this.moveSpeedModifier /= 2;
         setTimeout(() => {
             this.moveSpeedModifier *= 2;
-        }, 500);
+        }, 200);
     }
     public knightSecondaryAttack(players: Player[]) {
         let momentum: number = 3000;
         let knockbackMomentum: number = 500;
         let range: number = 250;
-        let damage: number = 5;
+        let damage: number = 10;
 
         if (!this.facing) {
             momentum *= -1;
@@ -510,10 +513,10 @@ export abstract class Player {
                         player.knockbackPlayer(0, knockbackMomentum);
                         player.momentum.y -= 200; // knocks them slightly upwards
 
-                        player.moveSpeedModifier /= 5; // slows them by 80%
+                        player.moveSpeedModifier /= 3; // slows them by 80%
                         setTimeout(() => {
-                            player.moveSpeedModifier *= 5;
-                        }, 1500);
+                            player.moveSpeedModifier *= 3;
+                        }, 700);
                     }, 30);
                 }
             }
@@ -560,18 +563,17 @@ export abstract class Player {
         let angle: number = Math.atan(newY / newX);
         if (newX < 0) angle += Math.PI;
 
-        /*this.doTargetedProjectile(
+        this.doTargetedProjectile(
             "chains",
             this.id,
             this.team,
             { x: this.position.x + Math.cos(angle) * 500, y: this.position.y + Math.sin(angle) * 500 },
             { x: 0, y: 0 },
             this.position,
-            //{x: this.position.x, y: this.position.y},
             false,
             1,
-        );*/
-        this.doTargetedProjectile(
+        );
+        /*this.doTargetedProjectile(
             "healingAura",
             this.id,
             this.team,
@@ -581,7 +583,7 @@ export abstract class Player {
             //{x: this.position.x, y: this.position.y},
             false,
             3,
-        );
+        );*/
     }
 
     public ninjaFirstAbility() {
@@ -666,7 +668,7 @@ export abstract class Player {
 
     public resurrect() {
         this.isDead = false;
-        this.position.x = this.config.playerStart.x + Math.random() * ((this.config.xSize * 3) / 8 - this.config.playerSize);
+        this.position.x = (this.team === 1) ? this.config.playerStart.x : this.config.playerStart.x + 3300;
         this.position.y = this.config.playerStart.y;
         this.deathCooldown = 150;
         this.health = 100 + this.healthModifier;
@@ -680,10 +682,18 @@ export abstract class Player {
         }, 3000);
     }
 
-    private getAKill() {
+    private getAKill(player: Player) {
         this.killCount++;
-        while (Math.floor(this.killCount / 1) > this.level) {
+        this.giveXP((player.level + 1) * 5 + 20);
+    }
+
+    private giveXP(quantity: number) {
+        this.XP += quantity;
+        if (this.XP >= this.XPuntilNextLevel) {
+            this.XP -= this.XPuntilNextLevel;
+            this.XPuntilNextLevel += 10;
             this.levelUp();
+            this.giveXP(0);
         }
     }
 
@@ -694,10 +704,10 @@ export abstract class Player {
                 this.AttackModifier += 1;
                 break;
             case 1:
-                this.healthModifier += 5;
+                this.healthModifier += 10;
                 break;
             case 2:
-                this.moveSpeedModifier *= 1.03;
+                this.moveSpeedModifier += 0.05;
                 break;
         }
         this.healPlayer((100 + this.healthModifier - this.health) / 2);
@@ -709,15 +719,13 @@ export abstract class Player {
 
         if (this.isDead) {
 
-            this.momentum.x *= 0.9;
-            this.momentum.y *= 0.9;
-            this.position.x += this.momentum.x * elapsedTime;
-            this.position.y += this.momentum.y * elapsedTime;
+            this.momentum.x = 0;
+            this.momentum.y = 0;
 
             if (this.lastHitBy != this.id && this.lastHitBy != -1) {
                 players.forEach((player) => {
                     if (player.id === this.lastHitBy) {
-                        player.getAKill();
+                        player.getAKill(this);
                         console.log(player.id + " has " + player.killCount + " kills");
                     }
                 });
@@ -743,9 +751,6 @@ export abstract class Player {
         }
         if (this.actionsNextFrame.moveRight) {
             this.attemptMoveRight(elapsedTime);
-        }
-        if (this.actionsNextFrame.blast) {
-            this.attemptBlast(elapsedTime);
         }
         if (this.actionsNextFrame.basicAttack) {
             this.attemptBasicAttack(players);
@@ -820,14 +825,9 @@ export abstract class Player {
 
         // get damaged if you hit the bottom of the screen
         if (!this.isDead && this.position.y >= this.config.ySize - this.size.height) {
-            this.damagePlayer(elapsedTime * 120, this.id, -this.team, "unblockable", "lava");
+            this.damagePlayer(elapsedTime * 120, this.id, -this.team - 1, "unblockable", "lava");
         } else if (!this.isDead) {
             this.healPlayer(elapsedTime * 1);
-        }
-
-        // Blast cooldown timer
-        if (this.blastCounter > 0) {
-            this.blastCounter -= elapsedTime * 60;
         }
 
         platforms.forEach((platform) => {

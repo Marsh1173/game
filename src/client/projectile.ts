@@ -25,8 +25,9 @@ export class ClientProjectile extends Projectile {
     }
 
     public render(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
-        ctx.shadowBlur = 0;
+        ctx.save();
 
+        ctx.shadowBlur = 0;
         let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
 
         var scale: number = 1;
@@ -68,7 +69,7 @@ export class ClientProjectile extends Projectile {
         if (this.momentum.x < 0) rotation *= -1;
         if (this.momentum.x < 0) scale *= -1;
 
-        ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
+        ctx.transform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
 
         if (this.projectileType != 'shuriken') ctx.rotate(rotation + Math.PI / 4);
         else ctx.rotate(this.position.x / 150);
@@ -77,9 +78,7 @@ export class ClientProjectile extends Projectile {
         else if (this.projectileType === "fire") ctx.drawImage(assetManager.images["fire"], -assetManager.images["fire"].width / 2, -assetManager.images["fire"].height / 2);
         else if (this.projectileType === "shuriken") ctx.drawImage(assetManager.images["shuriken"], -assetManager.images["shuriken"].width / 2, -assetManager.images["shuriken"].height / 2);
         else if (this.projectileType === "arrow") ctx.drawImage(assetManager.images["arrow"], -assetManager.images["arrow"].width / 2, -assetManager.images["arrow"].height / 2);
-        ctx.resetTransform();
-
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
+        
+        ctx.restore();
     }
 }

@@ -26,14 +26,13 @@ export class PlayerAI extends ServerPlayer {
 
     constructor(
         config: Config,id: number,team: number,name: string,color: string,classType: number,position: Vector,
-        doBlast: (position: Vector, color: string, id: number) => void,
         doProjectile: (projectileType: ProjectileType,damageType: string,damage: number,id: number,team: number,position: Vector,momentum: Vector,fallSpeed: number,knockback: number,range: number,life: number,inGround: boolean) => void,
         doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,id: number,team: number,position: Vector,momentum: Vector,destination: Vector,isDead: boolean,life: number,) => void,
     ) {
 
-        super(config,id,team,name,color,classType,{x: position.x,y: position.y},doBlast,doProjectile,doTargetedProjectile,);
-        if (classType === -1) this.setClassStats(0.4, 10, 75, 100, 25); // axe
-        else if (classType === -2) this.setClassStats(2, 5, 500, 500, 200); // archer
+        super(config,id,team,name,color,classType,{x: position.x,y: position.y},doProjectile,doTargetedProjectile,);
+        if (classType === -1) this.setClassStats(0.4, 10, 130, 100, 25); // axe
+        else if (classType === -2) this.setClassStats(2, 5, 500, 500, 50); // archer
     }
 
     private setClassStats(basicAttackCounter: number, aiTargetCorrectionSpeed: number, basicAttackRange: number, maxPlayerXProximity: number, minPlayerXProximity: number) {
@@ -100,24 +99,23 @@ export class PlayerAI extends ServerPlayer {
 
             if (this.targetedPlayer) {
                 const distance: number = Math.sqrt(Math.pow(this.targetedPlayer.position.x - this.position.x, 2) + Math.pow(this.targetedPlayer.position.y - this.position.y, 2));
+                //distance from ai to target
+                const focusDistance: number = Math.sqrt(Math.pow(this.targetedPlayer.position.x - this.focusPosition.x, 2) + Math.pow(this.targetedPlayer.position.y - this.focusPosition.y, 2));
+                //distance from ai's cursor to target 
 
                 if (distance < this.minPlayerXProximity) { // too close to ai?
-                    if (this.targetedPlayer.position.x - this.position.x < 0) this.actionsNextFrame.moveRight = true;
-                    else  this.actionsNextFrame.moveLeft = true;
+                    if (this.targetedPlayer.position.x - this.position.x < -50) this.actionsNextFrame.moveRight = true;
+                    else if (this.targetedPlayer.position.x - this.position.x > 50) this.actionsNextFrame.moveLeft = true;
                 } else if (distance > this.maxPlayerXProximity) {// too far from ai?
-                    if (this.targetedPlayer.position.x - this.position.x < 0) this.actionsNextFrame.moveLeft = true;
-                    else  this.actionsNextFrame.moveRight = true;
+                    if (this.targetedPlayer.position.x - this.position.x < -50) this.actionsNextFrame.moveLeft = true;
+                    else if (this.targetedPlayer.position.x - this.position.x > 50) this.actionsNextFrame.moveRight = true;
                 }
 
 
-                if (distance < this.basicAttackRange) {
+                if (distance < this.basicAttackRange && focusDistance < 50) {
                     if (this.basicAttackCounter < 0 ){
                         this.actionsNextFrame.basicAttack = true;
-                        this.animationFrameCounter = 1;
                         this.basicAttackCounter = this.basicAttackCooldown / this.moveSpeedModifier;
-                        setTimeout(() => {
-                            this.animationFrameCounter = 0;
-                        }, 150); 
                     }
                 }
             } else {

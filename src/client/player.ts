@@ -13,7 +13,6 @@ export class ClientPlayer extends Player {
     constructor(
         config: Config,
         info: SerializedPlayer,
-        doBlast: (position: Vector, color: string, id: number) => void,
         doProjectile: (
             projectileType: ProjectileType,
             damageType: string,
@@ -73,7 +72,6 @@ export class ClientPlayer extends Player {
             info.moveSpeedModifier,
             info.healthModifier,
             info.level,
-            doBlast,
             doProjectile,
             doTargetedProjectile,
         );
@@ -94,7 +92,17 @@ export class ClientPlayer extends Player {
     }
 
     public render(ctx: CanvasRenderingContext2D) {
-        if (this.isShielded) {
+        if (this.isStealthed) {
+            ctx.shadowBlur = 10;
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.color;
+            ctx.shadowColor = this.color;
+            ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = "gray";
+            return;
+        } else if (this.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
         } else if (this.health >= 100 + this.healthModifier) {
@@ -192,31 +200,45 @@ export class ClientPlayer extends Player {
         ctx.shadowColor = "gray";
     }
 
-    public renderInvisiblePlayer(ctx: CanvasRenderingContext2D) {
+    public renderInvisibleScreen(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = "black";
         ctx.shadowColor = "black";
         ctx.shadowBlur = 100;
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.6;
 
         ctx.globalCompositeOperation = "destination-in";
         ctx.beginPath(); // circle
         ctx.arc(
             this.position.x + this.size.width / 2 - this.momentum.x / 50,
             this.position.y + this.size.height / 2 - this.momentum.y / 50,
-            300,
+            500,
             0,
             2 * Math.PI,
         );
         ctx.fill();
 
         ctx.globalCompositeOperation = "source-over";
-        ctx.shadowBlur = 10;
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
-
         ctx.globalAlpha = 1;
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "gray";
+    }
+
+    public renderDeadScreen(ctx: CanvasRenderingContext2D) {
+        ctx.shadowColor = "red";
+        ctx.shadowBlur = 100;
+
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.beginPath(); // circle
+        ctx.arc(
+            this.position.x + this.size.width / 2 - this.momentum.x / 50,
+            this.position.y + this.size.height / 2 - this.momentum.y / 50,
+            this.deathCooldown * 3,
+            0,
+            2 * Math.PI,
+        );
+        ctx.fill();
+
+        ctx.globalCompositeOperation = "source-over";
         ctx.shadowBlur = 2;
         ctx.shadowColor = "gray";
     }
@@ -244,10 +266,10 @@ export class ClientPlayer extends Player {
         ctx.shadowBlur = 2;
     }
 
-    public renderName(ctx: CanvasRenderingContext2D) {
+    public renderName(ctx: CanvasRenderingContext2D, color: string) {
         ctx.shadowBlur = 0;
 
-        ctx.fillStyle = "lightgray";
+        ctx.fillStyle = color;
         ctx.fillText(
             "(" + this.level + ") " + this.name,
             this.position.x + this.size.width / 2 - ("(" + this.level + ") " + this.name).length * 2.4,
@@ -345,11 +367,15 @@ export class ClientPlayer extends Player {
         } else if (this.classType === -1) {
             this.renderWeaponTemplate(ctx, assetManager.images["axe"], 0.2);
         }
+        else if (this.classType === -2) {
+            this.renderWeaponTemplate(ctx, assetManager.images["bow"], 0.2);
+        }
     }
 
     public renderWeaponTemplate(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number) {
-        ctx.shadowBlur = 0;
+        ctx.save()
 
+        ctx.shadowBlur = 0;
         let rotation: number = Math.atan(
             (this.focusPosition.y - this.position.y - this.size.height / 2) / (this.focusPosition.x - this.position.x - this.size.width / 2),
         );
@@ -357,7 +383,7 @@ export class ClientPlayer extends Player {
         if (this.focusPosition.x - this.position.x - this.size.width / 2 < 0) {
             scale *= -1;
             rotation *= -1;
-            ctx.setTransform(
+            ctx.transform(
                 scale,
                 0,
                 0,
@@ -366,7 +392,7 @@ export class ClientPlayer extends Player {
                 this.position.y + this.size.height / 2 + 40 * Math.sin(rotation),
             );
         } else {
-            ctx.setTransform(
+            ctx.transform(
                 scale,
                 0,
                 0,
@@ -378,9 +404,8 @@ export class ClientPlayer extends Player {
 
         ctx.rotate(rotation + Math.PI / 4 + this.animationFrame);
         ctx.drawImage(img, (-img.width * 2) / 3, (-img.height * 3) / 4 - this.animationFrame * 60);
-        ctx.resetTransform();
 
-        ctx.shadowBlur = 2;
+        ctx.restore();
     }
 
     public jump() {
@@ -409,43 +434,6 @@ export class ClientPlayer extends Player {
             id: this.id,
         });
     }
-
-    public blast(elapsedTime: number) {
-        super.blast(elapsedTime);
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "blast",
-            id: this.id,
-        });
-    }
-
-    /*public projectile() {
-
-        const power: number = 100;
-
-        let newX = Math.sqrt(power - Math.pow(this.focusPosition.y, 2));
-        let newY = Math.sqrt(power - Math.pow(this.focusPosition.x, 2));
-
-        if (this.focusPosition.x < 0) newX *= -1;
-        if (this.focusPosition.y < 0) newY *= -1;
-
-        super.projectile(); // not needed for some reason
-        if (this.classType === 0)this.serverTalker.sendMessage({
-            type: "projectile",
-            projectileType: "arrow",
-            damageType: "piercing",
-            damage: 15,
-            id: this.id,
-            team: this.id,
-            position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            momentum: { x: newX, y: newY },
-            fallSpeed: 10, // should be tested
-            knockback: 400,
-            range: 0,
-            life: 800, // test
-            inGround: false,
-        });
-    }*/
 
     public basicAttack(players: Player[]) {
         /*Game.particleHandler.newEffect({

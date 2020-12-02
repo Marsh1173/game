@@ -37,7 +37,7 @@
                     </div>
                     <div style='display:flex; flex-direction: row;'>
                         <div id='level'></div>
-                        <div id='healthContainer'><div id='health'></div><span id='healthText'></span></div>
+                        <div id='healthContainer'><div id='health'></div><span id='healthText'></span><div id='xp'></div></div>
                     </div>
                 </div>
                 <div id='chargeContainer'><div id='charge'></div></div>
@@ -46,7 +46,8 @@
             <div id="menu">
                 <button id="start" class="big">Enter Game</button>
                 <button id="instructions" class="big">Instructions</button>
-                <div id='namePicker'><input type="text" id='name' placeholder="Name..." autocomplete="off"></input></div>
+                <div id='namePicker'><input type="text" id='name' placeholder="Name..." autocomplete="off" autofocus="true"></input></div>
+                <div id='teamPicker'><input type="number" id='team' value="1" min='1' max='2'></input></div>
                 <div id='colorPicker'><p>Pick a color:</p><input type="color" id='color' value="#32a852"></input></div>
                 <div id='classPicker'>
                     <button id='ninja' class='classButton classSelected'>Ninja</button>

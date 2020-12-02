@@ -29,6 +29,8 @@ export class ClientTargetedProjectile extends TargetedProjectile {
 
     public renderFirestrike(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
 
+        ctx.save();
+
         if (this.life != 0){
             particleHandler.newEffect({
                 particleEffectType: "firestrikeIdle",
@@ -57,13 +59,11 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         if (this.momentum.x < 0) rotation *= -1;
         if (this.momentum.x < 0) scale *= -1;
 
-        ctx.setTransform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
+        ctx.transform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
 
         ctx.rotate(rotation + Math.PI / 4);
 
         ctx.drawImage(assetManager.images["firestrike"], -assetManager.images["firestrike"].width / 2, -assetManager.images["firestrike"].height / 2);
-        ctx.resetTransform();
-
 
         /*ctx.globalAlpha = 0.1;
         ctx.fillStyle = "orange";
@@ -73,11 +73,7 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.lineTo(this.destination.x + 65, this.destination.y);
         ctx.lineTo(this.destination.x - 65, this.destination.y);
         ctx.fill();*/
-        ctx.globalAlpha = 1.0;
-
-
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
+        ctx.restore();
     }
 
     public renderChains(ctx: CanvasRenderingContext2D) {

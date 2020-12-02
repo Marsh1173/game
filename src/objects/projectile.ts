@@ -130,10 +130,15 @@ export abstract class Projectile {
             if (!player.isDead && !this.inGround) {
                 if (!player.isShielded){
 
-                    if (this.damageType != "fire") {
-                        player.dotPlayer(2, this.id, this.team, "fire", "elemental", 500, 2);
+                    if (this.projectileType === "shuriken") {
+                        player.dotPlayer(2, this.id, this.team, "fire", "elemental", 500, 4);
                         player.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
-                    } else player.dotPlayer(2, this.id, this.team, "poison", "elemental", 300, 5);
+                        player.moveSpeedModifier /= 1.4;
+                            setTimeout(() => {
+                                player.moveSpeedModifier *= 1.4;
+                            }, 1000);
+                    } else if (this.damageType === "fire") player.dotPlayer(1, this.id, this.team, "poison", "elemental", 300, 4);
+                    else player.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
                     
                 }
                 this.life = 0;
@@ -190,8 +195,7 @@ export abstract class Projectile {
                             players.forEach((player2) => {
                                 if (player2.id === this.id) {
                                     player2.revealStealthed(500);
-                                    if (player.facing) player2.movePlayer((player.position.x - player2.position.x - 60), (player.position.y - player2.position.y), true);
-                                    else player2.movePlayer((player.position.x - player2.position.x + 60), (player.position.y - player2.position.y), true);
+                                    player2.movePlayer((player.position.x - player2.position.x), (player.position.y - player2.position.y), true);
                                 }
                             });
                         } else if (this.projectileType === "fire") {

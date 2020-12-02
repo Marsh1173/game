@@ -1,5 +1,4 @@
 import { AllInfo } from "../api/allinfo";
-import { ServerBlast } from "./blast";
 import { ServerProjectile } from "./projectile";
 import { ServerTargetedProjectile } from "./targetedProjectile";
 import { getDefaultPlatformList, ServerPlatform } from "./platform";
@@ -16,7 +15,6 @@ export class Game {
     private static readonly REFRESH_RATE = 16;
 
     private players: ServerPlayer[] = [];
-    private blasts: ServerBlast[] = [];
     private projectiles: ServerProjectile[] = [];
     private targetedProjectiles: ServerTargetedProjectile[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
@@ -32,7 +30,7 @@ export class Game {
     constructor(public readonly config: Config) {
         //this.newPlayerAI(-2, "AI", "#516687", -1, {x: config.xSize / 2, y: config.ySize * 3 / 4 - 90});
         this.aiId = -2;
-        this.makeNewAI();
+        //this.makeNewAI();
     }
 
     public start() {
@@ -52,7 +50,6 @@ export class Game {
     public allInfo(): AllInfo {
         return {
             players: this.players.map((player) => player.serialize()),
-            blasts: this.blasts.map((blast) => blast.serialize()),
             projectiles: this.projectiles.map((projectile) => projectile.serialize()),
             targetedProjectiles: this.targetedProjectiles.map((targetedProjectile) => targetedProjectile.serialize()),
             platforms: this.platforms.map((platform) => platform.serialize()),
@@ -83,9 +80,6 @@ export class Game {
         this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
         this.players = this.players.filter((player) => player.deathCooldown > 0 || player.classType >= 0);
 
-        this.blasts.forEach((blast) => blast.update(elapsedTime));
-        this.blasts = this.blasts.filter((blast) => blast.opacity > 0);
-
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
 
@@ -99,18 +93,15 @@ export class Game {
 
     }
 
-    public newPlayer(id: number, name: string, color: string, classType: number, position: Vector) {
+    public newPlayer(id: number, name: string, color: string, classType: number, position: Vector, team: number) {
         const newPlayer = new ServerPlayer(
             this.config,
             id,
-            1,
+            team,
             name,
             color,
             classType,
             position,
-            (position: Vector, color: string, id: number) => {
-                this.blast(position, color, id);
-            },
             (
                 projectileType: ProjectileType,
                 damageType: string,
@@ -141,6 +132,7 @@ export class Game {
             },
         );
         this.players.push(newPlayer);
+        newPlayer.resurrect();
     }
 
     public newPlayerAI(id: number, name: string, color: string, classType: number, position: Vector) {
@@ -152,9 +144,6 @@ export class Game {
             color,
             classType,
             position,
-            (position: Vector, color: string, id: number) => {
-                this.blast(position, color, id);
-            },
             (
                 projectileType: ProjectileType,
                 damageType: string,
@@ -208,9 +197,6 @@ export class Game {
                         break;
                     case "moveRight":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.moveRight = true;
-                        break;
-                    case "blast":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.blast = true;
                         break;
                     case "basicAttack":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
@@ -268,23 +254,6 @@ export class Game {
             default:
                 throw new Error(`Invalid client message type`);
         }
-    }
-
-    private blast(position: Vector, color: string, id: number) {
-        const blast = new ServerBlast(this.config, {
-            position,
-            color,
-            id,
-            opacity: 1,
-            size: 0,
-        });
-        this.blasts.push(blast);
-        this.players.forEach((player) => {
-            blast.blastPlayer(player);
-        });
-        this.projectiles.forEach((projectile) => {
-            if (!projectile.inGround) blast.blastProjectile(projectile);
-        });
     }
 
     private projectile(

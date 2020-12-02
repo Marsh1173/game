@@ -105,8 +105,8 @@ export abstract class TargetedProjectile {
     }
 
     private updateChains(elapsedTime: number, players: Player[]) {
-        this.momentum.x = ((this.destination.x + this.config.playerSize / 2) - this.position.x) / 2 + (this.momentum.x * 0.87);
-        this.momentum.y = ((this.destination.y + this.config.playerSize / 2) - this.position.y) / 2 + (this.momentum.y * 0.87);
+        this.momentum.x = ((this.destination.x + this.config.playerSize.x / 2) - this.position.x) / 2 + (this.momentum.x * 0.87);
+        this.momentum.y = ((this.destination.y + this.config.playerSize.y / 2) - this.position.y) / 2 + (this.momentum.y * 0.87);
 
         players.forEach(player => {
             let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
@@ -120,7 +120,7 @@ export abstract class TargetedProjectile {
         this.position.x += this.momentum.x * elapsedTime;
         this.position.y += this.momentum.y * elapsedTime;
 
-        let distance = Math.sqrt(Math.pow((this.destination.x + (this.config.playerSize / 2)) - this.position.x, 2) + Math.pow((this.destination.y + (this.config.playerSize / 2)) - this.position.y, 2));
+        let distance = Math.sqrt(Math.pow((this.destination.x + (this.config.playerSize.x / 2)) - this.position.x, 2) + Math.pow((this.destination.y + (this.config.playerSize.y / 2)) - this.position.y, 2));
         if (distance < 70) {
             this.isDead = true;
         }
@@ -139,8 +139,8 @@ export abstract class TargetedProjectile {
     }
 
     private updateGravity(elapsedTime: number, players: Player[]) {
-        this.momentum.x = ((this.destination.x + this.config.playerSize / 2) - this.position.x) / 2 + (this.momentum.x * 0.99);
-        this.momentum.y = ((this.destination.y + this.config.playerSize / 2) - this.position.y) / 2 + (this.momentum.y * 0.99);
+        this.momentum.x = ((this.destination.x + this.config.playerSize.x / 2) - this.position.x) / 2 + (this.momentum.x * 0.99);
+        this.momentum.y = ((this.destination.y + this.config.playerSize.y / 2) - this.position.y) / 2 + (this.momentum.y * 0.99);
 
         players.forEach(player => {
             let distance = Math.sqrt(Math.pow((player.position.x + (player.size.width / 2)) - this.position.x, 2) + Math.pow((player.position.y + (player.size.height / 2)) - this.position.y, 2));
@@ -153,7 +153,7 @@ export abstract class TargetedProjectile {
         this.position.x += this.momentum.x * elapsedTime;
         this.position.y += this.momentum.y * elapsedTime;
 
-        let distance = Math.sqrt(Math.pow((this.destination.x + (this.config.playerSize / 2)) - this.position.x, 2) + Math.pow((this.destination.y + (this.config.playerSize / 2)) - this.position.y, 2));
+        let distance = Math.sqrt(Math.pow((this.destination.x + (this.config.playerSize.x / 2)) - this.position.x, 2) + Math.pow((this.destination.y + (this.config.playerSize.y / 2)) - this.position.y, 2));
         if (distance < 90) {
             //this.isDead = true;
         }

@@ -24,7 +24,7 @@ app.get("/bundle.js", (request, response) => {
 app.post("/join", (request, response) => {
     const joinRequest: JoinRequest = request.body;
     const newId = Player.getNextId();
-    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType, { x: defaultConfig.playerStart.x, y: defaultConfig.playerStart.y });
+    game.newPlayer(newId, joinRequest.name, joinRequest.color, joinRequest.classType, { x: defaultConfig.playerStart.x, y: defaultConfig.playerStart.y }, joinRequest.team);
     const joinResponse: JoinResponse = {
         id: newId,
         config: game.config,

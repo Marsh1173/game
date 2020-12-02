@@ -36,7 +36,8 @@ safeGetElementById("start").onclick = async () => {
     const serverTalker = new ServerTalker({
         name,
         color: (safeGetElementById("color") as HTMLInputElement).value,
-        classType: classType,
+        classType,
+        team: parseInt((safeGetElementById("team") as HTMLInputElement).value),
     });
     const { id, info, config } = await serverTalker.serverTalkerReady;
     const game = new Game(info, config, id, serverTalker);
