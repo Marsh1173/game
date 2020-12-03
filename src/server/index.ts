@@ -36,7 +36,7 @@ app.post("/join", (request, response) => {
 app.ws("/:id", (ws, request) => {
     const clientId = parseInt(request.params.id);
     Game.clientMap[clientId] = (message: ServerMessage) => {
-        if (ws.OPEN) {
+        if (ws.readyState === ws.OPEN) {
             ws.send(JSON.stringify(message));
         } else {
             console.log("Tried to send to a closed websocket");
