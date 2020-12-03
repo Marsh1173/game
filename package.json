@@ -17,6 +17,7 @@
     },
     "scripts": {
         "compile-client": "webpack --watch",
-        "compile-server": "ts-node-dev ./src/server/index.ts"
+        "compile-server": "ts-node-dev ./src/server/index.ts",
+        "compile-ci": "npm install && npx tsc"
     }
 }
