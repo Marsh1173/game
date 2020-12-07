@@ -4,8 +4,8 @@ import { Random } from "../random";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type ParticleType = "ice particle" | "smoke particle" | "red fire particle" | "orange fire particle" | "levelUp particle" | "levelUp glow" | "colored particle" | "text particle";
-export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "stealth" | "firestrikeIdle" | "fireballIdle" | "iceIdle" | "firestrikeExplode";
+export type ParticleType = "ice particle" | "smoke particle" | "red fire particle" | "orange fire particle" | "levelUp particle" | "levelUp glow" | "colored particle" | "text particle" | "blizzard particle";
+export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "stealth" | "firestrikeIdle" | "fireballIdle" | "iceIdle" | "firestrikeExplode" | "blizzardIdle";
 
 class Particle {
     public originalLife: number;
@@ -125,6 +125,12 @@ class Particle {
                 ctx.shadowColor = "white";
                 ctx.fillStyle = "cyan";
                 break;
+            case "blizzard particle" :
+                ctx.globalAlpha = this.lifetime / (this.originalLife * 2);
+                ctx.shadowBlur = 3;
+                ctx.shadowColor = "white";
+                ctx.fillStyle = "cyan";
+                break;
         }
         ctx.fillRect(this.position.x - this.size.width / 2, this.position.y - this.size.height / 2, this.size.width, this.size.height);
 
@@ -198,6 +204,7 @@ class ParticleEffect {
         else if (info.particleEffectType === "fireballIdle") this.fireballIdle(info);
         else if (info.particleEffectType === "iceIdle") this.iceIdle(info);
         else if (info.particleEffectType === "firestrikeExplode") this.firestrikeExplode(info);
+        else if (info.particleEffectType === "blizzardIdle") this.blizzardIdle(info);
     }
 
     public levelUp(info: ParticleEffectInfo) {
@@ -447,6 +454,30 @@ class ParticleEffect {
         }
     }
 
+    public blizzardIdle(info: ParticleEffectInfo) {
+        const randomX: number = this.info.position.x + (Math.random() * 340 - 160);
+        const randomY: number = this.info.position.y + (Math.random() * 115 - 125);
+
+        const randomSize: number = Math.floor(Math.random() * 3 + 3);
+
+        this.particles.push(
+            new Particle(
+                { x: randomX, y: randomY },
+                {x: info.momentum.x, y: info.momentum.y},
+                "blizzard particle",
+                {width: randomSize, height: randomSize},
+                0.1,
+                0,
+                0.4,
+                info.color,
+                Random.nextGaussian(1.5, 0.1),
+                Random.nextDouble() * Math.PI * 2,
+                0,
+            ),
+        );
+        
+    }
+
     public update(elapsedTime: number, platforms: Platform[]) {
         this.particles.forEach((particle) => particle.update(elapsedTime, platforms));
         this.particles = this.particles.filter((particle) => particle.lifetime > 0);
@@ -461,7 +492,8 @@ class ParticleEffect {
                 particle.type === "red fire particle" ||
                 particle.type === "orange fire particle" ||
                 particle.type === "smoke particle" ||
-                particle.type === "ice particle"
+                particle.type === "ice particle" ||
+                particle.type === "blizzard particle"
                 )particle.renderParticle(ctx);
                 else if (particle.type === "levelUp glow")particle.renderLevelupGlow(ctx);
                 else if (particle.type === "text particle")particle.renderTextParticle(ctx);

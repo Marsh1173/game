@@ -15,7 +15,7 @@ export class ClientPlatform extends Platform {
         ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
     }
 
-    public renderSight(ctx: CanvasRenderingContext2D, player: Player) {
+    /*public renderSight(ctx: CanvasRenderingContext2D, player: Player) {
         ctx.shadowBlur = 1;
         ctx.shadowColor = "#202224";
         ctx.fillStyle = "#202224";
@@ -34,5 +34,5 @@ export class ClientPlatform extends Platform {
                 ctx.fill();
             }
         }
-    }
+    }*/
 }

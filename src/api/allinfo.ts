@@ -1,3 +1,4 @@
+import { SerializedItem } from "../serialized/item";
 import { SerializedPlatform } from "../serialized/platform";
 import { SerializedPlayer } from "../serialized/player";
 import { SerializedProjectile } from "../serialized/projectile";
@@ -8,4 +9,5 @@ export interface AllInfo {
     platforms: SerializedPlatform[];
     projectiles: SerializedProjectile[];
     targetedProjectiles: SerializedTargetedProjectile[];
+    items: SerializedItem[];
 }

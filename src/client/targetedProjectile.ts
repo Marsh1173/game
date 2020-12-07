@@ -25,6 +25,7 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         if (this.targetedProjectileType === "firestrike") this.renderFirestrike(ctx, particleHandler);
         else if (this.targetedProjectileType === "chains") this.renderChains(ctx);
         else if (this.targetedProjectileType === "healingAura") this.renderHealingAura(ctx);
+        else if (this.targetedProjectileType === "blizzard") this.renderBlizzard(ctx, particleHandler);
     }
 
     public renderFirestrike(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
@@ -133,16 +134,25 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.shadowBlur = 2;
     }
 
-    /*public firestrikeExplode(players: Player[]) {
+    public renderBlizzard(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {
 
         particleHandler.newEffect({
-            particleEffectType: "firestrikeIdle",
-            position: { x: this.position.x, y: this.position.y - 50},
+            particleEffectType: "blizzardIdle",
+            position: { x: this.position.x, y: this.position.y},
             momentum: this.momentum,
             direction: { x: 0, y: 0 },
-            color: "orange",
+            color: "blue",
         });
+        
+        
+        ctx.save();
 
-        super.firestrikeExplode(players);
-    }*/
+        ctx.globalAlpha = 0.01;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = "white";
+        ctx.fillStyle = "cyan";
+        ctx.fillRect(this.position.x - 170, this.position.y - 125, 340, 200);
+
+        ctx.restore();
+    }
 }

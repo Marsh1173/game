@@ -1,6 +1,6 @@
 import { SerializedPlayer } from "../serialized/player";
 import { ServerTalker } from "./servertalker";
-import { Player } from "../objects/player";
+import { DamageType, Player } from "../objects/player";
 import { Vector } from "../vector";
 import { Config } from "../config";
 import { ProjectileType } from "../objects/projectile";
@@ -8,6 +8,9 @@ import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Platform } from "../objects/platform";
 import { assetManager } from "./assetmanager";
 import { Size } from "../size";
+import { playerRenderData } from "./playerRenderData";
+import { WeaponRender } from "./clientWeapon";
+import { Item, ItemType } from "../objects/item";
 
 export class ClientPlayer extends Player {
     constructor(
@@ -15,7 +18,7 @@ export class ClientPlayer extends Player {
         info: SerializedPlayer,
         doProjectile: (
             projectileType: ProjectileType,
-            damageType: string,
+            damageType: DamageType,
             damage: number,
             id: number,
             team: number,
@@ -37,6 +40,12 @@ export class ClientPlayer extends Player {
             isDead: boolean,
             life: number,
         ) => void,
+        public doItem: (
+            itemType: ItemType,
+            position: Vector,
+            momentum: Vector,
+            life: number,
+        ) => void,
         private readonly serverTalker: ServerTalker,
         private readonly isClientPlayer: number,
         private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
@@ -55,7 +64,6 @@ export class ClientPlayer extends Player {
             info.size,
             info.blastCounter,
             info.alreadyJumped,
-            info.canJump,
             info.standing,
             info.wasStanding,
             info.isDead,
@@ -74,10 +82,11 @@ export class ClientPlayer extends Player {
             info.level,
             doProjectile,
             doTargetedProjectile,
+            doItem,
         );
     }
 
-    public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
+    public update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
         if (this.prevFocusPosition.x !== this.focusPosition.x || this.prevFocusPosition.y !== this.focusPosition.y) {
             this.serverTalker.sendMessage({
                 type: "moveMouse",
@@ -88,7 +97,7 @@ export class ClientPlayer extends Player {
             this.prevFocusPosition.y = this.focusPosition.y;
         }
 
-        super.update(elapsedTime, players, platforms);
+        super.update(elapsedTime, players, platforms, items);
     }
 
     public render(ctx: CanvasRenderingContext2D) {
@@ -131,14 +140,7 @@ export class ClientPlayer extends Player {
 
         //reset
 
-        //renders the gear
-        if (this.classType === "ninja") {
-            this.renderNinja(ctx);
-        } else if (this.classType === "wizard") {
-            this.renderWizard(ctx);
-        } else if (this.classType === "templar") {
-            this.renderTemplar(ctx);
-        }
+        playerRenderData[this.classType](ctx, this);
 
         ctx.globalAlpha = 1.0;
         ctx.shadowBlur = 2;
@@ -200,9 +202,8 @@ export class ClientPlayer extends Player {
         ctx.shadowColor = "gray";
     }
 
-    public renderInvisibleScreen(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = "black";
-        ctx.shadowColor = "black";
+    public renderLimitedVision(ctx: CanvasRenderingContext2D, range: number) {
+        ctx.save();
         ctx.shadowBlur = 100;
         ctx.globalAlpha = 0.6;
 
@@ -211,36 +212,13 @@ export class ClientPlayer extends Player {
         ctx.arc(
             this.position.x + this.size.width / 2 - this.momentum.x / 50,
             this.position.y + this.size.height / 2 - this.momentum.y / 50,
-            500,
+            range,
             0,
             2 * Math.PI,
         );
         ctx.fill();
 
-        ctx.globalCompositeOperation = "source-over";
-        ctx.globalAlpha = 1;
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
-    }
-
-    public renderDeadScreen(ctx: CanvasRenderingContext2D) {
-        ctx.shadowColor = "red";
-        ctx.shadowBlur = 100;
-
-        ctx.globalCompositeOperation = "destination-in";
-        ctx.beginPath(); // circle
-        ctx.arc(
-            this.position.x + this.size.width / 2 - this.momentum.x / 50,
-            this.position.y + this.size.height / 2 - this.momentum.y / 50,
-            this.deathCooldown * 3,
-            0,
-            2 * Math.PI,
-        );
-        ctx.fill();
-
-        ctx.globalCompositeOperation = "source-over";
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
+        ctx.restore();
     }
 
     public renderHealth(ctx: CanvasRenderingContext2D) {
@@ -275,101 +253,17 @@ export class ClientPlayer extends Player {
             this.position.x + this.size.width / 2 - ("(" + this.level + ") " + this.name).length * 2.4,
             this.position.y - 11,
         );
-
-        //ctx.fillStyle = "white";
-        //ctx.fillText(this.killCount.toString(), this.position.x + this.size.width / 2 - this.name.length * 2.4, this.position.y - 15);
     }
 
     public renderFocus(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = "red";
-        ctx.fillRect(this.focusPosition.x - 6, this.focusPosition.y - 6, 6, 6);
-    }
-
-    public renderNinja(ctx: CanvasRenderingContext2D) {
-        //headband
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "black";
-        ctx.fillRect(this.position.x, this.position.y + 4, this.size.width, this.size.height - 40);
-
-        //loose headband piece
-        let xStart: number = this.position.x + this.size.width - 2;
-        if (this.facing) xStart = this.position.x + 2;
-
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 60 + 2, this.position.y + 20 - this.momentum.y / 100);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(xStart, this.position.y + 7);
-        ctx.lineTo(xStart - this.momentum.x / 70 - 2, this.position.y + 30 - this.momentum.y / 100);
-        ctx.stroke();
-
-        //reset
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
-    }
-
-    public renderWizard(ctx: CanvasRenderingContext2D) {
-        ctx.shadowBlur = 0;
-
-        const imagePosition: Vector = {
-            x: this.position.x + this.size.width * 0.15,
-            y: this.position.y - this.size.height * 1.0,
-        };
-        const imageSize: Size = {
-            width: this.size.width * 1.1,
-            height: this.size.height * 1.1,
-        };
-        const rotation = 0.3;
-        ctx.save();
-        ctx.translate(imagePosition.x, imagePosition.y);
-        ctx.rotate(rotation);
-        ctx.translate(-imagePosition.x, -imagePosition.y);
-        ctx.drawImage(assetManager.images["wizard-hat"], imagePosition.x, imagePosition.y, imageSize.width, imageSize.height);
-        ctx.restore();
-
-        //reset
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "gray";
-    }
-
-    public renderTemplar(ctx: CanvasRenderingContext2D) {
-        ctx.shadowBlur = 0;
-
-        //scarf
-        ctx.fillStyle = "mediumblue";
-        ctx.fillRect(this.position.x, this.position.y + this.size.height / 2, this.size.width, -10);
-
-        //loose scarf piece
-        let xStart: number = this.position.x + this.size.width - 3;
-        if (this.facing) xStart = this.position.x + 3;
-
-        ctx.strokeStyle = "mediumblue";
-        ctx.lineWidth = 9;
-        ctx.beginPath();
-        ctx.moveTo(xStart, this.position.y + this.size.height / 2 - 6);
-        ctx.lineTo(xStart - this.momentum.x / 60, this.position.y + this.size.height / 2 + 10 - this.momentum.y / 80);
-        ctx.stroke();
-
-        //reset
-        ctx.shadowBlur = 2;
+        ctx.fillRect(this.focusPosition.x - 3, this.focusPosition.y - 3, 6, 6);
     }
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
-        if (this.classType === "ninja") {
-            this.renderWeaponTemplate(ctx, assetManager.images["sword"], 0.17);
-        } else if (this.classType === "wizard") {
-            this.renderWeaponTemplate(ctx, assetManager.images["staff"], 0.24);
-        } else if (this.classType === "templar") {
-            this.renderWeaponTemplate(ctx, assetManager.images["hammer"], 0.25);
-        } else if (this.classType === "axeai") {
-            this.renderWeaponTemplate(ctx, assetManager.images["axe"], 0.2);
-        }
-        else if (this.classType === "archerai") {
-            this.renderWeaponTemplate(ctx, assetManager.images["bow"], 0.2);
-        }
+
+        WeaponRender[this.weaponEquipped](this, ctx);
+
     }
 
     public renderWeaponTemplate(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number) {
@@ -435,7 +329,7 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public basicAttack(players: Player[]) {
+    public basicAttack(players: Player[], items: Item[]) {
         /*Game.particleHandler.newEffect({
             particleType: "smoke",
             position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
@@ -444,7 +338,7 @@ export class ClientPlayer extends Player {
             particleLifetime: { mean: 0.4, stdev: 0.3 },
             particleAmt: 70,
         });*/
-        super.basicAttack(players);
+        super.basicAttack(players, items);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "basicAttack",
@@ -452,8 +346,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public secondaryAttack(players: Player[]) {
-        super.secondaryAttack(players);
+    public secondaryAttack(players: Player[], platforms: Platform[]) {
+        super.secondaryAttack(players, platforms);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "secondaryAttack",
@@ -466,6 +360,15 @@ export class ClientPlayer extends Player {
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "firstAbility",
+            id: this.id,
+        });
+    }
+
+    public secondAbility(players: Player[], platforms: Platform[]) {
+        super.secondAbility(players, platforms);
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "secondAbility",
             id: this.id,
         });
     }

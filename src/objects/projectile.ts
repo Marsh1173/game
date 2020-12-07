@@ -2,15 +2,19 @@ import { Config } from "../config";
 import { SerializedProjectile } from "../serialized/projectile";
 import { Vector } from "../vector";
 import { Size } from "../size";
-import { Player } from "./player";
+import { DamageType, Player } from "./player";
 import { Platform } from "./platform";
 
 export type ProjectileType = "arrow" | "shuriken" | "ice" | "fire";
 
 export abstract class Projectile {
+
+
+    public isFrozen: number = 1; // is multiplied by the elapsed time
+
     constructor(private readonly config: Config,
         public projectileType: ProjectileType, // literal name of the projectile
-        public damageType: string, // type of damage
+        public damageType: DamageType, // type of damage
         public damage: number, // amount of damage
         public id: number, // id of player who shot it
         public team: number, // team of player who shot it (not implemented)
@@ -131,14 +135,14 @@ export abstract class Projectile {
                 if (!player.isShielded){
 
                     if (this.projectileType === "shuriken") {
-                        player.dotPlayer(2, this.id, this.team, "fire", "elemental", 500, 4);
-                        player.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
+                        player.dotPlayer(2, this.id, this.team, "magic", 500, 4);
+                        player.damagePlayer(this.damage, this.id, this.team, this.damageType);
                         player.moveSpeedModifier /= 1.4;
                             setTimeout(() => {
                                 player.moveSpeedModifier *= 1.4;
                             }, 1000);
-                    } else if (this.damageType === "fire") player.dotPlayer(1, this.id, this.team, "poison", "elemental", 300, 4);
-                    else player.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
+                    } else if (this.projectileType === "fire") player.dotPlayer(1, this.id, this.team, "magic", 300, 4);
+                    else player.damagePlayer(this.damage, this.id, this.team, this.damageType);
                     
                 }
                 this.life = 0;
@@ -176,6 +180,9 @@ export abstract class Projectile {
 
     public update(elapsedTime: number, players: Player[], platforms: Platform[]) {
         if (!this.inGround) {
+            
+            elapsedTime *= this.isFrozen;
+
             if (this.fallSpeed != 0 ) this.momentum.y += (this.config.fallingAcceleration * elapsedTime) * this.fallSpeed;
 
             players.forEach((player) => {
@@ -195,14 +202,14 @@ export abstract class Projectile {
                             players.forEach((player2) => {
                                 if (player2.id === this.id) {
                                     player2.revealStealthed(500);
-                                    player2.movePlayer((player.position.x - player2.position.x), (player.position.y - player2.position.y), true);
+                                    player2.teleportPlayer((player.position.x - player2.position.x), (player.position.y - player2.position.y), true);
                                 }
                             });
                         } else if (this.projectileType === "fire") {
                             players.forEach((player2) => {
                                 const distance: number = Math.sqrt(Math.pow(player2.position.x - this.position.x, 2) + Math.pow(player2.position.y - this.position.y, 2))
                                 if (player2.id != this.id && this.team != player.team && distance < 70) {
-                                    player2.damagePlayer(this.damage, this.id, this.team, "projectile", this.damageType);
+                                    player2.damagePlayer(this.damage, this.id, this.team, this.damageType);
                                 }
                             });
                         }

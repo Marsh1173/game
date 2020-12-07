@@ -1,7 +1,7 @@
 import { AllInfo } from "../api/allinfo";
 import { ServerMessage } from "../api/message";
 import { Config } from "../config";
-import { Player } from "../objects/player";
+import { DamageType, Player } from "../objects/player";
 import { Vector } from "../vector";
 import { ClientProjectile } from "./projectile";
 import { ProjectileType } from "../objects/projectile";
@@ -13,6 +13,10 @@ import { ServerTalker } from "./servertalker";
 import { safeGetElementById } from "./util";
 import { ParticleSystem } from "./particle";
 import { isPlayerClassType } from "../classtype";
+import { PlayerTooltip } from "../abilityTooltips";
+import { renderPlayerOrItemFocus } from "./playerRenderData";
+import { ClientItem } from "./item";
+import { ItemType } from "../objects/item";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
@@ -28,6 +32,7 @@ export class Game {
     private players: ClientPlayer[] = [];
     private projectiles: ClientProjectile[] = [];
     private targetedProjectiles: ClientTargetedProjectile[] = [];
+    private items: ClientItem[] = [];
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
 
@@ -62,7 +67,7 @@ export class Game {
                     playerInfo,
                     (
                         projectileType: ProjectileType,
-                        damageType: string,
+                        damageType: DamageType,
                         damage: number,
                         id: number,
                         team: number,
@@ -87,6 +92,14 @@ export class Game {
                         life: number,
                     ) => {
                         this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
+                    },
+                    (
+                        itemType: ItemType,
+                        position: Vector,
+                        momentum: Vector,
+                        life: number,
+                    ) => {
+                        this.item(itemType, position, momentum, life);
                     },
                     this.serverTalker,
                     this.id,
@@ -176,7 +189,7 @@ export class Game {
             } else if (e.button === 2 && this.keyState[config.playerKeys.secondAttack]) {
                 // right mouse release
                 if (playerWithId.classType === "wizard" && this.isRightCharging >= 1) {
-                    playerWithId.attemptSecondaryAttack(this.players);
+                    playerWithId.attemptSecondaryAttack(this.players, this.platforms);
                     this.rightClickCounter = this.rightClickCooldown;
                     this.isRightCharging = 0;
                 }
@@ -193,10 +206,10 @@ export class Game {
                 if (!this.keyState["ShiftLeft"] && !this.keyState[config.playerKeys.basicAttack]) {
                     const playerWithId = this.findPlayer();
                     this.cancelAbilites();
-                    if (!playerWithId.isDead && playerWithId.classType === "templar" && this.firstAbilityCounter <= 0) {
-                        playerWithId.attemptfirstAbility(this.players, this.platforms);
+                    if (!playerWithId.isDead && playerWithId.classType === "warrior" && this.firstAbilityCounter <= 0) {
+                        playerWithId.attemptFirstAbility(this.players, this.platforms);
                         this.firstAbilityCounter = this.firstAbilityCooldown;
-                    } else if (playerWithId.classType != "templar") {
+                    } else if (playerWithId.classType != "warrior") {
                         this.keyState[e.code] = true;
                     }
                 }
@@ -207,7 +220,7 @@ export class Game {
                 if (this.keyState["ShiftLeft"]) {
                     const playerWithId = this.findPlayer();
                     if (this.firstAbilityCounter <= 0 && this.firstAbilityCharging >= 1) {
-                        playerWithId.attemptfirstAbility(this.players, this.platforms);
+                        playerWithId.attemptFirstAbility(this.players, this.platforms);
                         this.firstAbilityCounter = this.firstAbilityCooldown;
                     }
                     this.keyState["ShiftLeft"] = false;
@@ -279,21 +292,23 @@ export class Game {
         }
         if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
             this.leftClickCounter = this.leftClickCooldown;
-            playerWithId.attemptBasicAttack(this.players);
+            playerWithId.attemptBasicAttack(this.players, this.items);
         }
         if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
 
             if (playerWithId.classType != "wizard") {
-                playerWithId.attemptSecondaryAttack(this.players);
+                playerWithId.attemptSecondaryAttack(this.players, this.platforms);
                 this.rightClickCounter = this.rightClickCooldown;
                 this.isRightCharging = 0;
             }
+        }
+        if (this.keyState[this.config.playerKeys.secondAbility]) {
+            playerWithId.attemptSecondAbility(this.players, this.platforms);
         }
 
         Game.particleHandler.update(elapsedTime, this.platforms);
 
         this.updateObjects(elapsedTime);
-        playerWithId.checkLineOfSight(this.platforms, playerWithId, elapsedTime);
 
         this.render();
     }
@@ -337,12 +352,12 @@ export class Game {
 
     private render() {
         Game.ctx.clearRect(0, 0, this.config.xSize, this.config.ySize);
+        Game.ctx.fillStyle = "#2e3133";
+        Game.ctx.fillRect(0, 0, this.config.xSize, this.config.ySize);
 
         Game.ctx.setTransform(1, 0, 0, 1, this.screenPosX, this.screenPosY);
 
         const playerWithId = this.findPlayer();
-        if (!playerWithId.isStealthed && Game.canvas.style.background != "#2e3133") Game.canvas.style.background = "#2e3133";
-        else if (playerWithId.isStealthed && Game.canvas.style.background != "#191b1c") Game.canvas.style.background = "#191b1c";
 
         this.players.forEach((player) => {
             if ((!player.isStealthed || this.id === player.id) && !player.isDead) player.render(Game.ctx);
@@ -370,17 +385,22 @@ export class Game {
             //player.renderFocus(Game.ctx); //FOR DEBUGGING
         });
 
+        this.items.forEach((item) => {
+            item.render(Game.ctx);
+        });
+
         Game.particleHandler.render(Game.ctx);
+
+        renderPlayerOrItemFocus(Game.ctx, playerWithId, this.players, this.items);
+
 
         this.platforms.forEach((platform) => platform.render(Game.ctx));
         if (playerWithId.isStealthed) {
-            playerWithId.renderInvisibleScreen(Game.ctx);
+            playerWithId.renderLimitedVision(Game.ctx, 500); //dark invisible screen
         } else if (playerWithId.isDead) {
-            playerWithId.renderDeadScreen(Game.ctx);
-        }//else {
-        //     this.platforms.forEach((platform) => platform.renderSight(Game.ctx, playerWithId)); //TESTING
-        //     this.platforms.forEach((platform) => platform.render(Game.ctx));
-        // }
+            playerWithId.renderLimitedVision(Game.ctx, playerWithId.deathCooldown * 4); //shrinking death screen
+            
+        }
         
     }
 
@@ -445,7 +465,7 @@ export class Game {
         //safeGetElementById("slider").style.top = this.screenPosY + "px"; CANVAS NOW UPDATED IN RENDER INSTEAD OF CHANGING THE SLIDER POS
     }
 
-    private setCooldowns(player: ClientPlayer) {
+    private setCooldowns(player: ClientPlayer): void {
         // sets cooldowns based on player class
         if (player.classType === "ninja") {
             this.leftClickCooldown = 0.3; // ninja shank
@@ -454,20 +474,31 @@ export class Game {
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/swordBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shurikenSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/stealth.png");
+            safeGetElementById("basicAttackTooltip").innerHTML = PlayerTooltip.NinjaBasicAttack;
+            safeGetElementById("secondaryAttackTooltip").innerHTML = PlayerTooltip.NinjaSecondaryAttack;
+            safeGetElementById("firstAbilityTooltip").innerHTML = PlayerTooltip.NinjaFirstAbility;
+
         } else if (player.classType === "wizard") {
-            this.leftClickCooldown = 0.6; // fireball
-            this.rightClickCooldown = 3.5; // ice spike
+            this.leftClickCooldown = 0.4; // fireball
+            this.rightClickCooldown = 6; // ice spike - 3.5
             this.firstAbilityCooldown = 4.5; // //firestrike
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/fireballBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/iceSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/firestrike.png");
-        } else if (player.classType === "templar") {
+            safeGetElementById("basicAttackTooltip").innerHTML = PlayerTooltip.WizardBasicAttack;
+            safeGetElementById("secondaryAttackTooltip").innerHTML = PlayerTooltip.WizardSecondaryAttack;
+            safeGetElementById("firstAbilityTooltip").innerHTML = PlayerTooltip.WizardFirstAbility;
+
+        } else if (player.classType === "warrior") {
             this.leftClickCooldown = 0.35; // hammer bash
-            this.rightClickCooldown = 1.2; // shield bash
-            this.firstAbilityCooldown = 7; // chains or healing aura
+            this.rightClickCooldown = 2.5; // shield bash
+            this.firstAbilityCooldown = 3.5; // chains or healing aura
             safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/hammerBasicAttack.png");
             safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shieldSecondary.png");
             safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/chains.png");
+            safeGetElementById("basicAttackTooltip").innerHTML = PlayerTooltip.WarriorBasicAttack;
+            safeGetElementById("secondaryAttackTooltip").innerHTML = PlayerTooltip.WarriorSecondaryAttack;
+            safeGetElementById("firstAbilityTooltip").innerHTML = PlayerTooltip.WarriorFirstAbility;
         }
 
         this.isRightCharging = 0;
@@ -522,42 +553,22 @@ export class Game {
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
+        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms, this.items));
         this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
+
+        this.items.forEach((item) => item.update(elapsedTime, this.platforms));
+        this.items = this.items.filter((item) => item.life >= 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);
 
         this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
-        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms));
-    }
-
-    private calculateArrow() {
-        const playerWithId = this.findPlayer();
-
-        let newX: number = this.mousePos.x - this.screenPosX - playerWithId.position.x - playerWithId.size.height / 2;
-        let newY: number = this.mousePos.y - playerWithId.position.y - playerWithId.size.height / 2;
-        //changes the player's mouse positions based on their location
-
-        const angle: number = Math.atan(newX / newY);
-
-        newX = Math.sin(angle) * this.config.arrowPower * this.isRightCharging;
-        newY = Math.cos(angle) * this.config.arrowPower * this.isRightCharging;
-
-        if (this.mousePos.y - playerWithId.position.y - playerWithId.size.height / 2 < 0) {
-            newX *= -1;
-            newY *= -1;
-        }
-
-        playerWithId.focusPosition.x = newX;
-        playerWithId.focusPosition.y = newY;
-
-        if (playerWithId.isDead === false) playerWithId.attemptProjectile();
+        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms, this.projectiles));
     }
 
     private projectile(
         projectileType: ProjectileType,
-        damageType: string,
+        damageType: DamageType,
         damage: number,
         id: number,
         team: number,
@@ -607,5 +618,20 @@ export class Game {
             life,
         });
         this.targetedProjectiles.push(targetedProjectile);
+    }
+
+    private item (
+        itemType: ItemType,
+        position: Vector,
+        momentum: Vector,
+        life: number,
+    ) {
+        const item = new ClientItem(this.config, {
+            itemType,
+            position,
+            momentum,
+            life,
+        });
+        this.items.push(item);
     }
 }

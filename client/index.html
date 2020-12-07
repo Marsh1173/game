@@ -14,25 +14,40 @@
             <div id='playerInformationBar'>
                     <button id="end">End Game</button>
                     <div id='abilities'>
-                        <div class='abilityIcon'>
-                            <img id='basicAttackImg' src='images/abilites/swordBasicAttack.png'></img>
-                            <div id='basicAttack' class='abilityCooldown'></div>
+                        <div class="tooltip">
+                            <div class='abilityIcon'>
+                                <img id='basicAttackImg' src='images/abilites/swordBasicAttack.png'></img>
+                                <div id='basicAttack' class='abilityCooldown'></div>
+                            </div>
+                            <span class="tooltiptext" id='basicAttackTooltip'></span>
                         </div>
-                        <div class='abilityIcon' style='margin-right: 25px;'>
-                            <img id='secondaryAttackImg' src='images/abilites/shurikenSecondary.png'></img>
-                            <div id='secondaryAttack' class='abilityCooldown'></div>
+                        <div class="tooltip">
+                            <div class='abilityIcon' style='margin-right: 25px;'>
+                                <img id='secondaryAttackImg' src='images/abilites/shurikenSecondary.png'></img>
+                                <div id='secondaryAttack' class='abilityCooldown'></div>
+                            </div>
+                            <span class="tooltiptext" id='secondaryAttackTooltip'></span>
                         </div>
-                        <div class='abilityIcon'>
-                            <img id='firstAbilityImg' src='images/abilites/fireStrike.PNG'></img>
-                            <div id='firstAbility' class='abilityCooldown'></div>
+                        <div class="tooltip">
+                            <div class='abilityIcon'>
+                                <img id='firstAbilityImg' src='images/abilites/fireStrike.PNG'></img>
+                                <div id='firstAbility' class='abilityCooldown'></div>
+                            </div>
+                            <span class="tooltiptext" id='firstAbilityTooltip'></span>
                         </div>
-                        <div class='abilityIcon'>
-                            <img id='secondAbilityImg' src=''></img>
-                            <div id='secondAbility' class='abilityCooldown'></div>
+                        <div class="tooltip">
+                            <div class='abilityIcon'>
+                                <img id='secondAbilityImg' src=''></img>
+                                <div id='secondAbility' class='abilityCooldown'></div>
+                            </div>
+                            <span class="tooltiptext" id='secondAbilityTooltip'></span>
                         </div>
-                        <div class='abilityIcon'>
-                            <img id='thirdAbilityImg' src=''></img>
-                            <div id='thirdAbility' class='abilityCooldown'></div>
+                        <div class="tooltip">
+                            <div class='abilityIcon'>
+                                <img id='thirdAbilityImg' src=''></img>
+                                <div id='thirdAbility' class='abilityCooldown'></div>
+                            </div>
+                            <span class="tooltiptext" id='thirdAbilityTooltip'></span>
                         </div>
                     </div>
                     <div style='display:flex; flex-direction: row;'>
@@ -46,13 +61,13 @@
             <div id="menu">
                 <button id="start" class="big">Enter Game</button>
                 <button id="instructions" class="big">Instructions</button>
-                <div id='namePicker'><input type="text" id='name' placeholder="Name..." autocomplete="off" autofocus="true"></input></div>
+                <div id='namePicker'><input type="text" id='name' placeholder="Name..." autocomplete="off" maxlength="15"></input></div>
                 <div id='teamPicker'><input type="number" id='team' value="1" min='1' max='2'></input></div>
                 <div id='colorPicker'><p>Pick a color:</p><input type="color" id='color' value="#32a852"></input></div>
                 <div id='classPicker'>
                     <button id='ninja' class='classButton classSelected'>Ninja</button>
                     <button id='wizard' class='classButton'>Wizard</button>
-                    <button id='templar' class='classButton'>Templar</button>
+                    <button id='warrior' class='classButton'>Warrior</button>
                 </div>
             </div>
             <div id="instructionMenu">

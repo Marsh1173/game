@@ -1,10 +1,11 @@
 import { Vector } from "../vector";
 import { ProjectileType } from "../objects/projectile";
 import { SerializedPlayer } from "./player";
+import { DamageType } from "../objects/player";
 
 export interface SerializedProjectile {
     projectileType: ProjectileType,
-    damageType: string,
+    damageType: DamageType,
     damage: number,
     id: number,
     team: number,

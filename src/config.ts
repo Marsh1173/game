@@ -9,11 +9,7 @@ export interface Config {
      */
     playerSize: Vector;
     playerStart: Vector;
-    blastRadius: number;
-    blastDuration: number;
-    blastPower: number;
     playerJumpHeight: number;
-    blastCooldown: number;
     xSize: number;
     ySize: number;
     playerKeys: {
@@ -23,13 +19,16 @@ export interface Config {
         right: string;
         basicAttack: string,
         secondAttack: string,
+        firstAbility: string,
+        secondAbility: string,
+        thirdAbility: string,
+        fourthAbility: string,
     };
     platformColor: string;
     fallingAcceleration: number;
     standingSidewaysAcceleration: number;
     nonStandingSidewaysAcceleration: number;
     maxSidewaysMomentum: number;
-    arrowPower: number;
     gameSpeed: number;
 }
 
@@ -39,11 +38,7 @@ export const defaultConfig: Config = {
         x: 300,
         y: 650
     },
-    blastRadius: 180,
-    blastDuration: 0.15,
-    blastPower: 300000,
-    playerJumpHeight: 1050,
-    blastCooldown: 20,
+    playerJumpHeight: 800,
     xSize,
     ySize,
     playerKeys: {
@@ -53,12 +48,15 @@ export const defaultConfig: Config = {
         right: "KeyD",
         basicAttack: "leftMouseDown",
         secondAttack: "rightMouseDown",
+        firstAbility: "ShiftLeft",
+        secondAbility: "Space",
+        thirdAbility: "KeyQ",
+        fourthAbility: "KeyE",
     },
     platformColor: "grey",
     fallingAcceleration: 3500,
     standingSidewaysAcceleration: 15000,
     nonStandingSidewaysAcceleration: 2000,
     maxSidewaysMomentum: 2000,
-    arrowPower: 2000,
     gameSpeed: 1,
 };

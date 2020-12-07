@@ -20,8 +20,8 @@ safeGetElementById('ninja').onclick = () => {
 safeGetElementById('wizard').onclick = () => {
     changeClass("wizard");
 };
-safeGetElementById('templar').onclick = () => {
-    changeClass("templar");
+safeGetElementById('warrior').onclick = () => {
+    changeClass("warrior");
 };
 
 

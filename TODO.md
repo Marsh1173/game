@@ -7,3 +7,5 @@
 
 add LOS
 fix AI pathing (with platforms and timed aggro)
+
+make player buffs and debuffs into an boolean array?

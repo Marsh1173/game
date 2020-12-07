@@ -1,10 +1,10 @@
-export type PlayerClassType = "ninja" | "wizard" | "templar";
+export type PlayerClassType = "ninja" | "wizard" | "warrior";
 export type AiClassType = "axeai" | "archerai";
 
 export type ClassType = PlayerClassType | AiClassType;
 
 export function isPlayerClassType(classType: ClassType) {
-    return (classType === "ninja" || classType === "templar" || classType === "wizard");
+    return (classType === "ninja" || classType === "warrior" || classType === "wizard");
 }
 
 export function randomAiClassType(): AiClassType {

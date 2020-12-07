@@ -10,6 +10,9 @@ import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { PlayerAI } from "./playerai";
 import { AiClassType, ClassType, isPlayerClassType, randomAiClassType } from "../classtype";
+import { DamageType } from "../objects/player";
+import { ServerItem } from "./item";
+import { ItemType } from "../objects/item";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -18,6 +21,7 @@ export class Game {
     private players: ServerPlayer[] = [];
     private projectiles: ServerProjectile[] = [];
     private targetedProjectiles: ServerTargetedProjectile[] = [];
+    private items: ServerItem[] = [];
     private readonly platforms: ServerPlatform[] = getDefaultPlatformList(this.config);
     public static readonly clientMap: Record<number, (message: ServerMessage) => void> = {};
     public static broadcastMessage(msg: ServerMessage) {
@@ -29,9 +33,9 @@ export class Game {
     private aiId: number;
 
     constructor(public readonly config: Config) {
-        //this.newPlayerAI(-2, "AI", "#516687", -1, {x: config.xSize / 2, y: config.ySize * 3 / 4 - 90});
+        //this.newPlayerAI(-2, "AI", "#516687", "axeai", {x: config.xSize / 2, y: config.ySize * 3 / 4 - 90});
         this.aiId = -2;
-        //this.makeNewAI();
+        this.makeNewAI();
     }
 
     public start() {
@@ -54,6 +58,7 @@ export class Game {
             projectiles: this.projectiles.map((projectile) => projectile.serialize()),
             targetedProjectiles: this.targetedProjectiles.map((targetedProjectile) => targetedProjectile.serialize()),
             platforms: this.platforms.map((platform) => platform.serialize()),
+            items: this.items.map((item) => item.serialize()),
         };
     }
 
@@ -78,13 +83,16 @@ export class Game {
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms));
+        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms, this.items));
         this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
 
-        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms));
+        this.items.forEach((item) => item.update(elapsedTime, this.platforms));
+        this.items = this.items.filter((item) => item.life > 0);
+
+        this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms, this.projectiles));
         this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
 
         this.platforms.forEach((platform) => platform.update());
@@ -105,7 +113,7 @@ export class Game {
             position,
             (
                 projectileType: ProjectileType,
-                damageType: string,
+                damageType: DamageType,
                 damage: number,
                 id: number,
                 team: number,
@@ -130,6 +138,14 @@ export class Game {
                 life: number,
             ) => {
                 this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
+            },
+            (
+                itemType: ItemType,
+                position: Vector,
+                momentum: Vector,
+                life: number,
+            ) => {
+                this.item(itemType, position, momentum, life);
             },
         );
         this.players.push(newPlayer);
@@ -147,7 +163,7 @@ export class Game {
             position,
             (
                 projectileType: ProjectileType,
-                damageType: string,
+                damageType: DamageType,
                 damage: number,
                 id: number,
                 team: number,
@@ -172,6 +188,14 @@ export class Game {
                 life: number,
             ) => {
                 this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
+            },
+            (
+                itemType: ItemType,
+                position: Vector,
+                momentum: Vector,
+                life: number,
+            ) => {
+                this.item(itemType, position, momentum, life);
             },
         );
         this.players.push(newPlayerAI);
@@ -207,6 +231,9 @@ export class Game {
                         break;
                     case "firstAbility":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.firstAbility = true;
+                        break;
+                    case "secondAbility":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.secondAbility = true;
                         break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
@@ -244,6 +271,16 @@ export class Game {
                     }),
                 );
                 break;
+            case "item":
+                this.items.push(
+                    new ServerItem(this.config, {
+                        itemType: data.itemType,
+                        position: data.position,
+                        momentum: data.momentum,
+                        life: data.life,
+                    }),
+                );
+                break;
             case "moveMouse":
                 this.players.find((player) => player.id === id)!.focusPosition = data.position;
                 break;
@@ -259,7 +296,7 @@ export class Game {
 
     private projectile(
         projectileType: ProjectileType,
-        damageType: string,
+        damageType: DamageType,
         damage: number,
         id: number,
         team: number,
@@ -309,6 +346,21 @@ export class Game {
             life,
         });
         this.targetedProjectiles.push(targetedProjectile);
+    }
+
+    private item(
+        itemType: ItemType,
+        position: Vector,
+        momentum: Vector,
+        life: number,
+    ) {
+        const item = new ServerItem(this.config, {
+            itemType,
+            position,
+            momentum,
+            life,
+        });
+        this.items.push(item);
     }
 
     private makeNewAI() {

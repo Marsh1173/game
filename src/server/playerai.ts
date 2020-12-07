@@ -1,8 +1,9 @@
 import { config } from "webpack";
 import { AiClassType, ClassType, isPlayerClassType } from "../classtype";
 import { Config } from "../config";
+import { getRandomWeapon, Item, ItemType } from "../objects/item";
 import { Platform } from "../objects/platform";
-import { Player } from "../objects/player";
+import { DamageType, Player } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
@@ -23,15 +24,14 @@ export class PlayerAI extends ServerPlayer {
     private maxPlayerXProximity: number = 0;
     private minPlayerXProximity: number = 0;
 
-    private animationFrameCounter: number = 0;
-
     constructor(
         config: Config,id: number,team: number,name: string,color: string,classType: AiClassType,position: Vector,
-        doProjectile: (projectileType: ProjectileType,damageType: string,damage: number,id: number,team: number,position: Vector,momentum: Vector,fallSpeed: number,knockback: number,range: number,life: number,inGround: boolean) => void,
+        doProjectile: (projectileType: ProjectileType,damageType: DamageType,damage: number,id: number,team: number,position: Vector,momentum: Vector,fallSpeed: number,knockback: number,range: number,life: number,inGround: boolean) => void,
         doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,id: number,team: number,position: Vector,momentum: Vector,destination: Vector,isDead: boolean,life: number,) => void,
+        doItem: (itemType: ItemType,position: Vector,momentum: Vector,life: number,) => void,
     ) {
 
-        super(config,id,team,name,color,classType,{x: position.x,y: position.y},doProjectile,doTargetedProjectile,);
+        super(config,id,team,name,color,classType,{x: position.x,y: position.y},doProjectile,doTargetedProjectile,doItem);
         if (classType === "axeai") this.setClassStats(0.4, 10, 130, 100, 25); // axe
         else if (classType === "archerai") this.setClassStats(2, 5, 500, 500, 50); // archer
     }
@@ -46,14 +46,14 @@ export class PlayerAI extends ServerPlayer {
         this.minPlayerXProximity = minPlayerXProximity;
     }
 
-    private checkProximity(players: Player[]) {
+    private checkProximity(players: Player[], platforms: Platform[]) {
         let meetsConditions: boolean = false;
 
         if (!this.targetedPlayer) {
             players.forEach((player) => {
                 if (isPlayerClassType(player.classType) && !player.isDead && !player.isStealthed) {
                     const distance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
-                    if (distance < 400) {
+                    if (distance < 400 && this.checkLineOfSightFromPlayer(platforms, player.position.x + player.size.width / 2, player.position.y + player.size.height / 2)) {
                         this.targetedPlayer = player;
                         meetsConditions = true;
                     }
@@ -70,7 +70,7 @@ export class PlayerAI extends ServerPlayer {
                     const stationDistance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
                     const distance: number = Math.sqrt(Math.pow(player.position.x - this.position.x, 2) + Math.pow(player.position.y - this.position.y, 2));
                     const targetDistance: number = Math.sqrt(Math.pow(this.targetedPlayer.position.x - this.position.x, 2) + Math.pow(this.targetedPlayer.position.y - this.position.y, 2));
-                    if (stationDistance < 700 && distance <= targetDistance) {
+                    if (stationDistance < 700 && distance <= targetDistance && this.checkLineOfSightFromPlayer(platforms, player.position.x + player.size.width / 2, player.position.y + player.size.height / 2)) {
                         this.targetedPlayer = player;
                         meetsConditions = true;
                     }
@@ -81,11 +81,9 @@ export class PlayerAI extends ServerPlayer {
         if (!meetsConditions) this.targetedPlayer = undefined;
     }
 
-    update(elapsedTime: number, players: Player[], platforms: Platform[]) {
+    update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
         if (!this.isDead){
             if (this.targetedPlayer) {
-
-                this.animationFrame = (this.animationFrameCounter + this.animationFrame * 2) / 3; // to smooth rudimentary attack animation
 
                 this.focusPosition.x = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * this.aiTargetCorrectionSpeed) / (this.aiTargetCorrectionSpeed + 1); // track player
                 this.focusPosition.y = (this.targetedPlayer.position.y + this.targetedPlayer.size.height / 2 + this.focusPosition.y * this.aiTargetCorrectionSpeed) / (this.aiTargetCorrectionSpeed + 1);
@@ -96,7 +94,7 @@ export class PlayerAI extends ServerPlayer {
                 this.healPlayer(elapsedTime * 50); // out of combat regen
             }
 
-            this.checkProximity(players);
+            this.checkProximity(players, platforms);
 
             if (this.targetedPlayer) {
                 const distance: number = Math.sqrt(Math.pow(this.targetedPlayer.position.x - this.position.x, 2) + Math.pow(this.targetedPlayer.position.y - this.position.y, 2));
@@ -129,6 +127,6 @@ export class PlayerAI extends ServerPlayer {
         }
 
         this.basicAttackCounter -= elapsedTime;
-        super.update(elapsedTime, players, platforms);
+        super.update(elapsedTime, players, platforms, items);
     }
 }

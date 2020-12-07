@@ -1,4 +1,5 @@
-import { Player, PlayerActions } from "../objects/player";
+import { ItemType } from "../objects/item";
+import { DamageType, Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { SerializedPlayer } from "../serialized/player";
@@ -47,7 +48,7 @@ export interface ActionMessage {
 export interface ProjectileMessage {
     type: "projectile";
     projectileType: ProjectileType;
-    damageType: string;
+    damageType: DamageType;
     damage: number;
     id: number;
     team: number;
@@ -72,6 +73,14 @@ export interface TargetedProjectileMessage {
     life: number;
 }
 
+export interface ItemMessage {
+    type: "item";
+    itemType: ItemType;
+    position: Vector;
+    momentum: Vector;
+    life: number;
+}
+
 export interface MouseMessage {
     type: "moveMouse";
     position: Vector;
@@ -84,4 +93,4 @@ export interface AnimateMessage {
     id: number;
 }
 
-export type ClientMessage = ActionMessage | TargetedProjectileMessage | ProjectileMessage | MouseMessage | AnimateMessage;
+export type ClientMessage = ActionMessage | TargetedProjectileMessage | ProjectileMessage | ItemMessage | MouseMessage | AnimateMessage;

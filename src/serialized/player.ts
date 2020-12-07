@@ -2,13 +2,14 @@ import { ClassType } from "../classtype";
 import { Player } from "../objects/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
+import { Weapon } from "../weapon";
 
 export interface SerializedPlayer {
     id: number;
     team: number;
     name: string;
     classType: ClassType;
-    weaponEquipped: number;
+    weaponEquipped: Weapon;
     animationFrame: number;
     position: Vector;
     momentum: Vector;
@@ -16,7 +17,6 @@ export interface SerializedPlayer {
     size: Size;
     blastCounter: number;
     alreadyJumped: number;
-    canJump: boolean;
     standing: boolean;
     wasStanding: boolean;
     isDead: boolean;

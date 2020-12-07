@@ -1,10 +1,12 @@
 import { Game } from "../server/game";
 import { Config } from "../config";
-import { Player, PlayerActions } from "../objects/player";
+import { DamageType, Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
 import { ClassType } from "../classtype";
+import { Weapon } from "../weapon";
+import { ItemType } from "../objects/item";
 
 export class ServerPlayer extends Player {
     public actionList: PlayerActions[] = [];
@@ -19,7 +21,7 @@ export class ServerPlayer extends Player {
         position: Vector,
         doProjectile: (
             projectileType: ProjectileType,
-            damageType: string,
+            damageType: DamageType,
             damage: number,
             id: number,
             team: number,
@@ -41,6 +43,12 @@ export class ServerPlayer extends Player {
             isDead: boolean,
             life: number,
         ) => void,
+        doItem: (
+            itemType: ItemType,
+            position: Vector,
+            momentum: Vector,
+            life: number,
+        ) => void,
     ) {
         super(
             config,
@@ -48,7 +56,7 @@ export class ServerPlayer extends Player {
             team,
             name,
             classType,
-            0,
+            decideClassWeapon(classType),
             0,
             {
                 x: position.x,
@@ -59,7 +67,6 @@ export class ServerPlayer extends Player {
             { width: config.playerSize.x, height: config.playerSize.y },
             0,
             0,
-            true,
             false,
             false,
             false,
@@ -81,6 +88,7 @@ export class ServerPlayer extends Player {
             0,
             doProjectile,
             doTargetedProjectile,
+            doItem,
         );
     }
 
@@ -106,5 +114,22 @@ export class ServerPlayer extends Player {
             type: "stealth",
             id: this.id,
         });
+    }
+}
+
+function decideClassWeapon(classType: ClassType): Weapon {
+    switch (classType) {
+        case "axeai" :
+            return "axe";
+        case "archerai" :
+            return "bow";
+        case "ninja" :
+            return "dagger";
+        case "wizard" :
+            return "staff";
+        case "warrior" :
+            return "hammer";
+        default:
+            return "none";
     }
 }
