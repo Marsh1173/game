@@ -56,74 +56,10 @@ export abstract class Projectile {
             this.position.y = (futurePosY + this.position.y) / 2;
             this.position.x = (futurePosX + this.position.x) / 2;
             this.inGround = true;
-            /*const points: Vector[] = [
-                {
-                    // above
-                    x: this.position.x,
-                    y: object.position.y,
-                },
-                {
-                    // below
-                    x: this.position.x,
-                    y: object.position.y + object.size.height,
-                },
-                {
-                    // left
-                    x: object.position.x,
-                    y: this.position.y,
-                },
-                {
-                    // right
-                    x: object.position.x + object.size.width,
-                    y: this.position.y,
-                },
-            ];
-
-            const distances = points.map((point) => Math.sqrt((point.x - this.position.x) ** 2 + (point.y - this.position.y) ** 2));
-
-            let smallest = distances[0];
-            let smallestIndex = 0;
-            distances.forEach((distance, i) => {
-                if (distance < smallest) {
-                    smallest = distance;
-                    smallestIndex = i;
-                }
-            });
-
-            this.position.x = points[smallestIndex].x;
-            this.position.y = points[smallestIndex].y;
-            
-            switch (smallestIndex) {
-                case 0: // above
-                    if (this.momentum.x > 700 || this.momentum.x < -700) {
-                        this.momentum.y /= -2;
-                        this.momentum.x /= 1.3;
-                        this.position.y += this.momentum.y * elapsedTime;
-                    } else {
-                        this.position.y -= Math.min(this.momentum.y / 20, 10);
-                        this.inGround = true;
-                    }
-                    break;
-                case 1: // below
-                    if (this.momentum.y < 0) {
-                        this.momentum.y /= -1.5;
-                    }
-                    break;
-                case 2: // left
-                    if (this.momentum.x > 0) {
-                        this.momentum.x /= -1.5;
-                    }
-                    break;
-                case 3: // right
-                    if (this.momentum.x < 0) this.momentum.x /= -1.5;
-                    break;
-            }*/
         }
     }
 
     public checkCollisionWithPlayer(player: Player, elapsedTime: number): boolean {
-        //let futurePosX = this.position.x + this.momentum.x * elapsedTime;
-        //let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
             this.position.x < player.position.x + player.size.width &&
             this.position.x > player.position.x &&
@@ -132,7 +68,7 @@ export abstract class Projectile {
             this.id != player.id
         ) {
             if (!player.isDead && !this.inGround) {
-                if (!player.isShielded){
+                if (!player.effects.isShielded){
 
                     if (this.projectileType === "shuriken") {
                         player.dotPlayer(2, this.id, this.team, "magic", 500, 4);

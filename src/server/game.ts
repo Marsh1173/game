@@ -13,6 +13,7 @@ import { AiClassType, ClassType, isPlayerClassType, randomAiClassType } from "..
 import { DamageType } from "../objects/player";
 import { ServerItem } from "./item";
 import { ItemType } from "../objects/item";
+import { moveEmitHelpers } from "typescript";
 
 export class Game {
     private intervalId?: NodeJS.Timeout;
@@ -33,7 +34,6 @@ export class Game {
     private aiId: number;
 
     constructor(public readonly config: Config) {
-        //this.newPlayerAI(-2, "AI", "#516687", "axeai", {x: config.xSize / 2, y: config.ySize * 3 / 4 - 90});
         this.aiId = -2;
         this.makeNewAI();
     }
@@ -70,20 +70,33 @@ export class Game {
         const elapsedTime = (timestamp - this.lastFrame) / 1000;
         this.lastFrame = timestamp;
         this.update(elapsedTime * this.config.gameSpeed);
-        const data: InfoMessage = {
+        /*const data: InfoMessage = {
             type: "info",
             info: this.allInfo(),
         };
-        Game.broadcastMessage(data);
+        Game.broadcastMessage(data);*/
     }
 
     public update(elapsedTime: number) {
         this.updateObjects(elapsedTime);
         this.updateObjectsSecondary(elapsedTime);
+
+
+        this.players.forEach((player) => {
+            if (!isPlayerClassType(player.classType)){
+                Game.broadcastMessage({
+                    type: "serverPlayerUpdate",
+                    id: player.id,
+                    focusPosition: player.focusPosition,
+                    position: player.position,
+                    health: player.health,
+                });
+            }
+        });
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms, this.items));
+        this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items));
         this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
@@ -149,7 +162,14 @@ export class Game {
             },
         );
         this.players.push(newPlayer);
-        newPlayer.resurrect();
+        newPlayer.position.x = (newPlayer.team === 1) ? newPlayer.config.playerStart.x : newPlayer.config.playerStart.x + 3300;
+        newPlayer.position.y = newPlayer.config.playerStart.y;
+
+        const data: InfoMessage = {
+            type: "info",
+            info: this.allInfo(),
+        };
+        Game.broadcastMessage(data);
     }
 
     public newPlayerAI(id: number, name: string, color: string, classType: AiClassType, position: Vector) {
@@ -199,6 +219,12 @@ export class Game {
             },
         );
         this.players.push(newPlayerAI);
+
+        const data: InfoMessage = {
+            type: "info",
+            info: this.allInfo(),
+        };
+        Game.broadcastMessage(data);
     }
 
     public removePlayer(id: number) {
@@ -215,7 +241,11 @@ export class Game {
             case "action":
                 switch (data.actionType) {
                     case "jump":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.jump = true;
+                        var player = this.players.find((player) => player.id === id);
+                        if (player) {
+                            player.actionsNextFrame.jump = true;
+                            player.jump();
+                        }
                         break;
                     case "moveLeft":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.moveLeft = true;
@@ -224,7 +254,12 @@ export class Game {
                         this.players.find((player) => player.id === id)!.actionsNextFrame.moveRight = true;
                         break;
                     case "basicAttack":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
+                        //this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
+                        var player = this.players.find((player) => player.id === id);
+                        if (player) {
+                            player.actionsNextFrame.basicAttack = true;
+                            player.basicAttack(this.players, this.items);
+                        }
                         break;
                     case "secondaryAttack":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.secondaryAttack = true;
@@ -281,13 +316,19 @@ export class Game {
                     }),
                 );
                 break;
-            case "moveMouse":
-                this.players.find((player) => player.id === id)!.focusPosition = data.position;
-                break;
-            case "animate":
-                //var playerWithId: ServerPlayer = this.players.find((player) => player.id === id)!;
-                //console.log(playerWithId.animationFrame + " " + playerWithId.id);
-                this.players.find((player) => player.id === id)!.animationFrame = data.animationFrame;
+            case "playerUpdate":
+                var player = this.players.find((player) => player.id === id);
+                if (player) {
+                    player.focusPosition = data.focusPosition;
+                    player.position = data.position;
+                } else console.log("could not find server player");
+                Game.broadcastMessage({
+                    type: "serverPlayerUpdate",
+                    id: id,
+                    focusPosition: data.focusPosition,
+                    position: data.position,
+                    health: data.health,
+                });
                 break;
             default:
                 throw new Error(`Invalid client message type`);

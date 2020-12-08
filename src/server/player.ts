@@ -4,9 +4,10 @@ import { DamageType, Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
-import { ClassType } from "../classtype";
+import { ClassType, isPlayerClassType } from "../classtype";
 import { Weapon } from "../weapon";
-import { ItemType } from "../objects/item";
+import { getRandomWeapon, Item, ItemType } from "../objects/item";
+import { Platform } from "../objects/platform";
 
 export class ServerPlayer extends Player {
     public actionList: PlayerActions[] = [];
@@ -80,8 +81,7 @@ export class ServerPlayer extends Player {
             },
             0,
             false,
-            false,
-            false,
+            {isShielded: false, isStealthed: false, isSlowed: 1},
             true,
             1,
             0,
@@ -108,10 +108,59 @@ export class ServerPlayer extends Player {
         });
     }
 
-    public ninjaFirstAbility() {
-        super.ninjaFirstAbility();
+    public attemptBasicAttack(players: Player[], items: Item[]) {
+        //console.log("tried basic attack");
+        super.attemptBasicAttack(players, items);
         Game.broadcastMessage({
-            type: "stealth",
+            type: "attemptBasicAttack",
+            id: this.id,
+        });
+    }
+
+    public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
+        //console.log("tried secondary attack");
+        super.attemptSecondaryAttack(players, platforms);
+        Game.broadcastMessage({
+            type: "attemptSecondaryAttack",
+            id: this.id,
+        });
+    }
+
+    public attemptFirstAbility(players: Player[], platforms: Platform[]) {
+        //console.log("tried First Ability");
+        super.attemptFirstAbility(players, platforms);
+        Game.broadcastMessage({
+            type: "attemptFirstAbility",
+            id: this.id,
+        });
+    }
+
+    public attemptMoveRight(elapsedTime: number) {
+        //console.log("tried to move right");
+        super.attemptMoveRight(elapsedTime);
+        this.moveRight(elapsedTime);
+        Game.broadcastMessage({
+            type: "attemptMoveRight",
+            id: this.id,
+        });
+    }
+
+    public attemptMoveLeft(elapsedTime: number) {
+        //console.log("tried to move left");
+        super.attemptMoveLeft(elapsedTime);
+        this.moveLeft(elapsedTime);
+        Game.broadcastMessage({
+            type: "attemptMoveLeft",
+            id: this.id,
+        });
+    }
+
+    public attemptJump() {
+        //console.log("tried to jump server-side");
+        super.attemptJump();
+        this.jump();
+        Game.broadcastMessage({
+            type: "attemptJump",
             id: this.id,
         });
     }

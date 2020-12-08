@@ -23,14 +23,6 @@ export const WeaponRender: Record<Weapon, (player: Player, ctx: CanvasRenderingC
     },
 }
 
-/*export const copyDummy: Record<Weapon, (player: Player, ctx: CanvasRenderingContext2D, img: HTMLImageElement) => void> = {
-    "dagger": () => {},
-    "staff": () => {},
-    "hammer": () => {},
-    "axe": () => {},
-    "bow": () => {},
-}*/
-
 function interpretAnimationFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement, player: Player, scale: number, x: number, y: number, imagex: number, imagey: number) {
 
     let rotationFromPlayer: number = Math.atan((player.focusPosition.y - player.position.y - player.size.height / 2) / (player.focusPosition.x - player.position.x - player.size.width / 2));

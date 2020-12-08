@@ -51,7 +51,7 @@ export class PlayerAI extends ServerPlayer {
 
         if (!this.targetedPlayer) {
             players.forEach((player) => {
-                if (isPlayerClassType(player.classType) && !player.isDead && !player.isStealthed) {
+                if (isPlayerClassType(player.classType) && !player.isDead && !player.effects.isStealthed) {
                     const distance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
                     if (distance < 400 && this.checkLineOfSightFromPlayer(platforms, player.position.x + player.size.width / 2, player.position.y + player.size.height / 2)) {
                         this.targetedPlayer = player;
@@ -66,7 +66,7 @@ export class PlayerAI extends ServerPlayer {
             }
         } else {
             players.forEach((player) => {
-                if (isPlayerClassType(player.classType) && this.targetedPlayer && !player.isDead && !player.isStealthed) {
+                if (isPlayerClassType(player.classType) && this.targetedPlayer && !player.isDead && !player.effects.isStealthed) {
                     const stationDistance: number = Math.sqrt(Math.pow(player.position.x - this.station.x, 2) + Math.pow(player.position.y - this.station.y, 2));
                     const distance: number = Math.sqrt(Math.pow(player.position.x - this.position.x, 2) + Math.pow(player.position.y - this.position.y, 2));
                     const targetDistance: number = Math.sqrt(Math.pow(this.targetedPlayer.position.x - this.position.x, 2) + Math.pow(this.targetedPlayer.position.y - this.position.y, 2));

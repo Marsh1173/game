@@ -172,9 +172,9 @@ export abstract class TargetedProjectile {
 
         players.forEach((player) => {
             if (Math.abs(player.position.x - this.position.x) < 180 && Math.abs(player.position.y - this.position.y) < 100 && player.team != this.team) {
-                player.isFrozen *= 0.9;
+                player.effects.isSlowed *= 0.9;
                 setTimeout(() => {
-                    player.isFrozen /= 0.9;
+                    player.effects.isSlowed /= 0.9;
                 }, 100);
             }
         });

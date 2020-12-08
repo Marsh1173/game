@@ -74,8 +74,7 @@ export class ClientPlayer extends Player {
             info.focusPosition,
             info.isCharging,
             info.isHit,
-            info.isShielded,
-            info.isStealthed,
+            info.effects,
             info.facing,
             info.moveSpeedModifier,
             info.healthModifier,
@@ -86,22 +85,8 @@ export class ClientPlayer extends Player {
         );
     }
 
-    public update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
-        if (this.prevFocusPosition.x !== this.focusPosition.x || this.prevFocusPosition.y !== this.focusPosition.y) {
-            this.serverTalker.sendMessage({
-                type: "moveMouse",
-                id: this.id,
-                position: this.focusPosition,
-            });
-            this.prevFocusPosition.x = this.focusPosition.x;
-            this.prevFocusPosition.y = this.focusPosition.y;
-        }
-
-        super.update(elapsedTime, players, platforms, items);
-    }
-
     public render(ctx: CanvasRenderingContext2D) {
-        if (this.isStealthed) {
+        if (this.effects.isStealthed) {
             ctx.shadowBlur = 10;
             ctx.globalAlpha = 0.3;
             ctx.fillStyle = this.color;
@@ -111,7 +96,7 @@ export class ClientPlayer extends Player {
             ctx.shadowBlur = 2;
             ctx.shadowColor = "gray";
             return;
-        } else if (this.isShielded) {
+        } else if (this.effects.isShielded) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "white";
         } else if (this.health >= 100 + this.healthModifier) {
@@ -124,7 +109,7 @@ export class ClientPlayer extends Player {
 
         //hit and shielded exceptions
 
-        if (this.isShielded) ctx.fillStyle = "white";
+        if (this.effects.isShielded) ctx.fillStyle = "white";
         else if (this.isDead) ctx.fillStyle = "black";
         else ctx.fillStyle = this.isHit ? "red" : this.color;
 
@@ -132,7 +117,7 @@ export class ClientPlayer extends Player {
         const opacity = this.isDead ? 0.1 : 0.9;
         ctx.globalAlpha = opacity;
         ctx.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
-        if (this.isShielded || this.isDead) {
+        if (this.effects.isShielded || this.isDead) {
             // for exceptions, colors the inside normally
             ctx.fillStyle = this.color;
             ctx.fillRect(this.position.x + 5, this.position.y + 5, this.size.width - 10, this.size.height - 10);
@@ -261,49 +246,13 @@ export class ClientPlayer extends Player {
     }
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
-
         WeaponRender[this.weaponEquipped](this, ctx);
-
     }
 
-    public renderWeaponTemplate(ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number) {
-        ctx.save()
 
-        ctx.shadowBlur = 0;
-        let rotation: number = Math.atan(
-            (this.focusPosition.y - this.position.y - this.size.height / 2) / (this.focusPosition.x - this.position.x - this.size.width / 2),
-        );
-
-        if (this.focusPosition.x - this.position.x - this.size.width / 2 < 0) {
-            scale *= -1;
-            rotation *= -1;
-            ctx.transform(
-                scale,
-                0,
-                0,
-                Math.abs(scale),
-                this.position.x + this.size.width / 2 - 40 * Math.cos(rotation),
-                this.position.y + this.size.height / 2 + 40 * Math.sin(rotation),
-            );
-        } else {
-            ctx.transform(
-                scale,
-                0,
-                0,
-                Math.abs(scale),
-                this.position.x + this.size.width / 2 + 40 * Math.cos(rotation),
-                this.position.y + this.size.height / 2 + 40 * Math.sin(rotation),
-            );
-        }
-
-        ctx.rotate(rotation + Math.PI / 4 + this.animationFrame);
-        ctx.drawImage(img, (-img.width * 2) / 3, (-img.height * 3) / 4 - this.animationFrame * 60);
-
-        ctx.restore();
-    }
-
-    public jump() {
-        super.jump();
+    
+    public attemptJump() {
+        super.attemptJump();
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "jump",
@@ -311,8 +260,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public moveLeft(elapsedTime: number) {
-        super.moveLeft(elapsedTime);
+    public attemptMoveLeft(elapsedTime: number) {
+        super.attemptMoveLeft(elapsedTime);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "moveLeft",
@@ -320,8 +269,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public moveRight(elapsedTime: number) {
-        super.moveRight(elapsedTime);
+    public attemptMoveRight(elapsedTime: number) {
+        super.attemptMoveRight(elapsedTime);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "moveRight",
@@ -329,16 +278,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public basicAttack(players: Player[], items: Item[]) {
-        /*Game.particleHandler.newEffect({
-            particleType: "smoke",
-            position: { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            particleSize: { width: 150, height: 150 },
-            particleSpeed: { mean: 100, stdev: 60 },
-            particleLifetime: { mean: 0.4, stdev: 0.3 },
-            particleAmt: 70,
-        });*/
-        super.basicAttack(players, items);
+    public attemptBasicAttack(players: Player[], items: Item[]) {
+        super.attemptBasicAttack(players, items);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "basicAttack",
@@ -346,8 +287,8 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public secondaryAttack(players: Player[], platforms: Platform[]) {
-        super.secondaryAttack(players, platforms);
+    public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
+        super.attemptSecondaryAttack(players, platforms);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "secondaryAttack",
@@ -355,20 +296,11 @@ export class ClientPlayer extends Player {
         });
     }
 
-    public firstAbility(players: Player[], platforms: Platform[]) {
-        super.firstAbility(players, platforms);
+    public attemptFirstAbility(players: Player[], platforms: Platform[]) {
+        super.attemptFirstAbility(players, platforms);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "firstAbility",
-            id: this.id,
-        });
-    }
-
-    public secondAbility(players: Player[], platforms: Platform[]) {
-        super.secondAbility(players, platforms);
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "secondAbility",
             id: this.id,
         });
     }

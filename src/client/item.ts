@@ -41,10 +41,9 @@ export class ClientItem extends Item {
         ctx.shadowBlur = 3;
         ctx.shadowColor = "black";
         ctx.fillStyle = "black";
-        ctx.globalAlpha = 0.6;
+        ctx.globalAlpha = 0.6 * (this.life / this.totalLife) + 0.4;
         ctx.fillRect(this.position.x, this.position.y, this.itemSize, this.itemSize);
-        ctx.drawImage(img, this.position.x, this.position.y, this.itemSize, this.itemSize);
-        
         ctx.restore();
+        ctx.drawImage(img, this.position.x, this.position.y, this.itemSize, this.itemSize);
     }
 }

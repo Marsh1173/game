@@ -63,26 +63,15 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.transform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
 
         ctx.rotate(rotation + Math.PI / 4);
-
         ctx.drawImage(assetManager.images["firestrike"], -assetManager.images["firestrike"].width / 2, -assetManager.images["firestrike"].height / 2);
-
-        /*ctx.globalAlpha = 0.1;
-        ctx.fillStyle = "orange";
-        ctx.beginPath(); // pillar
-        ctx.moveTo(this.destination.x - 60, this.destination.y - this.config.ySize - 50);
-        ctx.lineTo(this.destination.x + 60, this.destination.y - this.config.ySize - 50);
-        ctx.lineTo(this.destination.x + 65, this.destination.y);
-        ctx.lineTo(this.destination.x - 65, this.destination.y);
-        ctx.fill();*/
         ctx.restore();
     }
 
     public renderChains(ctx: CanvasRenderingContext2D) {
+        ctx.save();
 
-        //let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
         ctx.shadowColor = "white";
         ctx.shadowBlur = 50;
-
         ctx.globalAlpha = 0.1;
         ctx.fillStyle = "cyan";
 
@@ -91,17 +80,14 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.fill();
 
 
-        ctx.globalAlpha = 1.0;
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
+        ctx.restore();
     }
 
     public renderHealingAura(ctx: CanvasRenderingContext2D) {
+        ctx.save();
 
-        //let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
         ctx.shadowColor = "white";
         ctx.shadowBlur = 50;
-
         ctx.globalAlpha = 0.1;
         ctx.fillStyle = "yellow";
 
@@ -110,17 +96,14 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.fill();
 
 
-        ctx.globalAlpha = 1.0;
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
+        ctx.restore();
     }
 
     public renderGravity(ctx: CanvasRenderingContext2D) {
+        ctx.save();
 
-        //let rotation: number = Math.atan(this.momentum.y / this.momentum.x);
         ctx.shadowColor = "white";
         ctx.shadowBlur = 50;
-
         ctx.globalAlpha = 0.1;
         ctx.fillStyle = "white";
 
@@ -128,10 +111,7 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.arc(this.position.x, this.position.y, 30, 0, 2 * Math.PI);
         ctx.fill();
 
-
-        ctx.globalAlpha = 1.0;
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
+        ctx.restore();
     }
 
     public renderBlizzard(ctx: CanvasRenderingContext2D, particleHandler: ParticleSystem) {

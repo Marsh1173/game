@@ -12,6 +12,20 @@ import { getRandomWeapon, Item, ItemType } from "./item";
 export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "basicAttack" | "secondaryAttack" | "firstAbility" | "secondAbility";
 export type DamageType = "unblockable" | "melee" | "magic" | "ranged" | "crushing";
 
+export class effectsClass {
+    isShielded: boolean;
+    isStealthed: boolean;
+    isSlowed: number;
+
+    constructor(isShielded: boolean,
+        isStealthed: boolean,
+        isSlowed: number,) {
+            this.isShielded = isShielded;
+            this.isStealthed = isStealthed;
+            this.isSlowed = isSlowed;
+        }
+}
+
 export abstract class Player {
     private static nextId = 0;
     public static getNextId() {
@@ -20,7 +34,6 @@ export abstract class Player {
 
     public shieldCount = setTimeout(() => "", 1);
     public stealthCount = setTimeout(() => "", 1);
-    public isFrozen: number = 1; // is multiplied by the elapsed time
 
     public AttackModifier: number = 0;
 
@@ -61,8 +74,7 @@ export abstract class Player {
         public focusPosition: Vector, // mouse position
         public isCharging: number,
         public isHit: boolean, // quick true/false if they've been hit in the last moment
-        public isShielded: boolean,
-        public isStealthed: boolean,
+        public effects: effectsClass,
         public facing: boolean, // true if facing right, false for left
         public moveSpeedModifier: number, // multiplied by their movespeed and jump height.
         public healthModifier: number,
@@ -130,8 +142,7 @@ export abstract class Player {
             focusPosition: this.focusPosition,
             isCharging: this.isCharging,
             isHit: this.isHit,
-            isShielded: this.isShielded,
-            isStealthed: this.isStealthed,
+            effects: this.effects,
             facing: this.facing,
             moveSpeedModifier: this.moveSpeedModifier,
             healthModifier: this.healthModifier,
@@ -212,12 +223,9 @@ export abstract class Player {
             futurePosY < object.position.y + object.size.height &&
             futurePosY + this.size.height > object.position.y
         ) {
-
             const xDistance: number = (object.position.x - this.position.x);
             if (xDistance > 0) this.momentum.x -= 40;
             else this.momentum.x += 40;
-            //this.momentum.x -= 100 / (object.position.x - this.position.x);
-
         }
     }
 
@@ -252,6 +260,7 @@ export abstract class Player {
     }
 
     public intersects(a: number, b: number, c: number, d: number, p: number, q: number, r: number, s: number): boolean {
+        //checks if line (a, b) -> (c, d) intersects with line (p, q) -> (r, s)
         var det, gamma, lambda;
         det = (c - a) * (s - q) - (r - p) * (d - b);
         if (det === 0) {
@@ -264,22 +273,18 @@ export abstract class Player {
     };
 
     public attemptJump() {
-        if (!this.isDead && this.alreadyJumped <= 1) {
-            this.jump();
-        }
-    }
 
+    }
     public jump() {
+        if (this.isDead || this.alreadyJumped > 1) return;
         this.momentum.y = -this.config.playerJumpHeight * (this.moveSpeedModifier + 1) / 2;
         this.alreadyJumped++;
     }
-
     public attemptMoveLeft(elapsedTime: number) {
-        if (!this.isDead && this.momentum.x > -this.config.maxSidewaysMomentum) {
-            this.moveLeft(elapsedTime);
-        }
+    
     }
     public moveLeft(elapsedTime: number) {
+        if (this.isDead || this.momentum.x <= -this.config.maxSidewaysMomentum) return;
         if (this.standing) {
             this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         } else {
@@ -287,11 +292,10 @@ export abstract class Player {
         }
     }
     public attemptMoveRight(elapsedTime: number) {
-        if (!this.isDead && this.momentum.x < this.config.maxSidewaysMomentum) {
-            this.moveRight(elapsedTime);
-        }
+
     }
     public moveRight(elapsedTime: number) {
+        if (this.isDead || this.momentum.x >= this.config.maxSidewaysMomentum) return;
         if (this.standing) {
             this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         } else {
@@ -299,195 +303,20 @@ export abstract class Player {
         }
     }
 
-    public attemptProjectile() {
-        this.projectile();
-    }
-    public projectile() {
-        const power: number = 100;
-
-        let newX = Math.sqrt(power - Math.pow(this.focusPosition.y, 2));
-        let newY = Math.sqrt(power - Math.pow(this.focusPosition.x, 2));
-
-        if (this.focusPosition.x < 0) newX *= -1;
-        if (this.focusPosition.y < 0) newY *= -1;
-
-        this.doProjectile(
-            "arrow",
-            "ranged",
-            15,
-            this.id,
-            this.team,
-            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            { x: newX, y: newY },
-            10, // should be tested
-            400,
-            0,
-            800, // test
-            false,
-        );
-    }
-
     public attemptBasicAttack(players: Player[], items: Item[]) {
-        if (!this.isDead) {
-            this.basicAttack(players, items);
-        }
 
     }
     public basicAttack(players: Player[], items: Item[]) {
-
-        if (this.classType === "axeai" || this.classType === "archerai") {
-            let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-            let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-            let angle: number = Math.atan(newY / newX);
-            if (newX < 0) angle += Math.PI;
-
-            this.animationFrame = 1;
-            WeaponBasicAttack[this.weaponEquipped](this, players, this.doProjectile);
-            return;
-        }
-        
-        let targetItem: Item | undefined;
-        let targetItemDistanceFromCursor: number | undefined;
-        let targetPlayer: Player | undefined;
-
-        /*let targetPlayerDistanceFromCursor: number | undefined;
-        players.forEach((player) => {
-            if (!player.isDead && !player.isStealthed && player.team != this.team) {
-                const distanceFromCursor: number = Math.sqrt(Math.pow(player.position.x + player.size.width / 2 - this.focusPosition.x, 2) + Math.pow(player.position.y + player.size.height / 2 - this.focusPosition.y, 2));
-                if ((!targetPlayer && distanceFromCursor < 100) || (targetPlayer && targetPlayerDistanceFromCursor && distanceFromCursor < targetPlayerDistanceFromCursor)) {
-                    targetPlayer = player;
-                    targetPlayerDistanceFromCursor = distanceFromCursor;
-                }
-            }
-        });*/
-        items.forEach((item) => {
-            const distanceFromCursor: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - this.focusPosition.x, 2) + Math.pow(item.position.y + item.itemSize / 2 - this.focusPosition.y, 2));
-            if ((!targetItem && distanceFromCursor < 10) || (targetItem && targetItemDistanceFromCursor && distanceFromCursor < targetItemDistanceFromCursor)) {
-                targetItem = item;
-                targetItemDistanceFromCursor = distanceFromCursor;
-            }
-        });
-        if (targetItem) {
-            targetItem.pickUp(this);
-        } else {// if (targetPlayer) {
-            let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-            let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-            let angle: number = Math.atan(newY / newX);
-            if (newX < 0) angle += Math.PI;
-
-            this.animationFrame = 1;
-            WeaponBasicAttack[this.weaponEquipped](this, players, this.doProjectile);
-        }
-
-    }
-
-    public basicAttackTemplate(
-        player: Player,
-        damage: number,
-        damageType: DamageType,
-        angle: number,
-        range: number,
-        spread: number,
-        meleeRange: number,
-        knockback: number,
-        //on hit effect methods?)
-    ) {
-        //find relative distance
-        const xDif = player.position.x - this.position.x;
-        const yDif = player.position.y - this.position.y;
-        const distance = Math.sqrt(Math.pow(xDif, 2) + Math.pow(yDif, 2));
-
-        //find relative angle
-        let newX: number = player.position.x + player.size.width / 2 - (this.position.x + this.size.width / 2);
-        let newY: number = player.position.y + player.size.height / 2 - (this.position.y + this.size.height / 2);
-        let enemyAngle: number = Math.atan(newY / newX);
-        if (newX < 0) enemyAngle += Math.PI;
-
-        if (distance < range) {
-            if (
-                (enemyAngle > angle - spread / 2 && enemyAngle < angle + spread / 2) ||
-                (enemyAngle > angle - spread / 2 + Math.PI * 2 && enemyAngle < angle + spread / 2 + Math.PI * 2) ||
-                (enemyAngle > angle - spread / 2 - Math.PI * 2 && enemyAngle < angle + spread / 2 - Math.PI * 2) ||
-                distance < meleeRange
-            ) {
-                if (this.classType === "ninja") {
-                    if (!player.isShielded && !player.isDead) player.dotPlayer(2 + this.AttackModifier / 2, this.id, this.team, "magic", 250, 10);
-                    if (
-                        (player.facing && angle >= Math.PI / -2 && angle <= Math.PI / 2) ||
-                        (!player.facing && angle >= Math.PI / 2 && angle <= (Math.PI * 3) / 2)
-                    ) {
-                        if (this.isStealthed) damage *= 3;
-                        else damage *= 1.3;
-                    }
-                }
-
-                player.damagePlayer(damage, this.id, this.team, damageType);
-                player.knockbackPlayer(angle, knockback);
-
-                this.revealStealthed(20);
-            }
-        }
-    }
-    public wizardBasicAttack() {
-        let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-        let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
-
-        this.doProjectile(
-            "fire",
-            "magic",
-            15 + this.AttackModifier,
-            this.id,
-            this.team,
-            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            { x: 1200 * Math.cos(angle), y: 1200 * Math.sin(angle) },
-            0,
-            0,
-            0,
-            0.5 + this.AttackModifier /  50,
-            false,
-        );
-
-        this.moveSpeedModifier /= 1.5;
-        setTimeout(() => {
-            this.moveSpeedModifier *= 1.5;
-        }, 500);
-    }
-    public archerBasicAttack() {
-        let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-        let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
-
-        this.doProjectile(
-            "arrow",
-            "ranged",
-            5 + this.AttackModifier * 5,
-            this.id,
-            this.team,
-            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            { x: 1400 * Math.cos(angle), y: 1200 * Math.sin(angle) - 100},
-            0.1,
-            200,
-            0,
-            0.5,
-            false
-        );
-
-        this.moveSpeedModifier /= 2;
-        setTimeout(() => {
-            this.moveSpeedModifier *= 2;
-        }, 500);
+        if (!this.isDead) WeaponBasicAttack[this.weaponEquipped](this, players, this.doProjectile);
     }
 
     public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
-        if (!this.isDead) this.secondaryAttack(players, platforms);
     }
     public secondaryAttack(players: Player[], platforms: Platform[]) {
-        if (this.classType === "ninja") this.ninjaSecondaryAttack();
-        if (this.classType === "wizard") this.wizardSecondaryAttack(platforms);
-        if (this.classType === "warrior") this.warriorSecondaryAttack(players);
+        if (this.isDead) return;
+        else if (this.classType === "ninja") this.ninjaSecondaryAttack();
+        else if (this.classType === "wizard") this.wizardSecondaryAttack(platforms);
+        else if (this.classType === "warrior") this.warriorSecondaryAttack(players);
     }
     public ninjaSecondaryAttack() {
         let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
@@ -580,12 +409,12 @@ export abstract class Player {
     }
 
     public attemptFirstAbility(players: Player[], platforms: Platform[]) {
-        this.firstAbility(players, platforms);
     }
     public firstAbility(players: Player[], platforms: Platform[]) {
-        if (this.classType === "ninja") this.ninjaFirstAbility();
-        if (this.classType === "wizard") this.wizardFirstAbility(platforms);
-        if (this.classType === "warrior") this.warriorFirstAbility();
+        if (this.isDead) return;
+        else if (this.classType === "ninja") this.ninjaFirstAbility();
+        else if (this.classType === "wizard") this.wizardFirstAbility(platforms);
+        else if (this.classType === "warrior") this.warriorFirstAbility();
     }
 
     public wizardFirstAbility(platforms: Platform[]) {
@@ -643,23 +472,29 @@ export abstract class Player {
     }
 
     public ninjaFirstAbility() {
-        this.isStealthed = true;
+        this.effects.isStealthed = true;
         this.stealthCount = setTimeout(() => {
-            this.isStealthed = false;
+            this.effects.isStealthed = false;
         }, 6500);
     }
 
     public attemptSecondAbility(players: Player[], platforms: Platform[]) {
-        if (!this.isDead) this.secondAbility(players, platforms);
     }
 
     public secondAbility(players: Player[], platforms: Platform[]) {
-        
+        if (this.isDead) return;
+    }
+
+    public attemptThirdAbility(players: Player[], platforms: Platform[]) {
+    }
+
+    public thirdAbility(players: Player[], platforms: Platform[]) {
+        if (this.isDead) return;
     }
 
     public revealStealthed(time: number = 1) {
         this.stealthCount = setTimeout(() => {
-            this.isStealthed = false;
+            this.effects.isStealthed = false;
         }, time);
     }
 
@@ -689,7 +524,7 @@ export abstract class Player {
         if (this.isDead || this.team === team) {
             return false;
         }
-        if (this.isShielded) {
+        if (this.effects.isShielded) {
             if (damageType != "unblockable") return false;
         }
 
@@ -737,18 +572,6 @@ export abstract class Player {
 
     public die() {
 
-        /*if (this.classType === "axeai" || this.classType === "archerai") {
-            const weapon: ItemType = getRandomWeapon();
-            if (weapon != "nullItem"){
-                this.doItem(
-                    weapon,
-                    {x: this.position.x, y: this.position.y},
-                    {x: 10, y: -100},
-                    20,
-                )
-            }
-        }*/
-
         this.revealStealthed();
         console.log(this.id + " was killed by " + this.lastHitBy);
         //this.lastHitBy = this.id;
@@ -765,9 +588,9 @@ export abstract class Player {
         this.momentum.y = 0;
         this.lastHitBy = this.id;
 
-        this.isShielded = true;
+        this.effects.isShielded = true;
         this.shieldCount = setTimeout(() => {
-            this.isShielded = false;
+            this.effects.isShielded = false;
         }, 3000);
     }
 
@@ -823,7 +646,6 @@ export abstract class Player {
     }
 
     public update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
-        elapsedTime *= this.isFrozen;
 
         if (this.isDead) { // if they're dead, update a few things then return
 
@@ -898,8 +720,7 @@ export abstract class Player {
             if (this.alreadyJumped === 0) this.alreadyJumped = 1;
         }
 
-        if (!this.isDead && this.focusPosition.x - this.position.x - this.size.width / 2 > 0) this.facing = true; // checks which side the player's focusing at
-        else if (!this.isDead) this.facing = false;
+        this.facing = (this.focusPosition.x - this.position.x - this.size.width / 2 > 0) ? true : false; // checks which side the player's focusing at
 
         // Update position based on momentum
         this.position.x += this.momentum.x * elapsedTime;
@@ -943,7 +764,7 @@ export abstract class Player {
         players.forEach((player2) => {
             if (!player2.isDead &&
                 player2.id != this.id &&
-                !this.isStealthed && !player2.isStealthed &&
+                !this.effects.isStealthed && !player2.effects.isStealthed &&
                 this.classType != "ninja" && player2.classType != "ninja") this.checkCollisionWithPlayer(player2, elapsedTime);
         });
 

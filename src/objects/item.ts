@@ -29,13 +29,16 @@ export function getRandomWeapon(): ItemType {
 export abstract class Item {
 
     public itemSize: number = 25;
+    public totalLife: number;
 
     constructor(public readonly config: Config,
         public itemType: ItemType,
         public position: Vector,
         public momentum: Vector,
         public life: number,
-        ) {}
+        ) {
+            this.totalLife = life;
+        }
 
     public serialize(): SerializedItem {
         return {
@@ -91,6 +94,8 @@ export abstract class Item {
                 this.momentum.x /= 1.05;
                 this.position.y = object.position.y - this.itemSize - 10;
                 return true;
+            } else {
+                this.momentum.y *= -0.8;
             }
         }
         return false;

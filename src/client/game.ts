@@ -16,7 +16,8 @@ import { isPlayerClassType } from "../classtype";
 import { PlayerTooltip } from "../abilityTooltips";
 import { renderPlayerOrItemFocus } from "./playerRenderData";
 import { ClientItem } from "./item";
-import { ItemType } from "../objects/item";
+import { getRandomWeapon, ItemType } from "../objects/item";
+import { moveEmitHelpers } from "typescript";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
@@ -35,6 +36,8 @@ export class Game {
     private items: ClientItem[] = [];
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
+
+    private globalElapsedTime: number = 0;
 
     private screenPosX: number = 0;
     private screenPosY: number = 0;
@@ -143,8 +146,17 @@ export class Game {
                         color: player.color,
                     });
                     break;
-                case "stealth":
+                case "attemptBasicAttack":
                     player = this.players.find((player) => player.id === msg.id)!;
+                    player.basicAttack(this.players, this.items);
+                    break;
+                case "attemptSecondaryAttack":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    player.secondaryAttack(this.players, this.platforms);
+                    break;
+                case "attemptFirstAbility":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    player.firstAbility(this.players, this.platforms);
                     Game.particleHandler.newEffect({
                         particleEffectType: "stealth",
                         position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
@@ -152,8 +164,29 @@ export class Game {
                         direction: { x: 0, y: 0 },
                         color: player.color,
                     });
+                    break;
+                case "attemptMoveRight":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    player.moveRight(this.globalElapsedTime);
+                    break;
+                case "attemptMoveLeft":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    player.moveLeft(this.globalElapsedTime);
+                    break;
+                case "attemptJump":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    player.jump();
+                    break;
+                case "serverPlayerUpdate":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    if (msg.id != this.id) {
+                        player.focusPosition = msg.focusPosition;
+                        player.position = msg.position;
+                        player.health = msg.health;
+                    }
+                    break;
                 case "playerLeaving":
-                    // We don't do anything here yet
+                    // We don't do anything here yet TODO - SPLICE THIS.PLAYERS
                     break;
                 default:
                     throw new Error("Unrecognized message from server");
@@ -260,6 +293,7 @@ export class Game {
             this.lastFrame = timestamp;
         }
         const elapsedTime = (timestamp - this.lastFrame) / 1000;
+        this.globalElapsedTime = elapsedTime;
         this.lastFrame = timestamp;
         this.update(elapsedTime * this.config.gameSpeed);
         if (this.going) {
@@ -268,10 +302,19 @@ export class Game {
     }
 
     private update(elapsedTime: number) {
+
         const playerWithId = this.findPlayer();
 
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPosX;
         playerWithId.focusPosition.y = this.mousePos.y - this.screenPosY;
+
+        this.serverTalker.sendMessage({
+            type: "playerUpdate",
+            id: this.id,
+            focusPosition: {x: this.mousePos.x - this.screenPosX, y: this.mousePos.y - this.screenPosY},
+            health: playerWithId.health,
+            position: playerWithId.position,
+        });
 
         this.updateMouse(elapsedTime, playerWithId);
 
@@ -360,7 +403,7 @@ export class Game {
         const playerWithId = this.findPlayer();
 
         this.players.forEach((player) => {
-            if ((!player.isStealthed || this.id === player.id) && !player.isDead) player.render(Game.ctx);
+            if ((!player.effects.isStealthed || this.id === player.id) && !player.isDead) player.render(Game.ctx);
         });
 
         this.projectiles.forEach((projectile) => projectile.render(Game.ctx, Game.particleHandler));
@@ -371,13 +414,13 @@ export class Game {
             if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
             }
-            if (!player.isDead && (!player.isStealthed || player.id === this.id)) {
+            if (!player.isDead && (!player.effects.isStealthed || player.id === this.id)) {
                 player.renderWeapon(Game.ctx);
             }
         });
         this.players.forEach((player) => {
-            if (!player.isStealthed && !player.isDead) player.renderHealth(Game.ctx);
-            if (!player.isStealthed && !player.isDead && isPlayerClassType(player.classType)) {
+            if (!player.effects.isStealthed && !player.isDead) player.renderHealth(Game.ctx);
+            if (!player.effects.isStealthed && !player.isDead && isPlayerClassType(player.classType)) {
                 if (player === playerWithId) player.renderName(Game.ctx, "cyan");
                 else if (player.team === playerWithId.team) player.renderName(Game.ctx, "white");
                 else player.renderName(Game.ctx, "red");
@@ -395,7 +438,7 @@ export class Game {
 
 
         this.platforms.forEach((platform) => platform.render(Game.ctx));
-        if (playerWithId.isStealthed) {
+        if (playerWithId.effects.isStealthed) {
             playerWithId.renderLimitedVision(Game.ctx, 500); //dark invisible screen
         } else if (playerWithId.isDead) {
             playerWithId.renderLimitedVision(Game.ctx, playerWithId.deathCooldown * 4); //shrinking death screen
@@ -511,7 +554,7 @@ export class Game {
         //safeGetElementById("xp").style.width = (player.XP / (player.XPuntilNextLevel)) * 102 + "%";
 
         safeGetElementById("health").style.width = (player.health / (100 + player.healthModifier)) * 102 + "%";
-        if (player.isShielded) safeGetElementById("health").style.background = "cyan";
+        if (player.effects.isShielded) safeGetElementById("health").style.background = "cyan";
         else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
 
         safeGetElementById("healthText").innerText = Math.round(player.health) + " / " + (100 + player.healthModifier);
@@ -553,14 +596,14 @@ export class Game {
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime, this.players, this.platforms, this.items));
+        this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items));
         this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.items.forEach((item) => item.update(elapsedTime, this.platforms));
         this.items = this.items.filter((item) => item.life >= 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
-        this.projectiles = this.projectiles.filter((projectile) => projectile.life >= 0);
+        this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
 
         this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
         this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms, this.projectiles));

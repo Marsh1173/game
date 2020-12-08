@@ -105,7 +105,7 @@ export function renderPlayerOrItemFocus(ctx: CanvasRenderingContext2D, originalP
     let targetPlayerDistanceFromCursor: number | undefined;
     let targetItemDistanceFromCursor: number | undefined;
     players.forEach((player) => {
-        if (!player.isDead && !player.isStealthed && player.team != originalPlayer.team) {
+        if (!player.isDead && !player.effects.isStealthed && player.team != originalPlayer.team) {
             const distanceFromCursor: number = Math.sqrt(Math.pow(player.position.x + player.size.width / 2 - originalPlayer.focusPosition.x, 2) + Math.pow(player.position.y + player.size.height / 2 - originalPlayer.focusPosition.y, 2));
             if ((!targetPlayer && distanceFromCursor < 100) || (targetPlayer && targetPlayerDistanceFromCursor && distanceFromCursor < targetPlayerDistanceFromCursor)) {
                 targetPlayer = player;
@@ -115,7 +115,9 @@ export function renderPlayerOrItemFocus(ctx: CanvasRenderingContext2D, originalP
     });
     items.forEach((item) => {
         const distanceFromCursor: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - originalPlayer.focusPosition.x, 2) + Math.pow(item.position.y + item.itemSize / 2 - originalPlayer.focusPosition.y, 2));
-        if ((!targetItem && distanceFromCursor < 10) || (targetItem && targetItemDistanceFromCursor && distanceFromCursor < targetItemDistanceFromCursor)) {
+        const distanceFromPlayer: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - originalPlayer.position.x - originalPlayer.size.width / 2, 2) + Math.pow(item.position.y + item.itemSize / 2 - originalPlayer.position.y - originalPlayer.size.height / 2, 2));
+        if ((!targetItem && distanceFromCursor < 10 && distanceFromPlayer < 60) || (targetItem && targetItemDistanceFromCursor && distanceFromCursor < targetItemDistanceFromCursor)) {
+            
             targetItem = item;
             targetItemDistanceFromCursor = distanceFromCursor;
         }

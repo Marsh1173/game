@@ -1,5 +1,5 @@
 import { ItemType } from "../objects/item";
-import { DamageType, Player, PlayerActions } from "../objects/player";
+import { DamageType, effectsClass, Player, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { SerializedPlayer } from "../serialized/player";
@@ -32,12 +32,56 @@ export interface DieMessage {
     id: number;
 }
 
-export interface StealthMessage {
-    type: "stealth";
+export interface AttemptMoveRight {
+    type: "attemptMoveRight";
     id: number;
 }
 
-export type ServerMessage = PlayerInfoMessage | PlayerLeavingMessage | InfoMessage | LevelUpMessage | DieMessage | StealthMessage;
+export interface AttemptMoveLeft {
+    type: "attemptMoveLeft";
+    id: number;
+}
+
+export interface AttemptJump {
+    type: "attemptJump";
+    id: number;
+}
+
+export interface AttemptBasicAttack {
+    type: "attemptBasicAttack";
+    id: number;
+}
+
+export interface AttemptSecondaryAttack {
+    type: "attemptSecondaryAttack";
+    id: number;
+}
+
+export interface AttemptFirstAbilityMessage {
+    type: "attemptFirstAbility";
+    id: number;
+}
+
+export interface ServerPlayerUpdate {
+    type: "serverPlayerUpdate";
+    id: number;
+    focusPosition: Vector;
+    position: Vector;
+    health: number;
+}
+
+export type ServerMessage = PlayerInfoMessage |
+    PlayerLeavingMessage |
+    InfoMessage |
+    LevelUpMessage |
+    DieMessage |
+    AttemptMoveRight |
+    AttemptMoveLeft |
+    AttemptJump |
+    AttemptBasicAttack |
+    AttemptSecondaryAttack |
+    AttemptFirstAbilityMessage |
+    ServerPlayerUpdate;
 
 export interface ActionMessage {
     type: "action";
@@ -81,16 +125,12 @@ export interface ItemMessage {
     life: number;
 }
 
-export interface MouseMessage {
-    type: "moveMouse";
+export interface PlayerUpdate {
+    type: "playerUpdate";
+    focusPosition: Vector;
     position: Vector;
+    health: number;
     id: number;
 }
 
-export interface AnimateMessage {
-    type: "animate";
-    animationFrame: number;
-    id: number;
-}
-
-export type ClientMessage = ActionMessage | TargetedProjectileMessage | ProjectileMessage | ItemMessage | MouseMessage | AnimateMessage;
+export type ClientMessage = ActionMessage | TargetedProjectileMessage | ProjectileMessage | ItemMessage | PlayerUpdate;

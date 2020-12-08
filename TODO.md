@@ -5,7 +5,8 @@
 -   Modular platforms and a way to create "levels" that players could play on with their own platform design
 -
 
-add LOS
-fix AI pathing (with platforms and timed aggro)
+Fix AI programming
+Add items, maybe get rid of classes?
+fix health bounce issues?
 
-make player buffs and debuffs into an boolean array?
+add player join and player leave messages for client/game.ts
