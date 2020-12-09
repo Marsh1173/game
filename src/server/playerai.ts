@@ -7,6 +7,7 @@ import { DamageType, Player } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
+import { Game } from "./game";
 import { ServerPlayer } from "./player";
 
 export type AIstate = "pacified" | "aggroed";
@@ -83,6 +84,9 @@ export class PlayerAI extends ServerPlayer {
 
     update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
         if (!this.isDead){
+
+            if (this.actionsNextFrame.die) this.attemptDie();
+
             if (this.targetedPlayer) {
 
                 this.focusPosition.x = (this.targetedPlayer.position.x + this.targetedPlayer.size.width / 2 + this.focusPosition.x * this.aiTargetCorrectionSpeed) / (this.aiTargetCorrectionSpeed + 1); // track player
@@ -128,5 +132,69 @@ export class PlayerAI extends ServerPlayer {
 
         this.basicAttackCounter -= elapsedTime;
         super.update(elapsedTime, players, platforms, items);
+    }
+
+    public attemptThirdAbility(players: Player[], platforms: Platform[]) {
+        super.attemptThirdAbility(players, platforms);
+        Game.broadcastMessage({
+            type: "serverThirdAbility",
+            id: this.id,
+        });
+    }
+
+    public attemptSecondAbility(players: Player[], platforms: Platform[]) {
+        super.attemptSecondAbility(players, platforms);
+        Game.broadcastMessage({
+            type: "serverSecondAbility",
+            id: this.id,
+        });
+    }
+
+    public attemptFirstAbility(players: Player[], platforms: Platform[]) {
+        super.attemptFirstAbility(players, platforms);
+        Game.broadcastMessage({
+            type: "serverFirstAbility",
+            id: this.id,
+        });
+    }
+
+    public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
+        super.attemptSecondaryAttack(players, platforms);
+        Game.broadcastMessage({
+            type: "serverSecondaryAttack",
+            id: this.id,
+        });
+    }
+
+    public attemptBasicAttack(players: Player[], items: Item[]) {
+        super.attemptBasicAttack(players, items);
+        Game.broadcastMessage({
+            type: "serverBasicAttack",
+            id: this.id,
+        });
+    }
+
+    public attemptMoveRight(elapsedTime: number) {
+        super.attemptMoveRight(elapsedTime);
+        Game.broadcastMessage({
+            type: "serverMoveRight",
+            id: this.id,
+        });
+    }
+
+    public attemptMoveLeft(elapsedTime: number) {
+        super.attemptMoveLeft(elapsedTime);
+        Game.broadcastMessage({
+            type: "serverMoveLeft",
+            id: this.id,
+        });
+    }
+
+    public attemptJump() {
+        super.attemptJump();
+        Game.broadcastMessage({
+            type: "serverJump",
+            id: this.id,
+        });
     }
 }

@@ -83,7 +83,7 @@ export class Game {
 
 
         this.players.forEach((player) => {
-            if (!isPlayerClassType(player.classType)){
+            if (!isPlayerClassType(player.classType)){ // tells the players what the AIs are doing.
                 Game.broadcastMessage({
                     type: "serverPlayerUpdate",
                     id: player.id,
@@ -97,7 +97,6 @@ export class Game {
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items));
-        this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
@@ -165,11 +164,17 @@ export class Game {
         newPlayer.position.x = (newPlayer.team === 1) ? newPlayer.config.playerStart.x : newPlayer.config.playerStart.x + 3300;
         newPlayer.position.y = newPlayer.config.playerStart.y;
 
-        const data: InfoMessage = {
+        /*const data: InfoMessage = {
             type: "info",
             info: this.allInfo(),
         };
-        Game.broadcastMessage(data);
+        Game.broadcastMessage(data);*/
+
+        Game.broadcastMessage({
+            type: "playerInfo",
+            id: newPlayer.id,
+            info: newPlayer.serialize()
+        });
     }
 
     public newPlayerAI(id: number, name: string, color: string, classType: AiClassType, position: Vector) {
@@ -220,11 +225,17 @@ export class Game {
         );
         this.players.push(newPlayerAI);
 
-        const data: InfoMessage = {
+        /*const data: InfoMessage = {
             type: "info",
             info: this.allInfo(),
         };
-        Game.broadcastMessage(data);
+        Game.broadcastMessage(data);*/
+
+        Game.broadcastMessage({
+            type: "playerInfo",
+            id: newPlayerAI.id,
+            info: newPlayerAI.serialize()
+        });
     }
 
     public removePlayer(id: number) {
@@ -241,25 +252,32 @@ export class Game {
             case "action":
                 switch (data.actionType) {
                     case "jump":
-                        var player = this.players.find((player) => player.id === id);
-                        if (player) {
-                            player.actionsNextFrame.jump = true;
-                            player.jump();
-                        }
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.jump = true;
+                        Game.broadcastMessage({
+                            type: "serverJump",
+                            id: id,
+                        });
                         break;
                     case "moveLeft":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.moveLeft = true;
+                        Game.broadcastMessage({
+                            type: "serverMoveLeft",
+                            id: id,
+                        });
                         break;
                     case "moveRight":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.moveRight = true;
+                        Game.broadcastMessage({
+                            type: "serverMoveRight",
+                            id: id,
+                        });
                         break;
                     case "basicAttack":
-                        //this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
-                        var player = this.players.find((player) => player.id === id);
-                        if (player) {
-                            player.actionsNextFrame.basicAttack = true;
-                            player.basicAttack(this.players, this.items);
-                        }
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
+                        Game.broadcastMessage({
+                            type: "serverBasicAttack",
+                            id: id,
+                        });
                         break;
                     case "secondaryAttack":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.secondaryAttack = true;
@@ -269,6 +287,16 @@ export class Game {
                         break;
                     case "secondAbility":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.secondAbility = true;
+                        break;
+                    case "die":
+                        var player = this.players.find((player) => player.id === id);
+                        if (player) {
+                            Game.broadcastMessage({
+                                type: "serverDie",
+                                id: player.id,
+                            });
+                            player.die();
+                        }
                         break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);

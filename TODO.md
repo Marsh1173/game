@@ -10,3 +10,5 @@ Add items, maybe get rid of classes?
 fix health bounce issues?
 
 add player join and player leave messages for client/game.ts
+
+there's a bug where targeted projectiles sometimes die right after being created.

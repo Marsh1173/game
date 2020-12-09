@@ -75,6 +75,7 @@ export class ClientPlayer extends Player {
             info.isCharging,
             info.isHit,
             info.effects,
+            info.abilities,
             info.facing,
             info.moveSpeedModifier,
             info.healthModifier,
@@ -251,27 +252,27 @@ export class ClientPlayer extends Player {
 
 
     
-    public attemptJump() {
+    /*public attemptJump() {
         super.attemptJump();
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "jump",
             id: this.id,
         });
-    }
+    }*/
 
-    public attemptMoveLeft(elapsedTime: number) {
+    /*public attemptMoveLeft(elapsedTime: number) {
         super.attemptMoveLeft(elapsedTime);
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "moveLeft",
             id: this.id,
         });
-    }
+    }*/
 
-    public attemptMoveRight(elapsedTime: number) {
+    /*public attemptMoveRight(elapsedTime: number) {
         super.attemptMoveRight(elapsedTime);
-        this.serverTalker.sendMessage({
+        /*this.serverTalker.sendMessage({
             type: "action",
             actionType: "moveRight",
             id: this.id,
@@ -280,7 +281,7 @@ export class ClientPlayer extends Player {
 
     public attemptBasicAttack(players: Player[], items: Item[]) {
         super.attemptBasicAttack(players, items);
-        this.serverTalker.sendMessage({
+        /*this.serverTalker.sendMessage({
             type: "action",
             actionType: "basicAttack",
             id: this.id,
@@ -301,6 +302,15 @@ export class ClientPlayer extends Player {
         this.serverTalker.sendMessage({
             type: "action",
             actionType: "firstAbility",
+            id: this.id,
+        });
+    }*/
+
+    public attemptDie() {
+        super.attemptDie();
+        this.serverTalker.sendMessage({
+            type: "action",
+            actionType: "die",
             id: this.id,
         });
     }

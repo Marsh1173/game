@@ -8,8 +8,9 @@ import { Platform } from "./platform";
 import { ClassType, isPlayerClassType } from "../classtype";
 import { Weapon, WeaponBasicAttack } from "../weapon";
 import { getRandomWeapon, Item, ItemType } from "./item";
+import { AbilityFunction, AbilityName, PlayerAbilities, updateAndCheckAbilites } from "./abilities";
 
-export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "basicAttack" | "secondaryAttack" | "firstAbility" | "secondAbility";
+export type PlayerActions = "jump" | "moveLeft" | "moveRight" | "die" | PlayerAbilities;
 export type DamageType = "unblockable" | "melee" | "magic" | "ranged" | "crushing";
 
 export class effectsClass {
@@ -23,6 +24,23 @@ export class effectsClass {
             this.isShielded = isShielded;
             this.isStealthed = isStealthed;
             this.isSlowed = isSlowed;
+        }
+}
+
+export class PlayerAbilityClass {
+    abilityName: AbilityName;
+    isCharging: boolean;
+    chargeAmount: number;
+    cooldown: number;
+
+    constructor(abilityName: AbilityName,
+        isCharging: boolean,
+        chargeAmount: number,
+        cooldown: number,) {
+            this.abilityName = abilityName;
+            this.isCharging = isCharging;
+            this.chargeAmount = chargeAmount;
+            this.cooldown = cooldown;
         }
 }
 
@@ -48,6 +66,8 @@ export abstract class Player {
         secondaryAttack: false,
         firstAbility: false,
         secondAbility: false,
+        thirdAbility: false,
+        die: false,
     };
 
     constructor(
@@ -56,7 +76,7 @@ export abstract class Player {
         public team: number,
         public name: string,
         public classType: ClassType,
-        public weaponEquipped: Weapon, //NOT BEING USED ATM
+        public weaponEquipped: Weapon,
         public animationFrame: number,
         public position: Vector,
         public momentum: Vector,
@@ -70,11 +90,12 @@ export abstract class Player {
         public health: number,
         public deathCooldown: number,
         public lastHitBy: number,
-        public killCount: number, //NOT BEING USED ATM
+        public killCount: number,
         public focusPosition: Vector, // mouse position
         public isCharging: number,
         public isHit: boolean, // quick true/false if they've been hit in the last moment
         public effects: effectsClass,
+        public abilities: PlayerAbilityClass[],
         public facing: boolean, // true if facing right, false for left
         public moveSpeedModifier: number, // multiplied by their movespeed and jump height.
         public healthModifier: number,
@@ -143,6 +164,7 @@ export abstract class Player {
             isCharging: this.isCharging,
             isHit: this.isHit,
             effects: this.effects,
+            abilities: this.abilities,
             facing: this.facing,
             moveSpeedModifier: this.moveSpeedModifier,
             healthModifier: this.healthModifier,
@@ -273,18 +295,16 @@ export abstract class Player {
     };
 
     public attemptJump() {
-
+        if (!this.isDead && this.alreadyJumped <= 1) this.jump();
     }
     public jump() {
-        if (this.isDead || this.alreadyJumped > 1) return;
         this.momentum.y = -this.config.playerJumpHeight * (this.moveSpeedModifier + 1) / 2;
         this.alreadyJumped++;
     }
     public attemptMoveLeft(elapsedTime: number) {
-    
+        if (!this.isDead && this.momentum.x > -this.config.maxSidewaysMomentum) this.moveLeft(elapsedTime);
     }
     public moveLeft(elapsedTime: number) {
-        if (this.isDead || this.momentum.x <= -this.config.maxSidewaysMomentum) return;
         if (this.standing) {
             this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         } else {
@@ -292,10 +312,9 @@ export abstract class Player {
         }
     }
     public attemptMoveRight(elapsedTime: number) {
-
+        if (!this.isDead && this.momentum.x < this.config.maxSidewaysMomentum) this.moveRight(elapsedTime);
     }
     public moveRight(elapsedTime: number) {
-        if (this.isDead || this.momentum.x >= this.config.maxSidewaysMomentum) return;
         if (this.standing) {
             this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
         } else {
@@ -304,19 +323,23 @@ export abstract class Player {
     }
 
     public attemptBasicAttack(players: Player[], items: Item[]) {
-
+        if (!this.isDead) {
+            this.basicAttack(players, items);
+        }
     }
     public basicAttack(players: Player[], items: Item[]) {
-        if (!this.isDead) WeaponBasicAttack[this.weaponEquipped](this, players, this.doProjectile);
+        WeaponBasicAttack[this.weaponEquipped](this, players, this.doProjectile);
     }
 
     public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
+        if (!this.isDead) this.secondaryAttack(players, platforms);
     }
     public secondaryAttack(players: Player[], platforms: Platform[]) {
-        if (this.isDead) return;
-        else if (this.classType === "ninja") this.ninjaSecondaryAttack();
+        /*if (this.classType === "ninja") this.ninjaSecondaryAttack();
         else if (this.classType === "wizard") this.wizardSecondaryAttack(platforms);
-        else if (this.classType === "warrior") this.warriorSecondaryAttack(players);
+        else if (this.classType === "warrior") this.warriorSecondaryAttack(players);*/
+
+        AbilityFunction[this.abilities[1].abilityName](this, players, platforms);
     }
     public ninjaSecondaryAttack() {
         let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
@@ -409,10 +432,10 @@ export abstract class Player {
     }
 
     public attemptFirstAbility(players: Player[], platforms: Platform[]) {
+        if (!this.isDead) this.firstAbility(players, platforms);
     }
     public firstAbility(players: Player[], platforms: Platform[]) {
-        if (this.isDead) return;
-        else if (this.classType === "ninja") this.ninjaFirstAbility();
+        if (this.classType === "ninja") this.ninjaFirstAbility();
         else if (this.classType === "wizard") this.wizardFirstAbility(platforms);
         else if (this.classType === "warrior") this.warriorFirstAbility();
     }
@@ -479,17 +502,17 @@ export abstract class Player {
     }
 
     public attemptSecondAbility(players: Player[], platforms: Platform[]) {
+        if (!this.isDead) this.secondAbility(players, platforms);
     }
 
     public secondAbility(players: Player[], platforms: Platform[]) {
-        if (this.isDead) return;
     }
 
     public attemptThirdAbility(players: Player[], platforms: Platform[]) {
+        if (!this.isDead) this.thirdAbility(players, platforms);
     }
 
     public thirdAbility(players: Player[], platforms: Platform[]) {
-        if (this.isDead) return;
     }
 
     public revealStealthed(time: number = 1) {
@@ -536,8 +559,7 @@ export abstract class Player {
         }
 
         if (this.health <= 0) {
-            this.die();
-            this.health = 0;
+            this.actionsNextFrame.die = true;
             return true;
         }
         return false;
@@ -570,8 +592,17 @@ export abstract class Player {
         }, 1);
     }
 
-    public die() {
+    public attemptDie() {
 
+        //playerside, this should only be called if the person's player dies.
+        //serverside?
+
+        //this.actionsNextFrame.die = true;
+    }
+
+    public die() {
+        this.actionsNextFrame.die = false;
+        this.health = 0;
         this.revealStealthed();
         console.log(this.id + " was killed by " + this.lastHitBy);
         //this.lastHitBy = this.id;
@@ -645,6 +676,14 @@ export abstract class Player {
 
     }
 
+    private playerUpdateAndCheckAbilites(elapsedTime: number) {
+        updateAndCheckAbilites(elapsedTime, this, this.abilities[0], "basicAttack");
+        updateAndCheckAbilites(elapsedTime, this, this.abilities[1], "secondaryAttack");
+        updateAndCheckAbilites(elapsedTime, this, this.abilities[2], "firstAbility");
+        updateAndCheckAbilites(elapsedTime, this, this.abilities[3], "secondAbility");
+        updateAndCheckAbilites(elapsedTime, this, this.abilities[4], "thirdAbility");
+    }
+
     public update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
 
         if (this.isDead) { // if they're dead, update a few things then return
@@ -662,9 +701,10 @@ export abstract class Player {
                 this.lastHitBy = this.id;
             }
             this.deathCooldown -= elapsedTime * 60;
-            if (this.deathCooldown <= 0 && isPlayerClassType(this.classType)) {
+            if (this.deathCooldown <= 0) {
                 this.resurrect();
             }
+            Object.keys(this.actionsNextFrame).forEach((key) => (this.actionsNextFrame[key as PlayerActions] = false));
             return;
         }
         
@@ -672,6 +712,9 @@ export abstract class Player {
         if (!this.standing) {
             this.momentum.y += this.config.fallingAcceleration * elapsedTime;
         }
+
+        //update and check abilities
+        this.playerUpdateAndCheckAbilites(elapsedTime);
 
         // Action handling
         if (this.actionsNextFrame.jump) {
@@ -682,7 +725,6 @@ export abstract class Player {
         }
         if (this.actionsNextFrame.moveRight) {
             this.attemptMoveRight(elapsedTime);
-        } else {
         }
         if (this.actionsNextFrame.basicAttack) {
             this.attemptBasicAttack(players, items);
@@ -696,6 +738,12 @@ export abstract class Player {
         if (this.actionsNextFrame.secondAbility) {
             this.attemptSecondAbility(players, platforms);
         }
+        if (this.actionsNextFrame.thirdAbility) {
+            this.attemptThirdAbility(players, platforms);
+        }
+        /*if (this.actionsNextFrame.die) {
+            this.attemptDie();
+        }*/
         
         this.updateAnimationFrame(elapsedTime); //updates the player's animation frame
 

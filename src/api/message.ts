@@ -27,38 +27,48 @@ export interface LevelUpMessage {
     id: number;
 }
 
-export interface DieMessage {
-    type: "die";
+export interface ServerDie {
+    type: "serverDie";
     id: number;
 }
 
-export interface AttemptMoveRight {
-    type: "attemptMoveRight";
+export interface ServerMoveRight {
+    type: "serverMoveRight";
     id: number;
 }
 
-export interface AttemptMoveLeft {
-    type: "attemptMoveLeft";
+export interface ServerMoveLeft {
+    type: "serverMoveLeft";
     id: number;
 }
 
-export interface AttemptJump {
-    type: "attemptJump";
+export interface ServerJump {
+    type: "serverJump";
     id: number;
 }
 
-export interface AttemptBasicAttack {
-    type: "attemptBasicAttack";
+export interface ServerBasicAttack {
+    type: "serverBasicAttack";
     id: number;
 }
 
-export interface AttemptSecondaryAttack {
-    type: "attemptSecondaryAttack";
+export interface ServerSecondaryAttack {
+    type: "serverSecondaryAttack";
     id: number;
 }
 
-export interface AttemptFirstAbilityMessage {
-    type: "attemptFirstAbility";
+export interface ServerFirstAbility {
+    type: "serverFirstAbility";
+    id: number;
+}
+
+export interface ServerSecondAbility {
+    type: "serverSecondAbility";
+    id: number;
+}
+
+export interface ServerThirdAbility {
+    type: "serverThirdAbility";
     id: number;
 }
 
@@ -74,13 +84,15 @@ export type ServerMessage = PlayerInfoMessage |
     PlayerLeavingMessage |
     InfoMessage |
     LevelUpMessage |
-    DieMessage |
-    AttemptMoveRight |
-    AttemptMoveLeft |
-    AttemptJump |
-    AttemptBasicAttack |
-    AttemptSecondaryAttack |
-    AttemptFirstAbilityMessage |
+    ServerDie |
+    ServerMoveRight |
+    ServerMoveLeft |
+    ServerJump |
+    ServerBasicAttack |
+    ServerSecondaryAttack |
+    ServerFirstAbility |
+    ServerSecondAbility |
+    ServerThirdAbility |
     ServerPlayerUpdate;
 
 export interface ActionMessage {

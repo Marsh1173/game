@@ -18,6 +18,7 @@ import { renderPlayerOrItemFocus } from "./playerRenderData";
 import { ClientItem } from "./item";
 import { getRandomWeapon, ItemType } from "../objects/item";
 import { moveEmitHelpers } from "typescript";
+import { cancelAbilites } from "../objects/abilities";
 
 export class Game {
     private static readonly menuDiv = safeGetElementById("menuDiv");
@@ -136,8 +137,9 @@ export class Game {
                         targetPosition: player.position,
                     });
                     break;
-                case "die":
+                case "serverDie":
                     player = this.players.find((player) => player.id === msg.id)!;
+                    player.die();
                     Game.particleHandler.newEffect({
                         particleEffectType: "die",
                         position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
@@ -146,36 +148,44 @@ export class Game {
                         color: player.color,
                     });
                     break;
-                case "attemptBasicAttack":
+                case "serverBasicAttack":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.basicAttack(this.players, this.items);
+                    if (player.id != this.id) player.actionsNextFrame.basicAttack = true;
                     break;
-                case "attemptSecondaryAttack":
+                case "serverSecondaryAttack":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.secondaryAttack(this.players, this.platforms);
+                    if (player.id != this.id) player.actionsNextFrame.secondaryAttack = true;
                     break;
-                case "attemptFirstAbility":
+                case "serverFirstAbility":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.firstAbility(this.players, this.platforms);
+                    if (player.id != this.id) player.actionsNextFrame.firstAbility = true;
                     Game.particleHandler.newEffect({
                         particleEffectType: "stealth",
                         position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
                         momentum: player.momentum,
                         direction: { x: 0, y: 0 },
                         color: player.color,
-                    });
+                    }); // there should be an abilities effects folder
                     break;
-                case "attemptMoveRight":
+                case "serverSecondAbility":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.moveRight(this.globalElapsedTime);
+                    if (player.id != this.id) player.actionsNextFrame.secondAbility = true;
                     break;
-                case "attemptMoveLeft":
+                case "serverThirdAbility":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.moveLeft(this.globalElapsedTime);
+                    if (player.id != this.id) player.actionsNextFrame.thirdAbility = true;
                     break;
-                case "attemptJump":
+                case "serverMoveRight":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.jump();
+                    if (player.id != this.id) player.actionsNextFrame.moveRight = true;
+                    break;
+                case "serverMoveLeft":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    if (player.id != this.id) player.actionsNextFrame.moveLeft = true;
+                    break;
+                case "serverJump":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    if (player.id != this.id) player.actionsNextFrame.jump = true;
                     break;
                 case "serverPlayerUpdate":
                     player = this.players.find((player) => player.id === msg.id)!;
@@ -185,8 +195,54 @@ export class Game {
                         player.health = msg.health;
                     }
                     break;
+                case "playerInfo":
+                    this.players.push(new ClientPlayer(
+                                this.config,
+                                msg.info,
+                                (
+                                    projectileType: ProjectileType,
+                                    damageType: DamageType,
+                                    damage: number,
+                                    id: number,
+                                    team: number,
+                                    position: Vector,
+                                    momentum: Vector,
+                                    fallSpeed: number,
+                                    knockback: number,
+                                    range: number,
+                                    life: number,
+                                    inGround: boolean,
+                                ) => {
+                                    this.projectile(projectileType, damageType, damage, id, team, position, momentum, fallSpeed, knockback, range, life, inGround);
+                                },
+                                (
+                                    targetedProjectileType: TargetedProjectileType,
+                                    id: number,
+                                    team: number,
+                                    position: Vector,
+                                    momentum: Vector,
+                                    destination: Vector,
+                                    isDead: boolean,
+                                    life: number,
+                                ) => {
+                                    this.targetedProjectile(targetedProjectileType, id, team, position, momentum, destination, isDead, life);
+                                },
+                                (
+                                    itemType: ItemType,
+                                    position: Vector,
+                                    momentum: Vector,
+                                    life: number,
+                                ) => {
+                                    this.item(itemType, position, momentum, life);
+                                },
+                                this.serverTalker,
+                                this.id,
+                            ),
+                    );
+                    break;
                 case "playerLeaving":
-                    // We don't do anything here yet TODO - SPLICE THIS.PLAYERS
+                    // We don't do anything here yet TODO - FILTER THIS.PLAYERS
+                    this.players = this.players.filter((player) => player.id !== msg.id);
                     break;
                 default:
                     throw new Error("Unrecognized message from server");
@@ -207,9 +263,8 @@ export class Game {
                 this.keyState[config.playerKeys.basicAttack] = true;
 
             } else if (e.button === 2) {
-                //right mouse button click
-                this.cancelAbilites();
-                this.keyState[config.playerKeys.secondAttack] = true;
+                cancelAbilites(playerWithId);
+                playerWithId.abilities[1].isCharging = true;
             }
         };
         window.onmouseup = (e: MouseEvent) => {
@@ -219,15 +274,8 @@ export class Game {
                 // left mouse release
                 this.isLeftCharging = 0;
                 this.keyState[config.playerKeys.basicAttack] = false;
-            } else if (e.button === 2 && this.keyState[config.playerKeys.secondAttack]) {
-                // right mouse release
-                if (playerWithId.classType === "wizard" && this.isRightCharging >= 1) {
-                    playerWithId.attemptSecondaryAttack(this.players, this.platforms);
-                    this.rightClickCounter = this.rightClickCooldown;
-                    this.isRightCharging = 0;
-                }
-                this.keyState[config.playerKeys.secondAttack] = false;
-                this.isRightCharging = 0;
+            } else if (e.button === 2) {
+                playerWithId.abilities[1].isCharging = false;
             }
         };
         window.onmousemove = (e: MouseEvent) => {
@@ -235,30 +283,27 @@ export class Game {
             this.mousePos.y = e.clientY;
         };
         window.onkeydown = (e: KeyboardEvent) => {
-            if (e.code === "ShiftLeft") {
-                if (!this.keyState["ShiftLeft"] && !this.keyState[config.playerKeys.basicAttack]) {
-                    const playerWithId = this.findPlayer();
-                    this.cancelAbilites();
-                    if (!playerWithId.isDead && playerWithId.classType === "warrior" && this.firstAbilityCounter <= 0) {
-                        playerWithId.attemptFirstAbility(this.players, this.platforms);
-                        this.firstAbilityCounter = this.firstAbilityCooldown;
-                    } else if (playerWithId.classType != "warrior") {
-                        this.keyState[e.code] = true;
-                    }
-                }
+            const playerWithId = this.findPlayer();
+
+            if (e.code === this.config.playerKeys.firstAbility && !playerWithId.abilities[2].isCharging) {
+                cancelAbilites(playerWithId);
+                playerWithId.abilities[2].isCharging = true;
+            } else if (e.code === this.config.playerKeys.secondAbility && !playerWithId.abilities[3].isCharging) {
+                cancelAbilites(playerWithId);
+                playerWithId.abilities[3].isCharging = true;
+            } else if (e.code === this.config.playerKeys.thirdAbility && !playerWithId.abilities[4].isCharging) {
+                cancelAbilites(playerWithId);
+                playerWithId.abilities[4].isCharging = true;
             } else this.keyState[e.code] = true;
         };
         window.onkeyup = (e: KeyboardEvent) => {
-            if (e.code === "ShiftLeft") {
-                if (this.keyState["ShiftLeft"]) {
-                    const playerWithId = this.findPlayer();
-                    if (this.firstAbilityCounter <= 0 && this.firstAbilityCharging >= 1) {
-                        playerWithId.attemptFirstAbility(this.players, this.platforms);
-                        this.firstAbilityCounter = this.firstAbilityCooldown;
-                    }
-                    this.keyState["ShiftLeft"] = false;
-                    this.firstAbilityCharging = 0;
-                }
+            const playerWithId = this.findPlayer();
+            if (e.code === this.config.playerKeys.firstAbility) {
+                playerWithId.abilities[2].isCharging = false;
+            } else if (e.code === this.config.playerKeys.secondAbility) {
+                playerWithId.abilities[3].isCharging = false;
+            } else if (e.code === this.config.playerKeys.thirdAbility) {
+                playerWithId.abilities[4].isCharging = false;
             } else this.keyState[e.code] = false;
         };
     }
@@ -304,6 +349,9 @@ export class Game {
     private update(elapsedTime: number) {
 
         const playerWithId = this.findPlayer();
+        if (playerWithId.actionsNextFrame.die) {
+            playerWithId.attemptDie();
+        }
 
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPosX;
         playerWithId.focusPosition.y = this.mousePos.y - this.screenPosY;
@@ -326,28 +374,69 @@ export class Game {
         if (this.keyState[this.config.playerKeys.up]) {
             playerWithId.attemptJump();
             this.keyState[this.config.playerKeys.up] = false;
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "jump",
+                id: this.id,
+            });
         }
         if (this.keyState[this.config.playerKeys.left]) {
             playerWithId.attemptMoveLeft(elapsedTime);
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "moveLeft",
+                id: this.id,
+            });
         }
         if (this.keyState[this.config.playerKeys.right]) {
             playerWithId.attemptMoveRight(elapsedTime);
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "moveRight",
+                id: this.id,
+            });
         }
         if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
             this.leftClickCounter = this.leftClickCooldown;
-            playerWithId.attemptBasicAttack(this.players, this.items);
+            playerWithId.actionsNextFrame.basicAttack = true;
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "basicAttack",
+                id: this.id,
+            });
         }
-        if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
-
-            if (playerWithId.classType != "wizard") {
-                playerWithId.attemptSecondaryAttack(this.players, this.platforms);
-                this.rightClickCounter = this.rightClickCooldown;
-                this.isRightCharging = 0;
-            }
+        /*if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
+            playerWithId.actionsNextFrame.secondaryAttack = true;
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "secondaryAttack",
+                id: this.id,
+            });
+        }
+        if (this.keyState[this.config.playerKeys.firstAbility]) {
+            playerWithId.actionsNextFrame.firstAbility = true;
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "firstAbility",
+                id: this.id,
+            });
         }
         if (this.keyState[this.config.playerKeys.secondAbility]) {
-            playerWithId.attemptSecondAbility(this.players, this.platforms);
+            playerWithId.actionsNextFrame.secondAbility = true;
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "secondAbility",
+                id: this.id,
+            });
         }
+        if (this.keyState[this.config.playerKeys.thirdAbility]) {
+            playerWithId.actionsNextFrame.thirdAbility = true;
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "thirdAbility",
+                id: this.id,
+            });
+        }*/
 
         Game.particleHandler.update(elapsedTime, this.platforms);
 
@@ -597,7 +686,6 @@ export class Game {
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items));
-        this.players = this.players.filter((player) => player.deathCooldown > 0 || isPlayerClassType(player.classType));
 
         this.items.forEach((item) => item.update(elapsedTime, this.platforms));
         this.items = this.items.filter((item) => item.life >= 0);

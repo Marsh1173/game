@@ -1,6 +1,6 @@
 import { Game } from "../server/game";
 import { Config } from "../config";
-import { DamageType, Player, PlayerActions } from "../objects/player";
+import { DamageType, Player, PlayerAbilityClass, PlayerActions } from "../objects/player";
 import { ProjectileType } from "../objects/projectile";
 import { TargetedProjectileType } from "../objects/targetedProjectile";
 import { Vector } from "../vector";
@@ -82,6 +82,11 @@ export class ServerPlayer extends Player {
             0,
             false,
             {isShielded: false, isStealthed: false, isSlowed: 1},
+            [new PlayerAbilityClass("basicAttack", false, 0, 0),
+            new PlayerAbilityClass("shurikenToss", false, 0, 0),
+            new PlayerAbilityClass("blizzard", false, 0, 0),
+            new PlayerAbilityClass("stealth", false, 0, 0),
+            new PlayerAbilityClass("shurikenToss", false, 0, 0),],
             true,
             1,
             0,
@@ -100,28 +105,29 @@ export class ServerPlayer extends Player {
         });
     }
 
-    public die() {
-        super.die();
+    public attemptDie() {
+        super.attemptDie();
         Game.broadcastMessage({
-            type: "die",
+            type: "serverDie",
             id: this.id,
         });
+        this.die();
     }
 
-    public attemptBasicAttack(players: Player[], items: Item[]) {
+    /*public attemptBasicAttack(players: Player[], items: Item[]) {
         //console.log("tried basic attack");
         super.attemptBasicAttack(players, items);
         Game.broadcastMessage({
-            type: "attemptBasicAttack",
+            type: "serverBasicAttack",
             id: this.id,
         });
-    }
+    }*/
 
-    public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
+    /*public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
         //console.log("tried secondary attack");
         super.attemptSecondaryAttack(players, platforms);
         Game.broadcastMessage({
-            type: "attemptSecondaryAttack",
+            type: "serverSecondaryAttack",
             id: this.id,
         });
     }
@@ -130,40 +136,40 @@ export class ServerPlayer extends Player {
         //console.log("tried First Ability");
         super.attemptFirstAbility(players, platforms);
         Game.broadcastMessage({
-            type: "attemptFirstAbility",
+            type: "serverFirstAbility",
             id: this.id,
         });
-    }
+    }*/
 
-    public attemptMoveRight(elapsedTime: number) {
+    /*public attemptMoveRight(elapsedTime: number) {
         //console.log("tried to move right");
         super.attemptMoveRight(elapsedTime);
         this.moveRight(elapsedTime);
         Game.broadcastMessage({
-            type: "attemptMoveRight",
+            type: "serverMoveRight",
             id: this.id,
         });
-    }
+    }*/
 
-    public attemptMoveLeft(elapsedTime: number) {
+    /*public attemptMoveLeft(elapsedTime: number) {
         //console.log("tried to move left");
         super.attemptMoveLeft(elapsedTime);
         this.moveLeft(elapsedTime);
         Game.broadcastMessage({
-            type: "attemptMoveLeft",
+            type: "serverMoveLeft",
             id: this.id,
         });
-    }
+    }*/
 
-    public attemptJump() {
+    /*public attemptJump() {
         //console.log("tried to jump server-side");
         super.attemptJump();
         this.jump();
         Game.broadcastMessage({
-            type: "attemptJump",
+            type: "serverJump",
             id: this.id,
         });
-    }
+    }*/
 }
 
 function decideClassWeapon(classType: ClassType): Weapon {
