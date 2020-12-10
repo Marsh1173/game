@@ -82,7 +82,7 @@ export class PlayerAI extends ServerPlayer {
         if (!meetsConditions) this.targetedPlayer = undefined;
     }
 
-    update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
+    update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[], ifPlayerWithId: boolean) {
         if (!this.isDead){
 
             if (this.actionsNextFrame.die) this.attemptDie();
@@ -131,70 +131,67 @@ export class PlayerAI extends ServerPlayer {
         }
 
         this.basicAttackCounter -= elapsedTime;
-        super.update(elapsedTime, players, platforms, items);
+        super.update(elapsedTime, players, platforms, items, ifPlayerWithId);
     }
 
-    public attemptThirdAbility(players: Player[], platforms: Platform[]) {
-        super.attemptThirdAbility(players, platforms);
-        Game.broadcastMessage({
-            type: "serverThirdAbility",
-            id: this.id,
-        });
-    }
 
-    public attemptSecondAbility(players: Player[], platforms: Platform[]) {
-        super.attemptSecondAbility(players, platforms);
-        Game.broadcastMessage({
-            type: "serverSecondAbility",
-            id: this.id,
-        });
-    }
+    protected broadcastActions() {
 
-    public attemptFirstAbility(players: Player[], platforms: Platform[]) {
-        super.attemptFirstAbility(players, platforms);
-        Game.broadcastMessage({
-            type: "serverFirstAbility",
-            id: this.id,
-        });
-    }
-
-    public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
-        super.attemptSecondaryAttack(players, platforms);
-        Game.broadcastMessage({
-            type: "serverSecondaryAttack",
-            id: this.id,
-        });
-    }
-
-    public attemptBasicAttack(players: Player[], items: Item[]) {
-        super.attemptBasicAttack(players, items);
-        Game.broadcastMessage({
-            type: "serverBasicAttack",
-            id: this.id,
-        });
-    }
-
-    public attemptMoveRight(elapsedTime: number) {
-        super.attemptMoveRight(elapsedTime);
-        Game.broadcastMessage({
-            type: "serverMoveRight",
-            id: this.id,
-        });
-    }
-
-    public attemptMoveLeft(elapsedTime: number) {
-        super.attemptMoveLeft(elapsedTime);
-        Game.broadcastMessage({
-            type: "serverMoveLeft",
-            id: this.id,
-        });
-    }
-
-    public attemptJump() {
-        super.attemptJump();
-        Game.broadcastMessage({
-            type: "serverJump",
-            id: this.id,
-        });
+        if (this.actionsNextFrame.jump) {
+            Game.broadcastMessage({
+                type: "serverJump",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.moveLeft) {
+            Game.broadcastMessage({
+                type: "serverMoveLeft",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.moveRight) {
+            Game.broadcastMessage({
+                type: "serverMoveRight",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.basicAttack) {
+            Game.broadcastMessage({
+                type: "serverBasicAttack",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.secondaryAttack) {
+            Game.broadcastMessage({
+                type: "serverSecondaryAttack",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.firstAbility) {
+            Game.broadcastMessage({
+                type: "serverFirstAbility",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.secondAbility) {
+            Game.broadcastMessage({
+                type: "serverSecondAbility",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.thirdAbility) {
+            Game.broadcastMessage({
+                type: "serverThirdAbility",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.die) {
+            Game.broadcastMessage({
+                type: "serverDie",
+                id: this.id,
+            });
+        }
+        
+        super.broadcastActions();
     }
 }

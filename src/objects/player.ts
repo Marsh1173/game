@@ -251,23 +251,6 @@ export abstract class Player {
         }
     }
 
-    /*public checkPlatformShadows(platforms: Platform[], object: { size: Size; position: Vector }, elapsedTime: number) {
-        platforms.forEach((platform) => {
-            if (this.position.x + this.size.width / 2 > platform.position.x) {
-                platform.cornerPoints[3][1] = true;
-            } else platform.cornerPoints[3][1] = false;
-            if (this.position.x + this.size.width / 2 < platform.position.x + platform.size.width) {
-                platform.cornerPoints[1][1] = true;
-            } else platform.cornerPoints[1][1] = false;
-            if (this.position.y + this.size.height / 2 > platform.position.y) {
-                platform.cornerPoints[0][1] = true;
-            } else platform.cornerPoints[0][1] = false;
-            if (this.position.y + this.size.height / 2 < platform.position.y + platform.size.height) {
-                platform.cornerPoints[2][1] = true;
-            } else platform.cornerPoints[2][1] = false;
-        });
-    }*/
-
     public checkLineOfSightFromPlayer(platforms: Platform[], targetx: number, targety: number): boolean { // we will check if the player's focus can be seen from his position
         let test: boolean = true;
         platforms.forEach(platform => { // checks each platform
@@ -280,7 +263,6 @@ export abstract class Player {
         });
         return test;
     }
-
     public intersects(a: number, b: number, c: number, d: number, p: number, q: number, r: number, s: number): boolean {
         //checks if line (a, b) -> (c, d) intersects with line (p, q) -> (r, s)
         var det, gamma, lambda;
@@ -341,164 +323,15 @@ export abstract class Player {
 
         AbilityFunction[this.abilities[1].abilityName](this, players, platforms);
     }
-    public ninjaSecondaryAttack() {
-        let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-        let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
-
-        this.momentum.x += this.momentum.x / 2 - 1000 * Math.cos(angle);
-        this.momentum.y += this.momentum.y / 2 - 1000 * Math.sin(angle);
-
-        this.doProjectile(
-            "shuriken",
-            "ranged",
-            7,
-            this.id,
-            this.team,
-            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            { x: 2500 * Math.cos(angle), y: 2500 * Math.sin(angle) },
-            0.05,
-            100,
-            0,
-            1,
-            false,
-        );
-    }
-    public wizardSecondaryAttack(platforms: Platform[]) {
-
-        this.doTargetedProjectile(
-            "blizzard",
-            this.id,
-            this.team,
-            { x: this.position.x + this.size.width / 2, y: this.position.y},
-            { x: (this.facing) ? 75 : -75, y: 0 },
-            {x: 0, y: 0},
-            //{ x: this.focusPosition.x + ((this.facing) ? 800 : -800), y: y },
-            false,
-            6,
-        );
-
-        /*let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-        let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
-
-        this.doProjectile(
-            "ice",
-            "ranged",
-            15,
-            this.id,
-            this.team,
-            { x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2 },
-            { x: 1300 * Math.cos(angle), y: 1300 * Math.sin(angle) - 100 },
-            0.15,
-            1000,
-            0,
-            1,
-            false,
-        );
-
-        this.moveSpeedModifier /= 2;
-        setTimeout(() => {
-            this.moveSpeedModifier *= 2;
-        }, 200);*/
-    }
-    public warriorSecondaryAttack(players: Player[]) {
-        const xRange: number = 400;
-        const yRange: number = 50;
-
-        this.momentum.x = 0;
-        this.momentum.y /= 3;
-        if (this.facing) this.pushPlayer(2, 0, 170);
-        else this.pushPlayer(-2, 0, 170);
-
-        players.forEach((player) => {
-            if (player.team != this.team &&
-                player.position.y > this.position.y - yRange && player.position.y < this.position.y + yRange &&
-                ((this.facing && player.position.x > this.position.x - 25 && player.position.x < this.position.x + xRange) ||
-                (!this.facing && player.position.x > this.position.x - xRange && player.position.x < this.position.x + 25))) {
-                    setTimeout(() => {
-                        player.damagePlayer(7, this.id, this.team, "crushing");
-                        player.momentum.y -= 400; // knocks them slightly upwards
-
-                        player.moveSpeedModifier /= 2; // slows them by half
-                        setTimeout(() => {
-                            player.moveSpeedModifier *= 2;
-                        }, 1500);
-                    }, 30);
-            }
-        });
-    }
 
     public attemptFirstAbility(players: Player[], platforms: Platform[]) {
         if (!this.isDead) this.firstAbility(players, platforms);
     }
     public firstAbility(players: Player[], platforms: Platform[]) {
-        if (this.classType === "ninja") this.ninjaFirstAbility();
+        /*if (this.classType === "ninja") this.ninjaFirstAbility();
         else if (this.classType === "wizard") this.wizardFirstAbility(platforms);
-        else if (this.classType === "warrior") this.warriorFirstAbility();
-    }
-
-    public wizardFirstAbility(platforms: Platform[]) {
-        let y = this.config.ySize;
-
-        platforms.forEach((platform) => {
-            if (
-                platform.position.x < this.focusPosition.x - 4 &&
-                platform.position.x + platform.size.width > this.focusPosition.x - 4 &&
-                platform.position.y > this.focusPosition.y - 4
-            ) {
-                y = platform.position.y;
-            }
-        });
-
-        this.doTargetedProjectile(
-            "firestrike",
-            this.id,
-            this.team,
-            { x: this.focusPosition.x - 4, y: y - this.config.ySize },
-            { x: 0, y: 600 },
-            { x: this.focusPosition.x - 4, y: y },
-            false,
-            40,
-        );
-    }
-
-    public warriorFirstAbility() {
-        let newX: number = this.focusPosition.x - this.position.x - this.size.width / 2;
-        let newY: number = this.focusPosition.y - this.position.y - this.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
-
-        this.doTargetedProjectile(
-            "chains",
-            this.id,
-            this.team,
-            { x: this.position.x + Math.cos(angle) * 500, y: this.position.y + Math.sin(angle) * 500 },
-            { x: 0, y: 0 },
-            this.position,
-            false,
-            1,
-        );
-        /*this.doTargetedProjectile(
-            "healingAura",
-            this.id,
-            this.team,
-            {x: this.position.x + this.size.width / 2, y: this.position.y + this.size.height / 2},
-            { x: Math.cos(angle) * 50, y: Math.sin(angle) * 50 },
-            { x: this.position.x + Math.cos(angle) * 500, y: this.position.y + Math.sin(angle) * 500 },
-            //{x: this.position.x, y: this.position.y},
-            false,
-            3,
-        );*/
-    }
-
-    public ninjaFirstAbility() {
-        this.effects.isStealthed = true;
-        this.stealthCount = setTimeout(() => {
-            this.effects.isStealthed = false;
-        }, 6500);
+        else if (this.classType === "warrior") this.warriorFirstAbility();*/
+        AbilityFunction[this.abilities[2].abilityName](this, players, platforms);
     }
 
     public attemptSecondAbility(players: Player[], platforms: Platform[]) {
@@ -506,6 +339,7 @@ export abstract class Player {
     }
 
     public secondAbility(players: Player[], platforms: Platform[]) {
+        AbilityFunction[this.abilities[3].abilityName](this, players, platforms);
     }
 
     public attemptThirdAbility(players: Player[], platforms: Platform[]) {
@@ -513,6 +347,7 @@ export abstract class Player {
     }
 
     public thirdAbility(players: Player[], platforms: Platform[]) {
+        AbilityFunction[this.abilities[4].abilityName](this, players, platforms);
     }
 
     public revealStealthed(time: number = 1) {
@@ -559,7 +394,6 @@ export abstract class Player {
         }
 
         if (this.health <= 0) {
-            this.actionsNextFrame.die = true;
             return true;
         }
         return false;
@@ -684,7 +518,11 @@ export abstract class Player {
         updateAndCheckAbilites(elapsedTime, this, this.abilities[4], "thirdAbility");
     }
 
-    public update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[]) {
+    protected broadcastActions() {
+        //PLACEHOLDER, implemented in client player and server player.
+    }
+
+    public update(elapsedTime: number, players: Player[], platforms: Platform[], items: Item[], ifIsPlayerWithId: boolean) {
 
         if (this.isDead) { // if they're dead, update a few things then return
 
@@ -713,8 +551,12 @@ export abstract class Player {
             this.momentum.y += this.config.fallingAcceleration * elapsedTime;
         }
 
-        //update and check abilities
+        //update and check status
         this.playerUpdateAndCheckAbilites(elapsedTime);
+        if (ifIsPlayerWithId) {
+            if (this.health <= 0) this.actionsNextFrame.die = true;
+            this.broadcastActions();
+        }
 
         // Action handling
         if (this.actionsNextFrame.jump) {
@@ -741,9 +583,9 @@ export abstract class Player {
         if (this.actionsNextFrame.thirdAbility) {
             this.attemptThirdAbility(players, platforms);
         }
-        /*if (this.actionsNextFrame.die) {
-            this.attemptDie();
-        }*/
+        if (this.actionsNextFrame.die) {
+            this.die();
+        }
         
         this.updateAnimationFrame(elapsedTime); //updates the player's animation frame
 

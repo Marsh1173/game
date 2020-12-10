@@ -85,8 +85,8 @@ export class ServerPlayer extends Player {
             [new PlayerAbilityClass("basicAttack", false, 0, 0),
             new PlayerAbilityClass("shurikenToss", false, 0, 0),
             new PlayerAbilityClass("blizzard", false, 0, 0),
-            new PlayerAbilityClass("stealth", false, 0, 0),
-            new PlayerAbilityClass("shurikenToss", false, 0, 0),],
+            new PlayerAbilityClass("meteorStrike", false, 0, 0),
+            new PlayerAbilityClass("charge", false, 0, 0),],
             true,
             1,
             0,
@@ -105,7 +105,7 @@ export class ServerPlayer extends Player {
         });
     }
 
-    public attemptDie() {
+    /*public attemptDie() {
         super.attemptDie();
         Game.broadcastMessage({
             type: "serverDie",
@@ -114,7 +114,7 @@ export class ServerPlayer extends Player {
         this.die();
     }
 
-    /*public attemptBasicAttack(players: Player[], items: Item[]) {
+    public attemptBasicAttack(players: Player[], items: Item[]) {
         //console.log("tried basic attack");
         super.attemptBasicAttack(players, items);
         Game.broadcastMessage({

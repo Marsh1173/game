@@ -4,7 +4,7 @@ import { Random } from "../random";
 import { Size } from "../size";
 import { Vector } from "../vector";
 
-export type ParticleType = "ice particle" | "smoke particle" | "red fire particle" | "orange fire particle" | "levelUp particle" | "levelUp glow" | "colored particle" | "text particle" | "blizzard particle";
+export type ParticleType = "ice particle" | "smoke particle" | "red fire particle" | "orange fire particle" | "levelUp particle" | "colored particle" | "text particle" | "blizzard particle";
 export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "stealth" | "firestrikeIdle" | "fireballIdle" | "iceIdle" | "firestrikeExplode" | "blizzardIdle";
 
 class Particle {
@@ -72,27 +72,13 @@ class Particle {
         this.lifetime -= elapsedTime;
     }
 
-    public renderLevelupGlow(ctx: CanvasRenderingContext2D) {
-        ctx.save();
-        ctx.globalAlpha = this.lifetime / (this.originalLife * 6);
-        ctx.shadowBlur = 3;
-        ctx.shadowColor = "white";
-        ctx.fillStyle = "cyan";
-
-        ctx.beginPath(); // circle
-        ctx.arc(this.position.x, this.position.y, this.size.width, 0, 2 * Math.PI);
-        ctx.fill();
-
-        ctx.restore()
-    }
-
     public renderParticle(ctx: CanvasRenderingContext2D) {
         ctx.save();
         switch (this.type) {
             case "colored particle":
                 ctx.globalAlpha = this.lifetime / this.originalLife;
                 ctx.shadowBlur = 1;
-                ctx.shadowColor = "gray";
+                ctx.shadowColor = this.color;
                 ctx.fillStyle = this.color;
                 break;
             case "levelUp particle":
@@ -175,15 +161,6 @@ class Particle {
     Particle.images[imageKey as ParticleType].src = "images/particles/" + imageKey + ".png";
 });*/
 
-/*interface ParticleEffectInfo {
-    particleType: ParticleType;
-    position: Vector;
-    particleSize: Size;
-    particleSpeed: Distribution;
-    particleLifetime: Distribution;
-    particleAmt: number;
-}*/
-
 interface ParticleEffectInfo {
     particleEffectType: ParticleEffectType;
     position: Vector;
@@ -229,44 +206,26 @@ class ParticleEffect {
                 ),
             );
         }
-        /*for (let i = 0; i < 15; i++) {
-            const angle: number = Math.random()*Math.PI*2; // this included with position places the circle in a random point in an imaginary circle
-            const radius: number = Random.nextGaussian(100, 25);
-            setTimeout(() => {
-                this.particles.push(
-                    new Particle(
-                        { x: this.info.position.x + Math.cos(angle)*radius, y: this.info.position.y + Math.sin(angle)*radius - 5 },
-                        {x: 0, y: 0},
-                        "levelUp glow",
-                        {width: 10, height: 10},
-                        0.05,
-                        false,
-                        Random.nextGaussian(1, 0.4),
-                        Random.nextDouble() * Math.PI * 2,
-                        0,
-                    ),
-                );
-            }, Math.random() * 300);
-        }*/
     }
 
     public die(info: ParticleEffectInfo) {
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 100; i++) {
             const momentumFactor: number = Random.nextGaussian(0.6, 0.3);
-            const randomX: number = this.info.position.x + (Math.random() * 40 - 20);
-            const randomY: number = this.info.position.y + (Math.random() * 40 - 20);
+            const randomX: number = this.info.position.x + (Math.random() * 50 - 25);
+            const randomY: number = this.info.position.y + (Math.random() * 50 - 25);
+            const randomSize: number = (Math.random() * 4 + 3);
 
             this.particles.push(
                 new Particle(
                     { x: randomX, y: randomY },
-                    {x: info.momentum.x * momentumFactor - (info.position.x - randomX), y: info.momentum.y * momentumFactor - (info.position.y - randomY)},
+                    {x: info.momentum.x * momentumFactor - (info.position.x - randomX) * 8, y: info.momentum.y * momentumFactor - (info.position.y - randomY) * 8},
                     "colored particle",
-                    {width: 5, height: 5},
-                    1,
-                    1,
-                    2,
+                    {width: randomSize, height: randomSize},
+                    0.8,
+                    0.7,
+                    3,
                     info.color,
-                    Random.nextGaussian(3, 0.2),
+                    Random.nextGaussian(5, 0.2),
                     Random.nextDouble() * Math.PI * 2,
                     0,
                 ),
@@ -495,7 +454,6 @@ class ParticleEffect {
                 particle.type === "ice particle" ||
                 particle.type === "blizzard particle"
                 )particle.renderParticle(ctx);
-                else if (particle.type === "levelUp glow")particle.renderLevelupGlow(ctx);
                 else if (particle.type === "text particle")particle.renderTextParticle(ctx);
             }
         });

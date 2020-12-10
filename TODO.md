@@ -7,8 +7,11 @@
 
 Fix AI programming
 Add items, maybe get rid of classes?
-fix health bounce issues?
 
-add player join and player leave messages for client/game.ts
+MAKE CUSTOM UI
+Correct the rest of the messages (levelup, die?)
+add particle effects based on the message recieved
+coordinate basic attacks and abilities
+and make basic attacks single-target
 
-there's a bug where targeted projectiles sometimes die right after being created.
+put items back in.

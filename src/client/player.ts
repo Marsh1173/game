@@ -208,29 +208,30 @@ export class ClientPlayer extends Player {
     }
 
     public renderHealth(ctx: CanvasRenderingContext2D) {
+        ctx.save();
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = "red";
-        ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (this.size.width * 3) / 4, 4);
+        ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (this.size.width * 3) / 4, 5);
         if (this.isHit) {
-            ctx.shadowBlur = 2;
+            ctx.shadowBlur = 5;
             ctx.fillStyle = "white";
             ctx.shadowColor = "white";
             ctx.fillRect(
                 this.position.x + this.size.width / 8,
                 this.position.y - 10,
-                (((this.size.width * this.health) / (100 + this.healthModifier)) * 3) / 4 + 2,
-                4,
+                (Math.max((this.size.width * this.health) / (100 + this.healthModifier), 0) * 3) / 4 + 2,
+                5,
             );
         }
         ctx.fillStyle = "#32a852";
-        ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (((this.size.width * this.health) / (100 + this.healthModifier)) * 3) / 4, 4);
+        ctx.fillRect(this.position.x + this.size.width / 8, this.position.y - 10, (Math.max((this.size.width * this.health) / (100 + this.healthModifier), 0) * 3) / 4, 5);
 
-        ctx.shadowColor = "gray";
-        ctx.shadowBlur = 2;
+        ctx.restore();
     }
 
     public renderName(ctx: CanvasRenderingContext2D, color: string) {
+        ctx.save();
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = color;
@@ -239,6 +240,7 @@ export class ClientPlayer extends Player {
             this.position.x + this.size.width / 2 - ("(" + this.level + ") " + this.name).length * 2.4,
             this.position.y - 11,
         );
+        ctx.restore();
     }
 
     public renderFocus(ctx: CanvasRenderingContext2D) {
@@ -250,68 +252,72 @@ export class ClientPlayer extends Player {
         WeaponRender[this.weaponEquipped](this, ctx);
     }
 
+    protected broadcastActions() {
 
-    
-    /*public attemptJump() {
-        super.attemptJump();
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "jump",
-            id: this.id,
-        });
-    }*/
-
-    /*public attemptMoveLeft(elapsedTime: number) {
-        super.attemptMoveLeft(elapsedTime);
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "moveLeft",
-            id: this.id,
-        });
-    }*/
-
-    /*public attemptMoveRight(elapsedTime: number) {
-        super.attemptMoveRight(elapsedTime);
-        /*this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "moveRight",
-            id: this.id,
-        });
-    }
-
-    public attemptBasicAttack(players: Player[], items: Item[]) {
-        super.attemptBasicAttack(players, items);
-        /*this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "basicAttack",
-            id: this.id,
-        });
-    }
-
-    public attemptSecondaryAttack(players: Player[], platforms: Platform[]) {
-        super.attemptSecondaryAttack(players, platforms);
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "secondaryAttack",
-            id: this.id,
-        });
-    }
-
-    public attemptFirstAbility(players: Player[], platforms: Platform[]) {
-        super.attemptFirstAbility(players, platforms);
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "firstAbility",
-            id: this.id,
-        });
-    }*/
-
-    public attemptDie() {
-        super.attemptDie();
-        this.serverTalker.sendMessage({
-            type: "action",
-            actionType: "die",
-            id: this.id,
-        });
+        if (this.actionsNextFrame.jump) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "jump",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.moveLeft) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "moveLeft",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.moveRight) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "moveRight",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.basicAttack) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "basicAttack",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.secondaryAttack) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "secondaryAttack",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.firstAbility) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "firstAbility",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.secondAbility) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "secondAbility",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.thirdAbility) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "thirdAbility",
+                id: this.id,
+            });
+        }
+        if (this.actionsNextFrame.die) {
+            this.serverTalker.sendMessage({
+                type: "action",
+                actionType: "die",
+                id: this.id,
+            });
+        }
+        
+        super.broadcastActions();
     }
 }

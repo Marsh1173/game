@@ -96,7 +96,7 @@ export class Game {
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items));
+        this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items, (!isPlayerClassType(player.classType))));
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
@@ -281,22 +281,38 @@ export class Game {
                         break;
                     case "secondaryAttack":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.secondaryAttack = true;
+                        Game.broadcastMessage({
+                            type: "serverSecondaryAttack",
+                            id: id,
+                        });
                         break;
                     case "firstAbility":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.firstAbility = true;
+                        Game.broadcastMessage({
+                            type: "serverFirstAbility",
+                            id: id,
+                        });
                         break;
                     case "secondAbility":
                         this.players.find((player) => player.id === id)!.actionsNextFrame.secondAbility = true;
+                        Game.broadcastMessage({
+                            type: "serverSecondAbility",
+                            id: id,
+                        });
+                        break;
+                    case "thirdAbility":
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.thirdAbility = true;
+                        Game.broadcastMessage({
+                            type: "serverThirdAbility",
+                            id: id,
+                        });
                         break;
                     case "die":
-                        var player = this.players.find((player) => player.id === id);
-                        if (player) {
-                            Game.broadcastMessage({
-                                type: "serverDie",
-                                id: player.id,
-                            });
-                            player.die();
-                        }
+                        this.players.find((player) => player.id === id)!.actionsNextFrame.die = true;
+                        Game.broadcastMessage({
+                            type: "serverDie",
+                            id: id,
+                        });
                         break;
                     default:
                         throw new Error(`Invalid client message actionType: ${data.actionType}`);
@@ -360,7 +376,7 @@ export class Game {
                 break;
             default:
                 throw new Error(`Invalid client message type`);
-        }
+            }
     }
 
     private projectile(

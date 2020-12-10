@@ -139,7 +139,7 @@ export class Game {
                     break;
                 case "serverDie":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    player.die();
+                    if (player.id != this.id) player.actionsNextFrame.die = true;
                     Game.particleHandler.newEffect({
                         particleEffectType: "die",
                         position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
@@ -349,9 +349,9 @@ export class Game {
     private update(elapsedTime: number) {
 
         const playerWithId = this.findPlayer();
-        if (playerWithId.actionsNextFrame.die) {
+        /*if (playerWithId.actionsNextFrame.die) {
             playerWithId.attemptDie();
-        }
+        }*/
 
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPosX;
         playerWithId.focusPosition.y = this.mousePos.y - this.screenPosY;
@@ -399,11 +399,11 @@ export class Game {
         if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
             this.leftClickCounter = this.leftClickCooldown;
             playerWithId.actionsNextFrame.basicAttack = true;
-            this.serverTalker.sendMessage({
+            /*this.serverTalker.sendMessage({
                 type: "action",
                 actionType: "basicAttack",
                 id: this.id,
-            });
+            });*/
         }
         /*if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
             playerWithId.actionsNextFrame.secondaryAttack = true;
@@ -685,7 +685,7 @@ export class Game {
     }
 
     private updateObjects(elapsedTime: number) {
-        this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items));
+        this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items, (player.id === this.id)));
 
         this.items.forEach((item) => item.update(elapsedTime, this.platforms));
         this.items = this.items.filter((item) => item.life >= 0);
