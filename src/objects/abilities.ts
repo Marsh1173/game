@@ -1,3 +1,4 @@
+import { ImageName } from "../client/assetmanager";
 import { Platform } from "./platform";
 import { Player, PlayerAbilityClass } from "./player";
 
@@ -25,7 +26,7 @@ class AbilityClass {
     }
 }
 
-const abilities: AbilityClass[] = [
+export const abilities: AbilityClass[] = [
     new AbilityClass ("none", "onClick", 1),
     new AbilityClass ("basicAttack", "onClickRepeat", 1),
     new AbilityClass ("shurikenToss", "onClickRepeat", 2.5),
@@ -39,7 +40,7 @@ const abilities: AbilityClass[] = [
     new AbilityClass ("charge", "onClick", 1),
 ];
 
-function findCorrespondingAbility(abilityName: AbilityName): AbilityClass {
+export function findCorrespondingAbility(abilityName: AbilityName): AbilityClass {
     for (let i = 0; i < abilities.length; i++) {
         if (abilities[i].abilityName === abilityName) return abilities[i];
     }
@@ -274,4 +275,32 @@ export const AbilityFunction: Record<AbilityName, (player: Player, players: Play
             }
         });
     },
+}
+
+export function getAbilityIcon(abilityName: AbilityName): ImageName {
+    switch (abilityName) {
+        case "none" :
+            return "iceIcon";//
+        case "shurikenToss" :
+            return "shurikenIcon";
+        case "stealth" :
+            return "stealthIcon";
+        case "blizzard" :
+            return "iceIcon";//
+        case "meteorStrike" :
+            return "meteorStrikeIcon";
+        case "iceShard" :
+            return "iceIcon";
+        case "healingAura" :
+            return "iceIcon";//
+        case "chains" :
+            return "chainsIcon";
+        case "shieldSlam" :
+            return "shieldslamIcon";
+        case "charge" :
+            return "iceIcon";//
+        default :
+            return "iceIcon";//
+
+    }
 }

@@ -1,6 +1,8 @@
 import { ServerTalker } from "./servertalker";
 
-export type ImageName = "wizard-hat" | "hammer" | "dagger" | "staff" | "axe" | "bow" | "fire" | "ice" | "shuriken" | "firestrike" | "arrow";
+export type ImageName = "wizard-hat" | "hammer" | "dagger" | "staff" | "axe" | "bow" |
+                    "fire" | "ice" | "shuriken" | "meteorstrike" | "arrow" |
+                    "chainsIcon" | "fireballIcon" | "meteorStrikeIcon" | "hammerIcon" | "iceIcon" | "shieldslamIcon" | "shurikenIcon" | "staffIcon" | "stealthIcon" | "poisonedSwordIcon"; 
 const imageInformation: Record<ImageName, string> = {
     "wizard-hat": `http://${ServerTalker.hostName}/images/wizard-hat.png`,
     "hammer": `http://${ServerTalker.hostName}/images/hammer.png`,
@@ -12,7 +14,17 @@ const imageInformation: Record<ImageName, string> = {
     "ice": `http://${ServerTalker.hostName}/images/projectiles/ice.png`,
     "shuriken": `http://${ServerTalker.hostName}/images/projectiles/shuriken.png`,
     "arrow": `http://${ServerTalker.hostName}/images/projectiles/arrow.png`,
-    "firestrike": `http://${ServerTalker.hostName}/images/targetedProjectiles/firestrike.png`,
+    "meteorstrike": `http://${ServerTalker.hostName}/images/targetedProjectiles/firestrike.png`,
+    "chainsIcon": `http://${ServerTalker.hostName}/images/abilities/chainsIcon.png`,
+    "fireballIcon": `http://${ServerTalker.hostName}/images/abilities/fireballIcon.png`,
+    "meteorStrikeIcon": `http://${ServerTalker.hostName}/images/abilities/meteorStrikeIcon.png`,
+    "hammerIcon": `http://${ServerTalker.hostName}/images/abilities/hammerIcon.png`,
+    "iceIcon": `http://${ServerTalker.hostName}/images/abilities/iceIcon.png`,
+    "shieldslamIcon": `http://${ServerTalker.hostName}/images/abilities/shieldslamIcon.png`,
+    "shurikenIcon": `http://${ServerTalker.hostName}/images/abilities/shurikenIcon.png`,
+    "staffIcon": `http://${ServerTalker.hostName}/images/abilities/staffIcon.png`,
+    "stealthIcon": `http://${ServerTalker.hostName}/images/abilities/stealthIcon.png`,
+    "poisonedSwordIcon": `http://${ServerTalker.hostName}/images/abilities/poisonedSwordIcon.png`,
 };
 
 class AssetManager {

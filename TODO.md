@@ -15,3 +15,8 @@ coordinate basic attacks and abilities
 and make basic attacks single-target
 
 put items back in.
+
+adjust moveSpeedModifier
+get rid of bouncy left-right movement.
+
+add particle# option

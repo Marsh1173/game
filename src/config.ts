@@ -38,7 +38,7 @@ export const defaultConfig: Config = {
         x: 300,
         y: 650
     },
-    playerJumpHeight: 850,
+    playerJumpHeight: 800,
     xSize,
     ySize,
     playerKeys: {
@@ -55,8 +55,8 @@ export const defaultConfig: Config = {
     },
     platformColor: "grey",
     fallingAcceleration: 3500,
-    standingSidewaysAcceleration: 15000,
-    nonStandingSidewaysAcceleration: 3000,
-    maxSidewaysMomentum: 2000,
+    standingSidewaysAcceleration: 10000,
+    nonStandingSidewaysAcceleration: 2000,
+    maxSidewaysMomentum: 700,
     gameSpeed: 1,
 };

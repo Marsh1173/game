@@ -11,6 +11,8 @@ import { Size } from "../size";
 import { playerRenderData } from "./playerRenderData";
 import { WeaponRender } from "./clientWeapon";
 import { Item, ItemType } from "../objects/item";
+import { getWeaponIcon } from "../weapon";
+import { findCorrespondingAbility, getAbilityIcon } from "../objects/abilities";
 
 export class ClientPlayer extends Player {
     constructor(
@@ -250,6 +252,110 @@ export class ClientPlayer extends Player {
 
     public renderWeapon(ctx: CanvasRenderingContext2D) {
         WeaponRender[this.weaponEquipped](this, ctx);
+    }
+
+    public renderUI(ctx: CanvasRenderingContext2D, screenPos: Vector) {
+
+        this.renderHealthAndLevel(ctx, screenPos);
+        this.renderAbilities(ctx, screenPos);
+        for (let i = 0; i < this.abilities.length; i++) {
+            if (this.abilities[i].chargeAmount > 0) {
+                this.renderCharger(ctx, screenPos, Math.min(1, this.abilities[i].chargeAmount / findCorrespondingAbility(this.abilities[i].abilityName).chargeReq));
+                break;
+            }
+        }
+        //if
+    }
+
+    public renderHealthAndLevel(ctx: CanvasRenderingContext2D, screenPos: Vector) {
+        ctx.save();
+        if (this.config.ySize < (window.innerHeight)) ctx.translate(-screenPos.x + window.innerWidth - 370, -screenPos.y + this.config.ySize - 40);
+        else ctx.translate(-screenPos.x + window.innerWidth - 370, -screenPos.y + window.innerHeight - 40);
+        ctx.globalAlpha = 0.6;
+        ctx.font = "30px Arial";
+
+        if (this.isDead || this.effects.isStealthed) {
+            ctx.globalAlpha = 0.2;
+            ctx.shadowColor = "darkgray";
+            ctx.shadowBlur = 20;
+        }
+
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = "black"
+        ctx.fillRect(40, -22, 304, 44);
+        if (this.effects.isShielded) ctx.fillStyle = "cyan";
+        else if (this.isDead) ctx.fillStyle = "cyan";
+        else if (this.isHit) ctx.fillStyle = "red";
+        else ctx.fillStyle = "green";
+        ctx.fillRect(42, -20, 300 * (this.health / (100 + this.healthModifier)), 40);
+
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(42, 16, 300 * (this.XP / this.XPuntilNextLevel), 5);
+
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 5;
+        ctx.fillStyle = "white";
+        ctx.fillText(this.level.toString(), -ctx.measureText(this.level.toString()).width / 2, 10);
+        ctx.fillText(Math.floor(this.health).toString() + " / " + Math.floor(100 + this.healthModifier).toString(), 200, 10);
+
+
+        ctx.restore();
+    }
+
+    public renderAbilities(ctx: CanvasRenderingContext2D, screenPos: Vector) {
+
+        ctx.save();
+        if (this.config.ySize < (window.innerHeight)) ctx.translate(-screenPos.x + (window.innerWidth / 2) - 300, -screenPos.y + this.config.ySize - 80);
+        else ctx.translate(-screenPos.x + (window.innerWidth / 2) - 300, -screenPos.y + window.innerHeight - 80);
+        ctx.globalAlpha = 0.6;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "darkgray";
+        ctx.fillStyle = "black";
+        for(let i = 0; i < this.abilities.length; i++) {
+            ctx.translate(80 + ((i === 2) ? 50 : 0), 0)
+
+            ctx.strokeRect(0, 0, 75, 75);
+            if (this.abilities[i].abilityName === "none") {
+                ctx.fillRect(2, 2, 71, 71);
+            } else {
+                if (this.abilities[i].abilityName === "basicAttack") {
+                    ctx.drawImage(assetManager.images[getWeaponIcon(this.weaponEquipped)], 2, 2, 71, 71);
+                } else {
+                    ctx.drawImage(assetManager.images[getAbilityIcon(this.abilities[i].abilityName)], 2, 2, 71, 71);
+                }
+                
+                if (this.abilities[i].cooldown > 0) {
+                    const height: number = this.abilities[i].cooldown / findCorrespondingAbility(this.abilities[i].abilityName).cooldown;
+                    ctx.fillRect(2, 73 - 71 * height, 71, 71 * height);
+
+                    ctx.strokeStyle = "white";
+                    ctx.beginPath();
+                    ctx.moveTo(2, 73 - 71 * height);
+                    ctx.lineTo(73, 73 - 71 * height);
+                    ctx.stroke();
+                    ctx.strokeStyle = "darkgray";
+                }
+            }
+        }
+        ctx.restore();
+    }
+
+    public renderCharger(ctx: CanvasRenderingContext2D, screenPos: Vector, decimal: number) {
+        ctx.save();
+        if (this.config.ySize < (window.innerHeight)) ctx.translate(-screenPos.x + (window.innerWidth / 2) - 197, -screenPos.y + this.config.ySize - 115);
+        else ctx.translate(-screenPos.x + (window.innerWidth / 2) - 197, -screenPos.y + window.innerHeight - 115);
+        ctx.globalAlpha = 0.6;
+
+        ctx.fillStyle = "black"
+        ctx.fillRect(0, 0, 400, 20);
+        ctx.fillStyle = (decimal < 1) ? "rgb(20, 172, 0)" : "rgb(20, 200, 0)";
+        ctx.fillRect(0, 0, 400 * decimal, 20);
+
+        ctx.restore();
     }
 
     protected broadcastActions() {

@@ -57,6 +57,7 @@ export class ServerPlayer extends Player {
             team,
             name,
             classType,
+            //"hammer",
             decideClassWeapon(classType),
             0,
             {
@@ -86,7 +87,7 @@ export class ServerPlayer extends Player {
             new PlayerAbilityClass("shurikenToss", false, 0, 0),
             new PlayerAbilityClass("blizzard", false, 0, 0),
             new PlayerAbilityClass("meteorStrike", false, 0, 0),
-            new PlayerAbilityClass("charge", false, 0, 0),],
+            new PlayerAbilityClass("none", false, 0, 0),],
             true,
             1,
             0,

@@ -63,7 +63,7 @@ export class ClientTargetedProjectile extends TargetedProjectile {
         ctx.transform(scale, 0, 0, Math.abs(scale), this.position.x, this.position.y);
 
         ctx.rotate(rotation + Math.PI / 4);
-        ctx.drawImage(assetManager.images["firestrike"], -assetManager.images["firestrike"].width / 2, -assetManager.images["firestrike"].height / 2);
+        ctx.drawImage(assetManager.images["meteorstrike"], -assetManager.images["meteorstrike"].width / 2, -assetManager.images["meteorstrike"].height / 2);
         ctx.restore();
     }
 

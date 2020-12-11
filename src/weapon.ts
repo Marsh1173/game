@@ -1,4 +1,4 @@
-import { assetManager } from "./client/assetmanager";
+import { assetManager, ImageName } from "./client/assetmanager";
 import { findAngle } from "./findAngle";
 import { DamageType, Player } from "./objects/player";
 
@@ -63,6 +63,7 @@ export const WeaponBasicAttack: Record<Weapon, (player: Player, players: Player[
             false,
         );
         
+        player.animationFrame = 1;
         
         player.revealStealthed(100);
         player.moveSpeedModifier /= 2;
@@ -115,6 +116,26 @@ function basicAttackTemplate(
             }
         }
     });
+}
+
+export function getWeaponIcon(weapon: Weapon): ImageName {
+    switch (weapon) {
+        case "none" :
+            return "iceIcon";//
+        case "hammer" :
+            return "hammerIcon";
+        case "dagger" :
+            return "poisonedSwordIcon";
+        case "staff" :
+            return "staffIcon";
+        case "axe" :
+            return "iceIcon";//
+        case "bow" :
+            return "iceIcon";//
+            default :
+        return "iceIcon";//
+
+    }
 }
 
 /*class WeaponClass {

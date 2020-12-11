@@ -27,7 +27,7 @@ export class Game {
     private static readonly ctx = Game.canvas.getContext("2d")!;
 
     private slideContainer = safeGetElementById("slideContainer");
-    private level = safeGetElementById("level");
+    //private level = safeGetElementById("level");
 
     public static readonly particleHandler = new ParticleSystem();
     private readonly keyState: Record<string, boolean> = {};
@@ -40,8 +40,7 @@ export class Game {
 
     private globalElapsedTime: number = 0;
 
-    private screenPosX: number = 0;
-    private screenPosY: number = 0;
+    private screenPos: Vector = {x: 0, y: 0};
 
     private mousePos: Vector = { x: 0, y: 0 };
 
@@ -318,8 +317,8 @@ export class Game {
         //safeGetElementById("canvas").style.height = this.config.ySize + "px";
         this.slideContainer.style.height = (window.innerHeight - 150) + "px";
         safeGetElementById("slider").style.width = this.config.xSize + "px";
-        safeGetElementById("slider").style.left = this.screenPosX + "px";
-        this.level.style.backgroundColor = playerWithId.color;
+        safeGetElementById("slider").style.left = this.screenPos.x + "px";
+        //this.level.style.backgroundColor = playerWithId.color;
 
         this.going = true;
         window.requestAnimationFrame((timestamp) => this.loop(timestamp));
@@ -347,19 +346,20 @@ export class Game {
     }
 
     private update(elapsedTime: number) {
+        elapsedTime = Math.min(0.03, elapsedTime);//hotfix to make sure sudden lag spikes dont clip them through the floors
 
         const playerWithId = this.findPlayer();
         /*if (playerWithId.actionsNextFrame.die) {
             playerWithId.attemptDie();
         }*/
 
-        playerWithId.focusPosition.x = this.mousePos.x - this.screenPosX;
-        playerWithId.focusPosition.y = this.mousePos.y - this.screenPosY;
+        playerWithId.focusPosition.x = this.mousePos.x - this.screenPos.x;
+        playerWithId.focusPosition.y = this.mousePos.y - this.screenPos.y;
 
         this.serverTalker.sendMessage({
             type: "playerUpdate",
             id: this.id,
-            focusPosition: {x: this.mousePos.x - this.screenPosX, y: this.mousePos.y - this.screenPosY},
+            focusPosition: {x: this.mousePos.x - this.screenPos.x, y: this.mousePos.y - this.screenPos.y},
             health: playerWithId.health,
             position: playerWithId.position,
         });
@@ -372,7 +372,8 @@ export class Game {
         this.updateSliderY();
 
         if (this.keyState[this.config.playerKeys.up]) {
-            playerWithId.attemptJump();
+            playerWithId.actionsNextFrame.jump = true;
+            //playerWithId.attemptJump();
             this.keyState[this.config.playerKeys.up] = false;
             this.serverTalker.sendMessage({
                 type: "action",
@@ -381,7 +382,8 @@ export class Game {
             });
         }
         if (this.keyState[this.config.playerKeys.left]) {
-            playerWithId.attemptMoveLeft(elapsedTime);
+            playerWithId.actionsNextFrame.moveLeft = true;
+            //playerWithId.attemptMoveLeft(elapsedTime);
             this.serverTalker.sendMessage({
                 type: "action",
                 actionType: "moveLeft",
@@ -389,7 +391,8 @@ export class Game {
             });
         }
         if (this.keyState[this.config.playerKeys.right]) {
-            playerWithId.attemptMoveRight(elapsedTime);
+            playerWithId.actionsNextFrame.moveRight = true;
+            //playerWithId.attemptMoveRight(elapsedTime);
             this.serverTalker.sendMessage({
                 type: "action",
                 actionType: "moveRight",
@@ -487,7 +490,7 @@ export class Game {
         Game.ctx.fillStyle = "#2e3133";
         Game.ctx.fillRect(0, 0, this.config.xSize, this.config.ySize);
 
-        Game.ctx.setTransform(1, 0, 0, 1, this.screenPosX, this.screenPosY);
+        Game.ctx.setTransform(1, 0, 0, 1, this.screenPos.x, this.screenPos.y);
 
         const playerWithId = this.findPlayer();
 
@@ -533,6 +536,8 @@ export class Game {
             playerWithId.renderLimitedVision(Game.ctx, playerWithId.deathCooldown * 4); //shrinking death screen
             
         }
+
+        playerWithId.renderUI(Game.ctx, this.screenPos);
         
     }
 
@@ -540,26 +545,26 @@ export class Game {
         const playerWithId = this.findPlayer();
 
         //check if screen is bigger than field
-        if (this.config.xSize < window.innerWidth - 20) {
-            this.screenPosX = 0;
+        if (this.config.xSize < window.innerWidth) {
+            this.screenPos.x = 0;
         } else {
-            let temp = this.screenPosX + (-playerWithId.position.x + window.innerWidth / 2 - this.screenPosX) / 7;
+            let temp = this.screenPos.x + (-playerWithId.position.x + window.innerWidth / 2 - this.screenPos.x) / 20;
             //make a temp position to check where it would be updated to
-            if (this.screenPosX < temp + 1 && this.screenPosX > temp - 1) {
+            if (this.screenPos.x < temp + 1 && this.screenPos.x > temp - 1) {
                 return; //so it's not updating even while idle
             }
 
             if (temp > 0) {
                 // if they're too close to the left wall
-                if (this.screenPosX === 0) return;
-                this.screenPosX = 0;
+                if (this.screenPos.x === 0) return;
+                this.screenPos.x = 0;
             } else if (temp < -(this.config.xSize - window.innerWidth)) {
                 // or the right wall
-                if (this.screenPosX === -(this.config.xSize - window.innerWidth)) return;
-                this.screenPosX = -(this.config.xSize - window.innerWidth);
+                if (this.screenPos.x === -(this.config.xSize - window.innerWidth)) return;
+                this.screenPos.x = -(this.config.xSize - window.innerWidth);
             } else {
-                if (this.screenPosX > temp + 1 || this.screenPosX < temp - 1) {
-                    this.screenPosX = temp; // otherwise the predicted position is fine
+                if (this.screenPos.x > temp + 1 || this.screenPos.x < temp - 1) {
+                    this.screenPos.x = temp; // otherwise the predicted position is fine
                 }
             }
         }
@@ -570,26 +575,26 @@ export class Game {
         const playerWithId = this.findPlayer();
 
         //check if screen is bigger than field
-        if (this.config.ySize < (window.innerHeight - 150)) {
-            this.screenPosY = 0;
+        if (this.config.ySize < (window.innerHeight)) {
+            this.screenPos.y = 0;//window.innerHeight - this.config.ySize;
         } else {
-            let temp = this.screenPosY + (-playerWithId.position.y + (window.innerHeight - 150) / 2 - this.screenPosY) / 7;
+            let temp = this.screenPos.y + (-playerWithId.position.y + (window.innerHeight) / 2 - this.screenPos.y) / 20;
             //make a temp position to check where it would be updated to
-            if (this.screenPosY < temp + 1 && this.screenPosY > temp - 1) {
+            if (this.screenPos.y < temp + 1 && this.screenPos.y > temp - 1) {
                 return; //so it's not updating even while idle
             }
 
             if (temp > 0) {
                 // if they're too close to the left wall
-                if (this.screenPosY === 0) return;
-                this.screenPosY = 0;
-            } else if (temp < -(this.config.ySize - (window.innerHeight - 150))) {
+                if (this.screenPos.y === 0) return;
+                this.screenPos.y = 0;
+            } else if (temp < -(this.config.ySize - (window.innerHeight))) {
                 // or the right wall
-                if (this.screenPosY === -(this.config.ySize - (window.innerHeight - 150))) return;
-                this.screenPosY = -(this.config.ySize - (window.innerHeight - 150));
+                if (this.screenPos.y === -(this.config.ySize - (window.innerHeight))) return;
+                this.screenPos.y = -(this.config.ySize - (window.innerHeight));
             } else {
-                if (this.screenPosY > temp + 1 || this.screenPosY < temp - 1) {
-                    this.screenPosY = temp; // otherwise the predicted position is fine
+                if (this.screenPos.y > temp + 1 || this.screenPos.y < temp - 1) {
+                    this.screenPos.y = temp; // otherwise the predicted position is fine
                 }
             }
         }
@@ -599,7 +604,7 @@ export class Game {
 
     private setCooldowns(player: ClientPlayer): void {
         // sets cooldowns based on player class
-        if (player.classType === "ninja") {
+        /*if (player.classType === "ninja") {
             this.leftClickCooldown = 0.3; // ninja shank
             this.rightClickCooldown = 2.5; // shuriken
             this.firstAbilityCooldown = 10; // stealth
@@ -634,7 +639,7 @@ export class Game {
         }
 
         this.isRightCharging = 0;
-        safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
+        safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";*/
     }
 
     private updateHTML(elapsedTime: number, player: Player) {
@@ -642,7 +647,7 @@ export class Game {
 
         //safeGetElementById("xp").style.width = (player.XP / (player.XPuntilNextLevel)) * 102 + "%";
 
-        safeGetElementById("health").style.width = (player.health / (100 + player.healthModifier)) * 102 + "%";
+        /*safeGetElementById("health").style.width = (player.health / (100 + player.healthModifier)) * 102 + "%";
         if (player.effects.isShielded) safeGetElementById("health").style.background = "cyan";
         else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
 
@@ -680,8 +685,8 @@ export class Game {
             this.firstAbilityCounter = 0;
         }
 
-        if (player.level.toString() != this.level.innerText) this.level.innerText = player.level.toString();
-        if (parseInt(this.slideContainer.style.height, 10) != window.innerHeight - 150) this.slideContainer.style.height = (window.innerHeight - 150) + "px";
+        if (player.level.toString() != this.level.innerText) this.level.innerText = player.level.toString();*/
+        if (parseInt(this.slideContainer.style.height, 10) != window.innerHeight) this.slideContainer.style.height = (window.innerHeight) + "px";
     }
 
     private updateObjects(elapsedTime: number) {

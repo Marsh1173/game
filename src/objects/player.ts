@@ -280,7 +280,7 @@ export abstract class Player {
         if (!this.isDead && this.alreadyJumped <= 1) this.jump();
     }
     public jump() {
-        this.momentum.y = -this.config.playerJumpHeight * (this.moveSpeedModifier + 1) / 2;
+        this.momentum.y = -this.config.playerJumpHeight;// * (this.moveSpeedModifier + 1) / 2;
         this.alreadyJumped++;
     }
     public attemptMoveLeft(elapsedTime: number) {
@@ -288,20 +288,22 @@ export abstract class Player {
     }
     public moveLeft(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
+            this.momentum.x -= this.config.standingSidewaysAcceleration * elapsedTime;// * this.moveSpeedModifier;
         } else {
-            this.momentum.x -= this.config.nonStandingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
+            this.momentum.x -= this.config.nonStandingSidewaysAcceleration * elapsedTime;// * this.moveSpeedModifier;
         }
+        if (this.momentum.x < -this.config.maxSidewaysMomentum) this.momentum.x = -this.config.maxSidewaysMomentum;
     }
     public attemptMoveRight(elapsedTime: number) {
         if (!this.isDead && this.momentum.x < this.config.maxSidewaysMomentum) this.moveRight(elapsedTime);
     }
     public moveRight(elapsedTime: number) {
         if (this.standing) {
-            this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
+            this.momentum.x += this.config.standingSidewaysAcceleration * elapsedTime;// * this.moveSpeedModifier;
         } else {
-            this.momentum.x += this.config.nonStandingSidewaysAcceleration * elapsedTime * this.moveSpeedModifier;
+            this.momentum.x += this.config.nonStandingSidewaysAcceleration * elapsedTime;// * this.moveSpeedModifier;
         }
+        if (this.momentum.x > this.config.maxSidewaysMomentum) this.momentum.x = this.config.maxSidewaysMomentum;
     }
 
     public attemptBasicAttack(players: Player[], items: Item[]) {
@@ -586,17 +588,17 @@ export abstract class Player {
         if (this.actionsNextFrame.die) {
             this.die();
         }
-        
+
         this.updateAnimationFrame(elapsedTime); //updates the player's animation frame
 
         // Movement dampening
         if (Math.abs(this.momentum.x) < 30) {
             this.momentum.x = 0;
-        } else {
-            if (this.standing) {
+        } else if ((this.actionsNextFrame.moveRight === false && this.actionsNextFrame.moveLeft === false) || Math.abs(this.momentum.x) > this.config.maxSidewaysMomentum) {
+            if (this.standing || this.wasStanding) {
                 this.momentum.x *= 0.65 ** (elapsedTime * 60);
             } else {
-                this.momentum.x *= 0.97 ** (elapsedTime * 60);
+                this.momentum.x *= 0.98 ** (elapsedTime * 60);
             }
         }
 
@@ -651,6 +653,7 @@ export abstract class Player {
         platforms.forEach((platform) => {
             this.checkCollisionWithRectangularObject(platform, elapsedTime);
         });
+
         players.forEach((player2) => {
             if (!player2.isDead &&
                 player2.id != this.id &&
