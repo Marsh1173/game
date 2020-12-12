@@ -12,7 +12,8 @@ import { playerRenderData } from "./playerRenderData";
 import { WeaponRender } from "./clientWeapon";
 import { Item, ItemType } from "../objects/item";
 import { getWeaponIcon } from "../weapon";
-import { findCorrespondingAbility, getAbilityIcon } from "../objects/abilities";
+import { getAbilityIcon } from "../objects/abilities";
+import { ids } from "webpack";
 
 export class ClientPlayer extends Player {
     constructor(
@@ -44,13 +45,13 @@ export class ClientPlayer extends Player {
         ) => void,
         public doItem: (
             itemType: ItemType,
+            id: number,
             position: Vector,
             momentum: Vector,
             life: number,
         ) => void,
         private readonly serverTalker: ServerTalker,
         private readonly isClientPlayer: number,
-        private prevFocusPosition: Vector = { x: info.focusPosition.x, y: info.focusPosition.y },
     ) {
         super(
             config,
@@ -77,7 +78,7 @@ export class ClientPlayer extends Player {
             info.isCharging,
             info.isHit,
             info.effects,
-            info.abilities,
+            info.abilityNames,
             info.facing,
             info.moveSpeedModifier,
             info.healthModifier,
@@ -258,9 +259,9 @@ export class ClientPlayer extends Player {
 
         this.renderHealthAndLevel(ctx, screenPos);
         this.renderAbilities(ctx, screenPos);
-        for (let i = 0; i < this.abilities.length; i++) {
-            if (this.abilities[i].chargeAmount > 0) {
-                this.renderCharger(ctx, screenPos, Math.min(1, this.abilities[i].chargeAmount / findCorrespondingAbility(this.abilities[i].abilityName).chargeReq));
+        for (let i = 0; i < this.abilityNames.length; i++) {
+            if (this.playerAbilities[i].chargeAmount > 0) {
+                this.renderCharger(ctx, screenPos, Math.min(1, this.playerAbilities[i].chargeAmount / this.playerAbilities[i].abilityType.chargeReq));
                 break;
             }
         }
@@ -270,7 +271,7 @@ export class ClientPlayer extends Player {
     public renderHealthAndLevel(ctx: CanvasRenderingContext2D, screenPos: Vector) {
         ctx.save();
         if (this.config.ySize < (window.innerHeight)) ctx.translate(-screenPos.x + window.innerWidth - 370, -screenPos.y + this.config.ySize - 40);
-        else ctx.translate(-screenPos.x + window.innerWidth - 370, -screenPos.y + window.innerHeight - 40);
+        else ctx.translate(-screenPos.x + window.innerWidth - 390, -screenPos.y + window.innerHeight - 40);
         ctx.globalAlpha = 0.6;
         ctx.font = "30px Arial";
 
@@ -282,25 +283,36 @@ export class ClientPlayer extends Player {
 
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(0, 0, 30, 0, 2 * Math.PI);
+        ctx.arc(340, 0, 30, 0, 2 * Math.PI);
         ctx.fill();
+        
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
+        ctx.arc(340, 0, 31, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.strokeStyle = "yellow";
+        ctx.beginPath();
+        ctx.arc(340, 0, 29, -Math.PI / 2, 2 * Math.PI * (this.XP / this.XPuntilNextLevel) - Math.PI / 2);
+        ctx.stroke();
 
-        ctx.fillStyle = "black"
-        ctx.fillRect(40, -22, 304, 44);
+        ctx.strokeStyle = "darkgray"
+        ctx.strokeRect(0, -20, 300, 40);
         if (this.effects.isShielded) ctx.fillStyle = "cyan";
         else if (this.isDead) ctx.fillStyle = "cyan";
-        else if (this.isHit) ctx.fillStyle = "red";
+        else if (this.isHit) {
+            ctx.fillStyle = "white";
+            ctx.fillRect(300 * (this.health / (100 + this.healthModifier)), -20, 15, 40);
+            ctx.fillStyle = "green";
+        }
         else ctx.fillStyle = "green";
-        ctx.fillRect(42, -20, 300 * (this.health / (100 + this.healthModifier)), 40);
-
-        ctx.fillStyle = "yellow";
-        ctx.fillRect(42, 16, 300 * (this.XP / this.XPuntilNextLevel), 5);
+        ctx.fillRect(0, -20, 300 * (this.health / (100 + this.healthModifier)), 40);
 
         ctx.shadowColor = "black";
         ctx.shadowBlur = 5;
         ctx.fillStyle = "white";
-        ctx.fillText(this.level.toString(), -ctx.measureText(this.level.toString()).width / 2, 10);
-        ctx.fillText(Math.floor(this.health).toString() + " / " + Math.floor(100 + this.healthModifier).toString(), 200, 10);
+        ctx.fillText(this.level.toString(), -ctx.measureText(this.level.toString()).width / 2 + 340, 10);
+        ctx.fillText(Math.floor(this.health).toString() + " / " + Math.floor(100 + this.healthModifier).toString(), 50, 10);
 
 
         ctx.restore();
@@ -313,23 +325,24 @@ export class ClientPlayer extends Player {
         else ctx.translate(-screenPos.x + (window.innerWidth / 2) - 300, -screenPos.y + window.innerHeight - 80);
         ctx.globalAlpha = 0.6;
         ctx.lineWidth = 3;
-        ctx.strokeStyle = "darkgray";
         ctx.fillStyle = "black";
-        for(let i = 0; i < this.abilities.length; i++) {
+        for(let i = 0; i < this.abilityNames.length; i++) {
             ctx.translate(80 + ((i === 2) ? 50 : 0), 0)
 
-            ctx.strokeRect(0, 0, 75, 75);
-            if (this.abilities[i].abilityName === "none") {
+            if (this.playerAbilities[i].abilityName === "none") {
                 ctx.fillRect(2, 2, 71, 71);
             } else {
-                if (this.abilities[i].abilityName === "basicAttack") {
+                if (this.playerAbilities[i].abilityName === "basicAttack") {
                     ctx.drawImage(assetManager.images[getWeaponIcon(this.weaponEquipped)], 2, 2, 71, 71);
                 } else {
-                    ctx.drawImage(assetManager.images[getAbilityIcon(this.abilities[i].abilityName)], 2, 2, 71, 71);
+                    ctx.drawImage(assetManager.images[getAbilityIcon(this.playerAbilities[i].abilityName)], 2, 2, 71, 71);
                 }
+                ctx.strokeStyle = (this.playerAbilities[i].isCharging) ? "white" : "darkgray";
+                ctx.lineWidth = (this.playerAbilities[i].isCharging) ? 5 : 3;
+                ctx.strokeRect(0, 0, 75, 75);
                 
-                if (this.abilities[i].cooldown > 0) {
-                    const height: number = this.abilities[i].cooldown / findCorrespondingAbility(this.abilities[i].abilityName).cooldown;
+                if (this.playerAbilities[i].cooldown > 0) {
+                    const height: number = this.playerAbilities[i].cooldown / this.playerAbilities[i].abilityType.cooldownReq;
                     ctx.fillRect(2, 73 - 71 * height, 71, 71 * height);
 
                     ctx.strokeStyle = "white";
@@ -351,8 +364,8 @@ export class ClientPlayer extends Player {
         ctx.globalAlpha = 0.6;
 
         ctx.fillStyle = "black"
-        ctx.fillRect(0, 0, 400, 20);
-        ctx.fillStyle = (decimal < 1) ? "rgb(20, 172, 0)" : "rgb(20, 200, 0)";
+        ctx.fillRect(-1, -1, 402, 22);
+        ctx.fillStyle = (decimal < 1) ? "rgb(10, 100, 0)" : "rgb(20, 200, 0)";
         ctx.fillRect(0, 0, 400 * decimal, 20);
 
         ctx.restore();
@@ -360,69 +373,24 @@ export class ClientPlayer extends Player {
 
     protected broadcastActions() {
 
-        if (this.actionsNextFrame.jump) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "jump",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.moveLeft) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "moveLeft",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.moveRight) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "moveRight",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.basicAttack) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "basicAttack",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.secondaryAttack) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "secondaryAttack",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.firstAbility) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "firstAbility",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.secondAbility) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "secondAbility",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.thirdAbility) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "thirdAbility",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.die) {
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "die",
-                id: this.id,
-            });
-        }
+        this.serverTalker.sendMessage({
+            type: "clientPlayerActions",
+            id: this.id,
+            moveRight: this.actionsNextFrame.moveRight,
+            moveLeft: this.actionsNextFrame.moveLeft,
+            jump: this.actionsNextFrame.jump,
+            basicAttack: this.actionsNextFrame.basicAttack,
+            secondaryAttack: this.actionsNextFrame.secondaryAttack,
+            firstAbility: this.actionsNextFrame.firstAbility,
+            secondAbility: this.actionsNextFrame.secondAbility,
+            thirdAbility: this.actionsNextFrame.thirdAbility,
+            die: this.actionsNextFrame.die,
+            level: this.actionsNextFrame.level,
+    
+            focusPosition: this.focusPosition,
+            position: this.position,
+            health: this.health,
+        });
         
         super.broadcastActions();
     }

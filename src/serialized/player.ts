@@ -1,5 +1,6 @@
 import { ClassType } from "../classtype";
-import { effectsClass, Player, PlayerAbilityClass } from "../objects/player";
+import { AbilityName } from "../objects/abilities";
+import { effectsType} from "../objects/player";
 import { Size } from "../size";
 import { Vector } from "../vector";
 import { Weapon } from "../weapon";
@@ -27,8 +28,8 @@ export interface SerializedPlayer {
     focusPosition: Vector;
     isCharging: number;
     isHit: boolean;
-    effects: effectsClass;
-    abilities: PlayerAbilityClass[];
+    effects: effectsType;
+    abilityNames: AbilityName[];
     facing: boolean;
     moveSpeedModifier: number;
     healthModifier: number;

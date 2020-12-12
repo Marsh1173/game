@@ -32,8 +32,10 @@ export class Game {
     }
 
     private aiId: number;
+    public static itemId: number;
 
     constructor(public readonly config: Config) {
+        Game.itemId = 0;
         this.aiId = -2;
         this.makeNewAI();
     }
@@ -70,29 +72,11 @@ export class Game {
         const elapsedTime = (timestamp - this.lastFrame) / 1000;
         this.lastFrame = timestamp;
         this.update(elapsedTime * this.config.gameSpeed);
-        /*const data: InfoMessage = {
-            type: "info",
-            info: this.allInfo(),
-        };
-        Game.broadcastMessage(data);*/
     }
 
     public update(elapsedTime: number) {
         this.updateObjects(elapsedTime);
         this.updateObjectsSecondary(elapsedTime);
-
-
-        this.players.forEach((player) => {
-            if (!isPlayerClassType(player.classType)){ // tells the players what the AIs are doing.
-                Game.broadcastMessage({
-                    type: "serverPlayerUpdate",
-                    id: player.id,
-                    focusPosition: player.focusPosition,
-                    position: player.position,
-                    health: player.health,
-                });
-            }
-        });
     }
 
     private updateObjects(elapsedTime: number) {
@@ -101,7 +85,7 @@ export class Game {
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
         this.projectiles = this.projectiles.filter((projectile) => projectile.life > 0);
 
-        this.items.forEach((item) => item.update(elapsedTime, this.platforms));
+        this.items.forEach((item) => item.update(elapsedTime, this.platforms, this.items));
         this.items = this.items.filter((item) => item.life > 0);
 
         this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms, this.projectiles));
@@ -153,22 +137,17 @@ export class Game {
             },
             (
                 itemType: ItemType,
+                id: number,
                 position: Vector,
                 momentum: Vector,
                 life: number,
             ) => {
-                this.item(itemType, position, momentum, life);
+                this.item(itemType, id, position, momentum, life);
             },
         );
         this.players.push(newPlayer);
         newPlayer.position.x = (newPlayer.team === 1) ? newPlayer.config.playerStart.x : newPlayer.config.playerStart.x + 3300;
         newPlayer.position.y = newPlayer.config.playerStart.y;
-
-        /*const data: InfoMessage = {
-            type: "info",
-            info: this.allInfo(),
-        };
-        Game.broadcastMessage(data);*/
 
         Game.broadcastMessage({
             type: "playerInfo",
@@ -216,11 +195,12 @@ export class Game {
             },
             (
                 itemType: ItemType,
+                id: number,
                 position: Vector,
                 momentum: Vector,
                 life: number,
             ) => {
-                this.item(itemType, position, momentum, life);
+                this.item(itemType, id, position, momentum, life);
             },
         );
         this.players.push(newPlayerAI);
@@ -248,74 +228,57 @@ export class Game {
     }
 
     public handleMessage(id: number, data: ClientMessage) {
+        var player;
         switch (data.type) {
-            case "action":
-                switch (data.actionType) {
-                    case "jump":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.jump = true;
-                        Game.broadcastMessage({
-                            type: "serverJump",
-                            id: id,
-                        });
-                        break;
-                    case "moveLeft":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.moveLeft = true;
-                        Game.broadcastMessage({
-                            type: "serverMoveLeft",
-                            id: id,
-                        });
-                        break;
-                    case "moveRight":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.moveRight = true;
-                        Game.broadcastMessage({
-                            type: "serverMoveRight",
-                            id: id,
-                        });
-                        break;
-                    case "basicAttack":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.basicAttack = true;
-                        Game.broadcastMessage({
-                            type: "serverBasicAttack",
-                            id: id,
-                        });
-                        break;
-                    case "secondaryAttack":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.secondaryAttack = true;
-                        Game.broadcastMessage({
-                            type: "serverSecondaryAttack",
-                            id: id,
-                        });
-                        break;
-                    case "firstAbility":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.firstAbility = true;
-                        Game.broadcastMessage({
-                            type: "serverFirstAbility",
-                            id: id,
-                        });
-                        break;
-                    case "secondAbility":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.secondAbility = true;
-                        Game.broadcastMessage({
-                            type: "serverSecondAbility",
-                            id: id,
-                        });
-                        break;
-                    case "thirdAbility":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.thirdAbility = true;
-                        Game.broadcastMessage({
-                            type: "serverThirdAbility",
-                            id: id,
-                        });
-                        break;
-                    case "die":
-                        this.players.find((player) => player.id === id)!.actionsNextFrame.die = true;
-                        Game.broadcastMessage({
-                            type: "serverDie",
-                            id: id,
-                        });
-                        break;
-                    default:
-                        throw new Error(`Invalid client message actionType: ${data.actionType}`);
+            case "clientPlayerActions" :
+                Game.broadcastMessage({
+                    type: "serverPlayerActions",
+                    id: data.id,
+                    moveRight: data.moveRight,
+                    moveLeft: data.moveLeft,
+                    jump: data.jump,
+                    basicAttack: data.basicAttack,
+                    secondaryAttack: data.secondaryAttack,
+                    firstAbility: data.firstAbility,
+                    secondAbility: data.secondAbility,
+                    thirdAbility: data.thirdAbility,
+                    die: data.die,
+                    level: data.level,
+
+                    focusPosition: data.focusPosition,
+                    position: data.position,
+                    health: data.health,
+                });
+                player = this.players.find((player) => player.id === id);
+                if (player) {
+                    player.actionsNextFrame.moveRight = data.moveRight;
+                    player.actionsNextFrame.moveLeft = data.moveLeft;
+                    player.actionsNextFrame.jump = data.jump;
+                    player.actionsNextFrame.basicAttack = data.basicAttack;
+                    player.actionsNextFrame.secondaryAttack = data.secondaryAttack;
+                    player.actionsNextFrame.firstAbility = data.firstAbility;
+                    player.actionsNextFrame.secondAbility = data.secondAbility;
+                    player.actionsNextFrame.thirdAbility = data.thirdAbility;
+                    player.actionsNextFrame.die = data.die;
+                    player.actionsNextFrame.level = data.level;
+
+                    player.focusPosition = data.focusPosition;
+                    player.position = data.position;
+                    player.health = data.health;
+                }
+                break;
+            case "playerUpdateStats" :
+                Game.broadcastMessage({
+                    type: "serverPlayerUpdateStats",
+                    id: data.id,
+                    abilityNames: data.abilityNames,
+                    weaponEquipped: data.weaponEquipped,
+                });
+                player = this.players.find((player) => player.id === id);
+                if (player) {
+                    player.abilityNames = data.abilityNames;
+                    player.weaponEquipped = data.weaponEquipped;
+                    player.playerUpdateAbilityStats();
                 }
                 break;
             case "projectile":
@@ -350,28 +313,12 @@ export class Game {
                     }),
                 );
                 break;
-            case "item":
-                this.items.push(
-                    new ServerItem(this.config, {
-                        itemType: data.itemType,
-                        position: data.position,
-                        momentum: data.momentum,
-                        life: data.life,
-                    }),
-                );
-                break;
-            case "playerUpdate":
-                var player = this.players.find((player) => player.id === id);
-                if (player) {
-                    player.focusPosition = data.focusPosition;
-                    player.position = data.position;
-                } else console.log("could not find server player");
+            case "itemKillMessage":
+                var item = this.items.find((item) => item.id === data.id);
+                if (item) item.life = 0;
                 Game.broadcastMessage({
-                    type: "serverPlayerUpdate",
-                    id: id,
-                    focusPosition: data.focusPosition,
-                    position: data.position,
-                    health: data.health,
+                    type: "serverItemKillMessage",
+                    id: data.id,
                 });
                 break;
             default:
@@ -435,12 +382,14 @@ export class Game {
 
     private item(
         itemType: ItemType,
+        id: number,
         position: Vector,
         momentum: Vector,
         life: number,
     ) {
         const item = new ServerItem(this.config, {
             itemType,
+            id,
             position,
             momentum,
             life,

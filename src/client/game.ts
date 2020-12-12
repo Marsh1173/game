@@ -25,9 +25,9 @@ export class Game {
     private static readonly gameDiv = safeGetElementById("gameDiv");
     private static readonly canvas = safeGetElementById("canvas") as HTMLCanvasElement;
     private static readonly ctx = Game.canvas.getContext("2d")!;
+    public static particleAmount: number;
 
     private slideContainer = safeGetElementById("slideContainer");
-    //private level = safeGetElementById("level");
 
     public static readonly particleHandler = new ParticleSystem();
     private readonly keyState: Record<string, boolean> = {};
@@ -38,29 +38,12 @@ export class Game {
     private platforms: ClientPlatform[] = [];
     private going: boolean = false;
 
-    private globalElapsedTime: number = 0;
-
     private screenPos: Vector = {x: 0, y: 0};
-
     private mousePos: Vector = { x: 0, y: 0 };
-
-    //private isLeftClicking: boolean = false;
-    private isLeftCharging: number = 0;
-    private leftClickCooldown: number = 0;
-    private leftClickCounter: number = 0;
-
-    private isRightClicking: boolean = false;
-    private isRightCharging: number = 0;
-    private rightClickCooldown: number = 0;
-    private rightClickCounter: number = 0;
-
-    //private isRightClicking: boolean = false;
-    private firstAbilityCharging: number = 0;
-    private firstAbilityCooldown: number = 0;
-    private firstAbilityCounter: number = 0;
 
     private constructGame(info: AllInfo) {
         this.platforms = info.platforms.map((platformInfo) => new ClientPlatform(this.config, platformInfo));
+        this.items = info.items.map((itemInfo) => new ClientItem(this.config, itemInfo));
         this.projectiles = info.projectiles.map((projectileInfo) => new ClientProjectile(this.config, projectileInfo));
         this.targetedProjectiles = info.targetedProjectiles.map((targetedProjectileInfo) => new ClientTargetedProjectile(this.config, targetedProjectileInfo));
         this.players = info.players.map(
@@ -98,11 +81,12 @@ export class Game {
                     },
                     (
                         itemType: ItemType,
+                        id: number,
                         position: Vector,
                         momentum: Vector,
                         life: number,
                     ) => {
-                        this.item(itemType, position, momentum, life);
+                        this.item(itemType, id, position, momentum, life);
                     },
                     this.serverTalker,
                     this.id,
@@ -110,14 +94,14 @@ export class Game {
         );
     }
 
-    constructor(info: AllInfo, private readonly config: Config, private readonly id: number, private readonly serverTalker: ServerTalker) {
+    constructor(info: AllInfo, private readonly config: Config, private readonly id: number, private readonly serverTalker: ServerTalker, particleAmount: number) {
         Game.canvas.style.width = this.config.xSize + "px";
         Game.canvas.style.height = this.config.ySize + "px";
         Game.canvas.width = this.config.xSize;
         Game.canvas.height = this.config.ySize;
+        Game.particleAmount = particleAmount / 100;
 
         this.constructGame(info);
-        this.setCooldowns(this.findPlayer());
 
         this.serverTalker.messageHandler = (msg: ServerMessage) => {
             let player;
@@ -125,74 +109,61 @@ export class Game {
                 case "info":
                     this.constructGame(msg.info);
                     break;
-                case "levelUp":
+                case "serverPlayerActions":
                     player = this.players.find((player) => player.id === msg.id)!;
-                    Game.particleHandler.newEffect({
-                        particleEffectType: "levelUp",
-                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
-                        momentum: player.momentum,
-                        direction: { x: 0, y: 0 },
-                        color: player.color,
-                        targetPosition: player.position,
-                    });
-                    break;
-                case "serverDie":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.die = true;
-                    Game.particleHandler.newEffect({
-                        particleEffectType: "die",
-                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
-                        momentum: player.momentum,
-                        direction: { x: 0, y: 0 },
-                        color: player.color,
-                    });
-                    break;
-                case "serverBasicAttack":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.basicAttack = true;
-                    break;
-                case "serverSecondaryAttack":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.secondaryAttack = true;
-                    break;
-                case "serverFirstAbility":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.firstAbility = true;
-                    Game.particleHandler.newEffect({
-                        particleEffectType: "stealth",
-                        position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
-                        momentum: player.momentum,
-                        direction: { x: 0, y: 0 },
-                        color: player.color,
-                    }); // there should be an abilities effects folder
-                    break;
-                case "serverSecondAbility":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.secondAbility = true;
-                    break;
-                case "serverThirdAbility":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.thirdAbility = true;
-                    break;
-                case "serverMoveRight":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.moveRight = true;
-                    break;
-                case "serverMoveLeft":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.moveLeft = true;
-                    break;
-                case "serverJump":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (player.id != this.id) player.actionsNextFrame.jump = true;
-                    break;
-                case "serverPlayerUpdate":
-                    player = this.players.find((player) => player.id === msg.id)!;
-                    if (msg.id != this.id) {
+                    if (player && msg.id != this.id) {
+                        player.actionsNextFrame.moveRight = msg.moveRight;
+                        player.actionsNextFrame.moveLeft = msg.moveLeft;
+                        player.actionsNextFrame.jump = msg.jump;
+                        player.actionsNextFrame.basicAttack = msg.basicAttack;
+                        player.actionsNextFrame.secondaryAttack = msg.secondaryAttack;
+                        player.actionsNextFrame.firstAbility = msg.firstAbility;
+                        player.actionsNextFrame.secondAbility = msg.secondAbility;
+                        player.actionsNextFrame.thirdAbility = msg.thirdAbility;
+                        player.actionsNextFrame.die = msg.die;
+                        player.actionsNextFrame.level = msg.level;
+                        
                         player.focusPosition = msg.focusPosition;
                         player.position = msg.position;
                         player.health = msg.health;
                     }
+
+                    if (msg.die) {
+                        Game.particleHandler.newEffect({
+                            particleEffectType: "die",
+                            position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
+                            momentum: player.momentum,
+                            direction: { x: 0, y: 0 },
+                            color: player.color,
+                        });
+                    }
+
+                    if (msg.level && player.id === this.id) {
+                        Game.particleHandler.newEffect({
+                            particleEffectType: "levelUp",
+                            position: { x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2},
+                            momentum: player.momentum,
+                            direction: { x: 0, y: 0 },
+                            color: player.color,
+                            targetPosition: player.position,
+                        });
+                    }
+
+                    break;
+                case "serverPlayerUpdateStats":
+                    player = this.players.find((player) => player.id === msg.id)!;
+                    if (player && msg.id != this.id) {
+                        player.abilityNames = msg.abilityNames;
+                        player.weaponEquipped = msg.weaponEquipped;
+                        player.playerUpdateAbilityStats();
+                    }
+                    break;
+                case "serverItemKillMessage":
+                    var item = this.items.find((item) => item.id === msg.id);
+                    if (item) item.life = 0;
+                    break;
+                case "serverItemMessage":
+                    this.item(msg.itemType, msg.id, msg.position, msg.momentum, msg.life);
                     break;
                 case "playerInfo":
                     this.players.push(new ClientPlayer(
@@ -228,11 +199,12 @@ export class Game {
                                 },
                                 (
                                     itemType: ItemType,
+                                    id: number,
                                     position: Vector,
                                     momentum: Vector,
                                     life: number,
                                 ) => {
-                                    this.item(itemType, position, momentum, life);
+                                    this.item(itemType, id, position, momentum, life);
                                 },
                                 this.serverTalker,
                                 this.id,
@@ -240,7 +212,6 @@ export class Game {
                     );
                     break;
                 case "playerLeaving":
-                    // We don't do anything here yet TODO - FILTER THIS.PLAYERS
                     this.players = this.players.filter((player) => player.id !== msg.id);
                     break;
                 default:
@@ -258,23 +229,22 @@ export class Game {
 
             if (e.button === 0) {
                 //left mouse button click
-                this.cancelAbilites();
-                this.keyState[config.playerKeys.basicAttack] = true;
+                cancelAbilites(playerWithId);
+                this.interpretLeftClick(playerWithId);
 
             } else if (e.button === 2) {
                 cancelAbilites(playerWithId);
-                playerWithId.abilities[1].isCharging = true;
+                playerWithId.playerAbilities[1].isCharging = true;
             }
         };
         window.onmouseup = (e: MouseEvent) => {
             const playerWithId = this.findPlayer();
 
-            if (e.button === 0 && this.keyState[config.playerKeys.basicAttack]) {
+            if (e.button === 0) {
                 // left mouse release
-                this.isLeftCharging = 0;
-                this.keyState[config.playerKeys.basicAttack] = false;
+                playerWithId.playerAbilities[0].isCharging = false;
             } else if (e.button === 2) {
-                playerWithId.abilities[1].isCharging = false;
+                playerWithId.playerAbilities[1].isCharging = false;
             }
         };
         window.onmousemove = (e: MouseEvent) => {
@@ -284,25 +254,25 @@ export class Game {
         window.onkeydown = (e: KeyboardEvent) => {
             const playerWithId = this.findPlayer();
 
-            if (e.code === this.config.playerKeys.firstAbility && !playerWithId.abilities[2].isCharging) {
+            if (e.code === this.config.playerKeys.firstAbility && !playerWithId.playerAbilities[2].isCharging) {
                 cancelAbilites(playerWithId);
-                playerWithId.abilities[2].isCharging = true;
-            } else if (e.code === this.config.playerKeys.secondAbility && !playerWithId.abilities[3].isCharging) {
+                playerWithId.playerAbilities[2].isCharging = true;
+            } else if (e.code === this.config.playerKeys.secondAbility && !playerWithId.playerAbilities[3].isCharging) {
                 cancelAbilites(playerWithId);
-                playerWithId.abilities[3].isCharging = true;
-            } else if (e.code === this.config.playerKeys.thirdAbility && !playerWithId.abilities[4].isCharging) {
+                playerWithId.playerAbilities[3].isCharging = true;
+            } else if (e.code === this.config.playerKeys.thirdAbility && !playerWithId.playerAbilities[4].isCharging) {
                 cancelAbilites(playerWithId);
-                playerWithId.abilities[4].isCharging = true;
+                playerWithId.playerAbilities[4].isCharging = true;
             } else this.keyState[e.code] = true;
         };
         window.onkeyup = (e: KeyboardEvent) => {
             const playerWithId = this.findPlayer();
             if (e.code === this.config.playerKeys.firstAbility) {
-                playerWithId.abilities[2].isCharging = false;
+                playerWithId.playerAbilities[2].isCharging = false;
             } else if (e.code === this.config.playerKeys.secondAbility) {
-                playerWithId.abilities[3].isCharging = false;
+                playerWithId.playerAbilities[3].isCharging = false;
             } else if (e.code === this.config.playerKeys.thirdAbility) {
-                playerWithId.abilities[4].isCharging = false;
+                playerWithId.playerAbilities[4].isCharging = false;
             } else this.keyState[e.code] = false;
         };
     }
@@ -337,7 +307,6 @@ export class Game {
             this.lastFrame = timestamp;
         }
         const elapsedTime = (timestamp - this.lastFrame) / 1000;
-        this.globalElapsedTime = elapsedTime;
         this.lastFrame = timestamp;
         this.update(elapsedTime * this.config.gameSpeed);
         if (this.going) {
@@ -349,22 +318,9 @@ export class Game {
         elapsedTime = Math.min(0.03, elapsedTime);//hotfix to make sure sudden lag spikes dont clip them through the floors
 
         const playerWithId = this.findPlayer();
-        /*if (playerWithId.actionsNextFrame.die) {
-            playerWithId.attemptDie();
-        }*/
 
         playerWithId.focusPosition.x = this.mousePos.x - this.screenPos.x;
         playerWithId.focusPosition.y = this.mousePos.y - this.screenPos.y;
-
-        this.serverTalker.sendMessage({
-            type: "playerUpdate",
-            id: this.id,
-            focusPosition: {x: this.mousePos.x - this.screenPos.x, y: this.mousePos.y - this.screenPos.y},
-            health: playerWithId.health,
-            position: playerWithId.position,
-        });
-
-        this.updateMouse(elapsedTime, playerWithId);
 
         this.updateHTML(elapsedTime, playerWithId);
 
@@ -373,73 +329,14 @@ export class Game {
 
         if (this.keyState[this.config.playerKeys.up]) {
             playerWithId.actionsNextFrame.jump = true;
-            //playerWithId.attemptJump();
             this.keyState[this.config.playerKeys.up] = false;
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "jump",
-                id: this.id,
-            });
         }
         if (this.keyState[this.config.playerKeys.left]) {
             playerWithId.actionsNextFrame.moveLeft = true;
-            //playerWithId.attemptMoveLeft(elapsedTime);
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "moveLeft",
-                id: this.id,
-            });
         }
         if (this.keyState[this.config.playerKeys.right]) {
             playerWithId.actionsNextFrame.moveRight = true;
-            //playerWithId.attemptMoveRight(elapsedTime);
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "moveRight",
-                id: this.id,
-            });
         }
-        if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
-            this.leftClickCounter = this.leftClickCooldown;
-            playerWithId.actionsNextFrame.basicAttack = true;
-            /*this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "basicAttack",
-                id: this.id,
-            });*/
-        }
-        /*if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
-            playerWithId.actionsNextFrame.secondaryAttack = true;
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "secondaryAttack",
-                id: this.id,
-            });
-        }
-        if (this.keyState[this.config.playerKeys.firstAbility]) {
-            playerWithId.actionsNextFrame.firstAbility = true;
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "firstAbility",
-                id: this.id,
-            });
-        }
-        if (this.keyState[this.config.playerKeys.secondAbility]) {
-            playerWithId.actionsNextFrame.secondAbility = true;
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "secondAbility",
-                id: this.id,
-            });
-        }
-        if (this.keyState[this.config.playerKeys.thirdAbility]) {
-            playerWithId.actionsNextFrame.thirdAbility = true;
-            this.serverTalker.sendMessage({
-                type: "action",
-                actionType: "thirdAbility",
-                id: this.id,
-            });
-        }*/
 
         Game.particleHandler.update(elapsedTime, this.platforms);
 
@@ -454,35 +351,6 @@ export class Game {
             throw new Error("Player with my id does not exist in data from server");
         }
         return playerWithId;
-    }
-
-    private cancelAbilites() {
-        this.keyState[this.config.playerKeys.secondAttack] = false;
-        this.keyState[this.config.playerKeys.basicAttack] = false;
-        this.keyState["ShiftLeft"] = false;
-
-        this.isLeftCharging = 0;
-        this.isRightCharging = 0;
-        this.firstAbilityCharging = 0;
-    }
-
-    private updateMouse(elapsedTime: number, player: Player) {
-        if (player.isDead) {
-            this.isRightCharging = 0;
-            this.isLeftCharging = 0;
-            this.firstAbilityCharging = 0;
-        } else {
-            if (this.keyState[this.config.playerKeys.secondAttack] && this.rightClickCounter <= 0) {
-                if (this.isRightCharging < 1) this.isRightCharging += elapsedTime * 2;
-                else if (this.isRightCharging > 1) this.isRightCharging = 1;
-            } else if (this.keyState[this.config.playerKeys.basicAttack] && this.leftClickCounter <= 0) {
-                if (this.isLeftCharging < 1) this.isLeftCharging += elapsedTime * 2;
-                else if (this.isLeftCharging > 1) this.isLeftCharging = 1;
-            } else if (this.keyState["ShiftLeft"] && this.firstAbilityCounter <= 0) {
-                if (this.firstAbilityCharging < 1) this.firstAbilityCharging += elapsedTime * 2;
-                else if (this.firstAbilityCharging > 1) this.firstAbilityCharging = 1;
-            }
-        }
     }
 
     private render() {
@@ -503,9 +371,9 @@ export class Game {
         
 
         this.players.forEach((player) => {
-            if (this.id === player.id && !player.isDead) {
+            /*if (this.id === player.id && !player.isDead) {
                 if (this.keyState["ShiftLeft"]) player.renderFirstAbilityPointer(Game.ctx, this.platforms);
-            }
+            }*/
             if (!player.isDead && (!player.effects.isStealthed || player.id === this.id)) {
                 player.renderWeapon(Game.ctx);
             }
@@ -526,7 +394,7 @@ export class Game {
 
         Game.particleHandler.render(Game.ctx);
 
-        renderPlayerOrItemFocus(Game.ctx, playerWithId, this.players, this.items);
+        renderPlayerOrItemFocus(Game.ctx, playerWithId, this.items);
 
 
         this.platforms.forEach((platform) => platform.render(Game.ctx));
@@ -568,7 +436,6 @@ export class Game {
                 }
             }
         }
-        //safeGetElementById("slider").style.left = this.screenPosX + "px"; CANVAS NOW UPDATED IN RENDER INSTEAD OF CHANGING THE SLIDER POS
     }
 
     private updateSliderY() {
@@ -598,101 +465,16 @@ export class Game {
                 }
             }
         }
-
-        //safeGetElementById("slider").style.top = this.screenPosY + "px"; CANVAS NOW UPDATED IN RENDER INSTEAD OF CHANGING THE SLIDER POS
-    }
-
-    private setCooldowns(player: ClientPlayer): void {
-        // sets cooldowns based on player class
-        /*if (player.classType === "ninja") {
-            this.leftClickCooldown = 0.3; // ninja shank
-            this.rightClickCooldown = 2.5; // shuriken
-            this.firstAbilityCooldown = 10; // stealth
-            safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/swordBasicAttack.png");
-            safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shurikenSecondary.png");
-            safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/stealth.png");
-            safeGetElementById("basicAttackTooltip").innerHTML = PlayerTooltip.NinjaBasicAttack;
-            safeGetElementById("secondaryAttackTooltip").innerHTML = PlayerTooltip.NinjaSecondaryAttack;
-            safeGetElementById("firstAbilityTooltip").innerHTML = PlayerTooltip.NinjaFirstAbility;
-
-        } else if (player.classType === "wizard") {
-            this.leftClickCooldown = 0.4; // fireball
-            this.rightClickCooldown = 6; // ice spike - 3.5
-            this.firstAbilityCooldown = 4.5; // //firestrike
-            safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/fireballBasicAttack.png");
-            safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/iceSecondary.png");
-            safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/firestrike.png");
-            safeGetElementById("basicAttackTooltip").innerHTML = PlayerTooltip.WizardBasicAttack;
-            safeGetElementById("secondaryAttackTooltip").innerHTML = PlayerTooltip.WizardSecondaryAttack;
-            safeGetElementById("firstAbilityTooltip").innerHTML = PlayerTooltip.WizardFirstAbility;
-
-        } else if (player.classType === "warrior") {
-            this.leftClickCooldown = 0.35; // hammer bash
-            this.rightClickCooldown = 2.5; // shield bash
-            this.firstAbilityCooldown = 3.5; // chains or healing aura
-            safeGetElementById("basicAttackImg").setAttribute("src", "images/abilites/hammerBasicAttack.png");
-            safeGetElementById("secondaryAttackImg").setAttribute("src", "images/abilites/shieldSecondary.png");
-            safeGetElementById("firstAbilityImg").setAttribute("src", "images/abilites/chains.png");
-            safeGetElementById("basicAttackTooltip").innerHTML = PlayerTooltip.WarriorBasicAttack;
-            safeGetElementById("secondaryAttackTooltip").innerHTML = PlayerTooltip.WarriorSecondaryAttack;
-            safeGetElementById("firstAbilityTooltip").innerHTML = PlayerTooltip.WarriorFirstAbility;
-        }
-
-        this.isRightCharging = 0;
-        safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";*/
     }
 
     private updateHTML(elapsedTime: number, player: Player) {
-        // updates player's cooldown icons
-
-        //safeGetElementById("xp").style.width = (player.XP / (player.XPuntilNextLevel)) * 102 + "%";
-
-        /*safeGetElementById("health").style.width = (player.health / (100 + player.healthModifier)) * 102 + "%";
-        if (player.effects.isShielded) safeGetElementById("health").style.background = "cyan";
-        else safeGetElementById("health").style.background = "rgb(201, 0, 0)";
-
-        safeGetElementById("healthText").innerText = Math.round(player.health) + " / " + (100 + player.healthModifier);
-
-        safeGetElementById("charge").style.background = "rgb(20, 200, 0)";
-        if (this.isRightCharging > 0) {
-            safeGetElementById("charge").style.width = this.isRightCharging * 102 + "%";
-            if (this.isRightCharging < 1) safeGetElementById("charge").style.background = "rgb(24, 100, 14)";
-        } else if (this.firstAbilityCharging > 0) {
-            safeGetElementById("charge").style.width = this.firstAbilityCharging * 102 + "%";
-            if (this.firstAbilityCharging < 1) safeGetElementById("charge").style.background = "rgb(24, 100, 14)";
-        } else {
-            safeGetElementById("charge").style.width = "0%";
-        }
-
-        if (this.leftClickCounter > 0) {
-            this.leftClickCounter -= elapsedTime;
-            safeGetElementById("basicAttack").style.top = (this.leftClickCounter / this.leftClickCooldown) * -55 - 3 + "px";
-        } else if (this.leftClickCounter < 0) {
-            this.leftClickCounter = 0;
-        }
-
-        if (this.rightClickCounter > 0) {
-            this.rightClickCounter -= elapsedTime;
-            safeGetElementById("secondaryAttack").style.top = (this.rightClickCounter / this.rightClickCooldown) * -50 - 3 + "px";
-        } else if (this.rightClickCounter < 0) {
-            this.rightClickCounter = 0;
-        }
-
-        if (this.firstAbilityCounter > 0) {
-            this.firstAbilityCounter -= elapsedTime;
-            safeGetElementById("firstAbility").style.top = (this.firstAbilityCounter / this.firstAbilityCooldown) * -50 - 3 + "px";
-        } else if (this.firstAbilityCounter < 0) {
-            this.firstAbilityCounter = 0;
-        }
-
-        if (player.level.toString() != this.level.innerText) this.level.innerText = player.level.toString();*/
         if (parseInt(this.slideContainer.style.height, 10) != window.innerHeight) this.slideContainer.style.height = (window.innerHeight) + "px";
     }
 
     private updateObjects(elapsedTime: number) {
         this.players.forEach((player) => player.update(elapsedTime * player.effects.isSlowed, this.players, this.platforms, this.items, (player.id === this.id)));
 
-        this.items.forEach((item) => item.update(elapsedTime, this.platforms));
+        this.items.forEach((item) => item.update(elapsedTime, this.platforms, this.items));
         this.items = this.items.filter((item) => item.life >= 0);
 
         this.projectiles.forEach((projectile) => projectile.update(elapsedTime, this.players, this.platforms));
@@ -700,6 +482,37 @@ export class Game {
 
         this.targetedProjectiles = this.targetedProjectiles.filter((targetedProjectile) => !targetedProjectile.isDead);
         this.targetedProjectiles.forEach((targetedProjectile) => targetedProjectile.update(elapsedTime, this.players, this.platforms, this.projectiles));
+    }
+
+    private interpretLeftClick(playerWithId: Player) {
+        let targetItem: ClientItem | undefined;
+        let targetItemDistanceFromCursor: number | undefined;
+        
+        this.items.forEach((item) => {
+            const distanceFromCursor: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - playerWithId.focusPosition.x, 2) + Math.pow(item.position.y + item.itemSize / 2 - playerWithId.focusPosition.y, 2));
+            if ((!targetItem && distanceFromCursor < 20) || (targetItem && targetItemDistanceFromCursor && distanceFromCursor < targetItemDistanceFromCursor)) {
+                targetItem = item;
+                targetItemDistanceFromCursor = distanceFromCursor;
+            }
+        });
+
+        if (targetItem && Math.sqrt(Math.pow(targetItem.position.x + targetItem.itemSize / 2 - playerWithId.position.x - playerWithId.size.width / 2, 2) + Math.pow(targetItem.position.y + targetItem.itemSize / 2 - playerWithId.position.y - playerWithId.size.height / 2, 2)) < 150) {
+            if (targetItem.pickUp(playerWithId)){
+                this.serverTalker.sendMessage({
+                    type: "itemKillMessage",
+                    id: targetItem.id,
+                });
+                this.serverTalker.sendMessage({
+                    type: "playerUpdateStats",
+                    id: playerWithId.id,
+                    weaponEquipped: playerWithId.weaponEquipped,
+                    abilityNames: playerWithId.abilityNames,
+                });
+                playerWithId.playerUpdateAbilityStats();
+            }
+        } else {
+            playerWithId.playerAbilities[0].isCharging = true;
+        }
     }
 
     private projectile(
@@ -758,12 +571,14 @@ export class Game {
 
     private item (
         itemType: ItemType,
+        id: number,
         position: Vector,
         momentum: Vector,
         life: number,
     ) {
         const item = new ClientItem(this.config, {
             itemType,
+            id,
             position,
             momentum,
             life,

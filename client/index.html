@@ -12,75 +12,26 @@
                 <div id='slider'><canvas id="canvas"></canvas></div>
             </div>
             <button id="end">End Game</button>
-            <!--<div id='playerInformationBar'>
-                    <button id="end">End Game</button>
-                    <div id='abilities'>
-                        <div class="tooltip">
-                            <div class='abilityIcon'>
-                                <img id='basicAttackImg' src='images/abilites/swordBasicAttack.png'></img>
-                                <div id='basicAttack' class='abilityCooldown'></div>
-                            </div>
-                            <span class="tooltiptext" id='basicAttackTooltip'></span>
-                        </div>
-                        <div class="tooltip">
-                            <div class='abilityIcon' style='margin-right: 25px;'>
-                                <img id='secondaryAttackImg' src='images/abilites/shurikenSecondary.png'></img>
-                                <div id='secondaryAttack' class='abilityCooldown'></div>
-                            </div>
-                            <span class="tooltiptext" id='secondaryAttackTooltip'></span>
-                        </div>
-                        <div class="tooltip">
-                            <div class='abilityIcon'>
-                                <img id='firstAbilityImg' src='images/abilites/fireStrike.PNG'></img>
-                                <div id='firstAbility' class='abilityCooldown'></div>
-                            </div>
-                            <span class="tooltiptext" id='firstAbilityTooltip'></span>
-                        </div>
-                        <div class="tooltip">
-                            <div class='abilityIcon'>
-                                <img id='secondAbilityImg' src=''></img>
-                                <div id='secondAbility' class='abilityCooldown'></div>
-                            </div>
-                            <span class="tooltiptext" id='secondAbilityTooltip'></span>
-                        </div>
-                        <div class="tooltip">
-                            <div class='abilityIcon'>
-                                <img id='thirdAbilityImg' src=''></img>
-                                <div id='thirdAbility' class='abilityCooldown'></div>
-                            </div>
-                            <span class="tooltiptext" id='thirdAbilityTooltip'></span>
-                        </div>
-                    </div>
-                    <div style='display:flex; flex-direction: row;'>
-                        <div id='level'></div>
-                        <div id='healthContainer'><div id='health'></div><span id='healthText'></span><div id='xp'></div></div>
-                    </div>
-                </div>
-                <div id='chargeContainer'><div id='charge'></div></div>-->
         </div>
         <div id="menuDiv">
             <div id="menu">
                 <button id="start" class="big">Enter Game</button>
-                <button id="instructions" class="big">Instructions</button>
                 <div id='namePicker'><input type="text" id='name' placeholder="Name..." autocomplete="off" maxlength="15"></input></div>
-                <div id='teamPicker'><input type="number" id='team' value="1" min='1' max='2'></input></div>
-                <div id='colorPicker'><p>Pick a color:</p><input type="color" id='color' value="#32a852"></input></div>
                 <div id='classPicker'>
                     <button id='ninja' class='classButton classSelected'>Ninja</button>
                     <button id='wizard' class='classButton'>Wizard</button>
                     <button id='warrior' class='classButton'>Warrior</button>
                 </div>
+                <button id="settings" class="big">Settings</button>
+                <button id="instructions" class="big">Instructions</button>
             </div>
             <div id="instructionMenu">
-                <h2>- To Move -</h2>
-                <p>A - move left</p>
-                <p>D - move right</p>
-                <p>W - jump</p>
-                <p>S - detonate</p>
-                <h2>- Goal -</h2>
-                <p>Don't touch the ground,</p>
-                <p>press down to detonate,</p>
-                <p>get the most kills.</p>
+                <div class='instruction'><h2>Win</h2></div>
+            </div>
+            <div id="settingsMenu">
+                <div id='colorPicker'><p>Pick your color:</p><input type="color" id='color' value="#32a852"></input></div>
+                <div id='teamPicker'><p>Team:</p><input type="number" id='team' value="1" min='1' max='2'></input></div>
+                <div id="particlePicker"><p>Particles: <span id="particleAmount">50%</span></p><input type="range" min="0" max="100" value="50" step='5' class="slider" id="particles"></div>
             </div>
         </div>
 

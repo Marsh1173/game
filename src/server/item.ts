@@ -6,6 +6,7 @@ export class ServerItem extends Item {
     constructor(config: Config, info: SerializedItem) {
         super(config, 
             info.itemType,
+            info.id,
             info.position,
             info.momentum,
             info.life,);

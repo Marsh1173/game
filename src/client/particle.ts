@@ -3,6 +3,7 @@ import { Platform } from "../objects/platform";
 import { Random } from "../random";
 import { Size } from "../size";
 import { Vector } from "../vector";
+import { Game } from "./game";
 
 export type ParticleType = "ice particle" | "smoke particle" | "red fire particle" | "orange fire particle" | "levelUp particle" | "colored particle" | "text particle" | "blizzard particle";
 export type ParticleEffectType = "levelUp" | "takeDamage" | "die" | "basicAttack" | "stealth" | "firestrikeIdle" | "fireballIdle" | "iceIdle" | "firestrikeExplode" | "blizzardIdle";
@@ -171,9 +172,9 @@ interface ParticleEffectInfo {
 }
 
 class ParticleEffect {
-    public particles: Particle[];
+    public particles: Particle[] = [];
     constructor(private readonly info: ParticleEffectInfo) {
-        this.particles = [];
+        if (Game.particleAmount === 0) return;
         if (info.particleEffectType === "levelUp") this.levelUp(info);
         else if (info.particleEffectType === "stealth") this.stealth(info);
         else if (info.particleEffectType === "die") this.die(info);
@@ -185,7 +186,7 @@ class ParticleEffect {
     }
 
     public levelUp(info: ParticleEffectInfo) {
-        for (let i = 0; i < 140; i++) {
+        for (let i = 0; i < Math.floor(140 * Game.particleAmount); i++) {
             const direction = Random.nextCircleVector();
             const speed = Random.nextGaussian(150, 45);
             direction.x *= speed;
@@ -209,7 +210,7 @@ class ParticleEffect {
     }
 
     public die(info: ParticleEffectInfo) {
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < Math.floor(100 * Game.particleAmount); i++) {
             const momentumFactor: number = Random.nextGaussian(0.6, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 50 - 25);
             const randomY: number = this.info.position.y + (Math.random() * 50 - 25);
@@ -234,7 +235,7 @@ class ParticleEffect {
     }
 
     public stealth(info: ParticleEffectInfo) {
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < Math.floor(60 * Game.particleAmount); i++) {
             const momentumFactor: number = Random.nextGaussian(0.9, 0);
             this.particles.push(
                 new Particle(
@@ -255,7 +256,8 @@ class ParticleEffect {
     }
 
     public firestrikeIdle(info: ParticleEffectInfo) {
-        for (let i = 0; i < 5; i++) {
+        let particleFactor: number =  Math.floor(Math.random() + Game.particleAmount) * 5;
+        for (let i = 0; i < particleFactor; i++) {
             const momentumFactor: number = Random.nextGaussian(1, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 110 - 55);
             const randomY: number = this.info.position.y + (Math.random() * 110 - 55);
@@ -276,7 +278,8 @@ class ParticleEffect {
                 ),
             );
         }
-        for (let i = 0; i < 10; i++) {
+        particleFactor =  Math.floor(Math.random() + Game.particleAmount) * 10;
+        for (let i = 0; i < particleFactor; i++) {
             const momentumFactor: number = Random.nextGaussian(1, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 100 - 50);
             const randomY: number = this.info.position.y + (Math.random() * 100 - 50);
@@ -300,7 +303,7 @@ class ParticleEffect {
     }
 
     public firestrikeExplode(info: ParticleEffectInfo) {
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < Math.floor(150 * Game.particleAmount); i++) {
             const direction = Random.nextCircleVector();
             const speed = Random.nextGaussian(1000, 650);
             direction.x *= speed;
@@ -321,7 +324,7 @@ class ParticleEffect {
                 ),
             );
         }
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < Math.floor(150 * Game.particleAmount); i++) {
             const direction = Random.nextCircleVector();
             const speed = Random.nextGaussian(600, 100);
             direction.x *= speed;
@@ -345,7 +348,8 @@ class ParticleEffect {
     }
 
     public fireballIdle(info: ParticleEffectInfo) {
-        for (let i = 0; i < 2; i++) {
+        let particleFactor: number =  Math.floor(Math.random() + Game.particleAmount) * 2;
+        for (let i = 0; i < particleFactor; i++) {
             const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 14 - 7);
             const randomY: number = this.info.position.y + (Math.random() * 14 - 7);
@@ -366,7 +370,8 @@ class ParticleEffect {
                 ),
             );
         }
-        for (let i = 0; i < 2; i++) {
+        particleFactor =  Math.floor(Math.random() + Game.particleAmount) * 2;
+        for (let i = 0; i < particleFactor; i++) {
             const momentumFactor: number = Random.nextGaussian(0.8, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 20 - 10);
             const randomY: number = this.info.position.y + (Math.random() * 20 - 10);
@@ -390,7 +395,8 @@ class ParticleEffect {
     }
 
     public iceIdle(info: ParticleEffectInfo) {
-        for (let i = 0; i < 2; i++) {
+        const particleFactor: number =  Math.floor(Math.random() + Game.particleAmount) * 2;
+        for (let i = 0; i < particleFactor; i++) {
             const momentumFactor: number = Random.nextGaussian(1, 0.3);
             const randomX: number = this.info.position.x + (Math.random() * 20 - 10);
             const randomY: number = this.info.position.y + (Math.random() * 20 - 10);
@@ -414,26 +420,27 @@ class ParticleEffect {
     }
 
     public blizzardIdle(info: ParticleEffectInfo) {
-        const randomX: number = this.info.position.x + (Math.random() * 340 - 160);
-        const randomY: number = this.info.position.y + (Math.random() * 115 - 125);
-
-        const randomSize: number = Math.floor(Math.random() * 3 + 3);
-
-        this.particles.push(
-            new Particle(
-                { x: randomX, y: randomY },
-                {x: info.momentum.x, y: info.momentum.y},
-                "blizzard particle",
-                {width: randomSize, height: randomSize},
-                0.1,
-                0,
-                0.4,
-                info.color,
-                Random.nextGaussian(1.5, 0.1),
-                Random.nextDouble() * Math.PI * 2,
-                0,
-            ),
-        );
+        const particleFactor: number =  Math.floor(Math.random() + Game.particleAmount) * 2;
+        for (let i = 0; i < particleFactor; i++) {
+            const randomX: number = this.info.position.x + (Math.random() * 340 - 160);
+            const randomY: number = this.info.position.y + (Math.random() * 115 - 125);
+            const randomSize: number = Math.floor(Math.random() * 3 + 3);
+                this.particles.push(
+                    new Particle(
+                        { x: randomX, y: randomY },
+                        {x: info.momentum.x, y: info.momentum.y},
+                        "blizzard particle",
+                        {width: randomSize, height: randomSize},
+                        0.1,
+                        0,
+                        0.4,
+                        info.color,
+                        Random.nextGaussian(1.5, 0.1),
+                        Random.nextDouble() * Math.PI * 2,
+                        0,
+                    ),
+                );
+        }
         
     }
 

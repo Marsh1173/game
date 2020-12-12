@@ -30,17 +30,20 @@ body {
     border: 2px solid rgb(124, 125, 138);
     background-color: #778288;
 }
-#instructionMenu {
+#instructionMenu,
+#settingsMenu {
     position: absolute;
     left: 50%;
-    transform: translateX(150px) translateY(50px);
+    transform: translateX(150px) translateY(100px);
     width: 200px;
     padding: 10px;
     border-radius: 10px;
-    border: 2px solid #aaa;
-    background-color: #eee;
+    background-color: #778288;
     text-align: center;
     color: #33424d;
+}
+#settingsMenu {
+    transform: translateX(-350px) translateY(100px);
 }
 #gameDiv {
     width: 100%;
@@ -72,15 +75,19 @@ body {
 }
 
 button {
+    margin-bottom: 10px;
     padding: 5px;
     font-size: 20pt;
     border-radius: 10px;
-    border: 1px solid #aaa;
+    border: none;
     background-color: #eee;
     color: #33424d;
+
+    transition: background-color 0.1s;
 }
 button:hover {
     background-color: #c1c6c9;
+    box-shadow: 0px 0px 3px black;
 }
 button:active {
     background-color: #b5bdc2;
@@ -94,6 +101,14 @@ button:focus {
 .small {
     width: 38px;
 }
+#start {
+    background-color: rgb(61, 201, 43);
+    color: #33424d;
+}
+#start:hover {
+    background-color: rgb(50, 170, 30);
+    color: #000000;
+}
 #color {
     width: 30px;
     height: 30px;
@@ -103,24 +118,36 @@ button:focus {
     overflow: hidden;
 }
 #color:focus,
-#name:focus {
+#name:focus,
+#team:focus {
     outline: none;
 }
 #colorPicker,
-#name {
+#name,
+#teamPicker,
+#particlePicker,
+.instruction {
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: space-between;
+    padding: 5px;
     margin: 5px;
     font-size: 13pt;
     border-radius: 10px;
     border: 1px solid #aaa;
     background-color: rgb(221, 221, 221);
 }
+#particlePicker {
+    flex-direction: column;
+}
 #name {
-    width: 92%;
+    margin: 0px;
+    width: 93.5%;
     font-size: 16pt;
     text-align: center;
+    border: 1px solid rgb(66, 66, 66);
+    background-color: #889399;
+    color: "gray";
 }
 #menuDiv h1,
 p {
@@ -128,8 +155,9 @@ p {
     margin: 0px;
     color: #33424d;
 }
-.selected {
-    background: #c1c6c9;
+.selected,
+.selected:hover {
+    background: #9ba1a3;
 }
 #width {
     width: 98%;
@@ -144,152 +172,11 @@ p {
     width: 33%;
     border: none;
     margin: 1px;
+    margin-bottom: 10px;
     background-color: #929ca1;
     overflow: hidden;
     font-size: small;
 }
 .classSelected {
     background-color: #eee;
-}
-
-#playerInformationBar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 5px;
-    padding: 2px;
-    border-radius: 10px;
-    border: 2px solid rgb(124, 125, 138);
-    background-color: #778288;
-
-    height: 50px;
-}
-#healthContainer,
-#chargeContainer {
-    width: 300px;
-    height: 45px;
-    background-color: #33424d;
-    border: 2px solid #33424d;
-    border-radius: 5px;
-    overflow: hidden;
-    margin: 2px;
-}
-#health,
-#charge {
-    width: 100%;
-    height: 100%;
-    background-color: rgb(201, 0, 0);
-    border-right: 2px solid #ebebeb;
-    border-radius: 1px;
-    transform: translateX(-6px);
-}
-#healthText {
-    position: relative;
-    top: -40px;
-    z-index: 2;
-    font-size: 20pt;
-    left: 90px;
-    color: white;
-    text-shadow: 1px 1px black;
-}
-#xp {
-    width: 100%;
-    height: 10%;
-    background-color: rgb(218, 210, 137);
-    border: 1px solid #2f3e4b;
-    transform: translate(-6px, -36px);
-}
-#level {
-    width: 25px;
-    height: 25px;
-    border: 2px solid #27343d;
-    border-radius: 30px;
-    color: white;
-    font-size: 15pt;
-    text-align: center;
-    overflow: hidden;
-    padding: 1px;
-    text-shadow: 1px 1px black;
-}
-
-#chargeContainer {
-    width: 50%;
-    height: 15px;
-    margin-left: 24%;
-    background-color: #27343d;
-}
-#charge {
-    width: 30%;
-    background-color: rgb(20, 172, 0);
-}
-
-#abilities {
-    display: flex;
-}
-
-.abilityIcon {
-    height: 50px;
-    border: 2px solid #33424d;
-    border-radius: 10px;
-    overflow: hidden;
-
-    margin: 2px;
-    padding: 0px;
-}
-
-.abilityIcon img {
-    padding: 0px;
-    height: 100%;
-
-    user-select: none;
-    -moz-user-select: none;
-    -webkit-user-drag: none;
-    -webkit-user-select: none;
-    -ms-user-select: none;
-}
-
-.abilityCooldown {
-    border-top: 2px solid #ebebeb;
-    border-radius: 3px;
-    position: relative;
-
-    width: 50px;
-    height: 50px;
-
-    left: 0px;
-    top: -3px;
-
-    background-color: black;
-    opacity: 0.9;
-}
-
-.tooltip {
-    position: relative;
-    display: inline-block;
-}
-
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 200px;
-    background-color: rgba(0, 0, 0, 0.596);
-    color: rgb(223, 223, 223);
-    border-radius: 6px;
-    padding: 5px;
-    text-align: center;
-
-    /* Position the tooltip */
-    position: absolute;
-    z-index: 1;
-    bottom: 0%;
-    left: 50%;
-    margin-left: -100px;
-
-    opacity: 0;
-    transition: bottom 0.5s, opacity 1s;
-}
-
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-    bottom: 120%;
 }

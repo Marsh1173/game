@@ -6,17 +6,10 @@
 -
 
 Fix AI programming
-Add items, maybe get rid of classes?
 
-MAKE CUSTOM UI
-Correct the rest of the messages (levelup, die?)
 add particle effects based on the message recieved
-coordinate basic attacks and abilities
-and make basic attacks single-target
-
-put items back in.
+add more weapons
+add talents or ways to change abilities
+add specializations or some way to get specialized abilities
 
 adjust moveSpeedModifier
-get rid of bouncy left-right movement.
-
-add particle# option

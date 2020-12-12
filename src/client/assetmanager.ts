@@ -2,7 +2,9 @@ import { ServerTalker } from "./servertalker";
 
 export type ImageName = "wizard-hat" | "hammer" | "dagger" | "staff" | "axe" | "bow" |
                     "fire" | "ice" | "shuriken" | "meteorstrike" | "arrow" |
-                    "chainsIcon" | "fireballIcon" | "meteorStrikeIcon" | "hammerIcon" | "iceIcon" | "shieldslamIcon" | "shurikenIcon" | "staffIcon" | "stealthIcon" | "poisonedSwordIcon"; 
+                    "chainsIcon" | "fireballIcon" | "meteorStrikeIcon" | "hammerIcon" |
+                    "iceIcon" | "shieldslamIcon" | "shurikenIcon" | "staffIcon" | "stealthIcon" | "poisonedSwordIcon" | 
+                    "axeIcon" | "bowIcon" | "fistIcon" | "blizzardIcon" | "healingAuraIcon" | "chargeIcon"; 
 const imageInformation: Record<ImageName, string> = {
     "wizard-hat": `http://${ServerTalker.hostName}/images/wizard-hat.png`,
     "hammer": `http://${ServerTalker.hostName}/images/hammer.png`,
@@ -25,6 +27,12 @@ const imageInformation: Record<ImageName, string> = {
     "staffIcon": `http://${ServerTalker.hostName}/images/abilities/staffIcon.png`,
     "stealthIcon": `http://${ServerTalker.hostName}/images/abilities/stealthIcon.png`,
     "poisonedSwordIcon": `http://${ServerTalker.hostName}/images/abilities/poisonedSwordIcon.png`,
+    "bowIcon": `http://${ServerTalker.hostName}/images/abilities/bowIcon.png`,
+    "axeIcon": `http://${ServerTalker.hostName}/images/abilities/axeIcon.png`,
+    "fistIcon": `http://${ServerTalker.hostName}/images/abilities/fistIcon.png`,
+    "blizzardIcon": `http://${ServerTalker.hostName}/images/abilities/blizzardIcon.png`,
+    "healingAuraIcon": `http://${ServerTalker.hostName}/images/abilities/healingAuraIcon.png`,
+    "chargeIcon": `http://${ServerTalker.hostName}/images/abilities/chargeIcon.png`,
 };
 
 class AssetManager {

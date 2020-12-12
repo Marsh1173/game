@@ -2,6 +2,7 @@ import { Config } from "../config";
 import { Item } from "../objects/item";
 import { SerializedItem } from "../serialized/item";
 import { assetManager } from "./assetmanager";
+import { Game } from "./game";
 
 export class ClientItem extends Item {
 
@@ -9,6 +10,7 @@ export class ClientItem extends Item {
 
         super(config,          
             info.itemType,
+            info.id,
             info.position,
             info.momentum,
             info.life,);

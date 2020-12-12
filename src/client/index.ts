@@ -6,6 +6,15 @@ import { safeGetElementById } from "./util";
 
 const instructionDiv = safeGetElementById("instructionMenu");
 const instructionButton = safeGetElementById("instructions");
+const settingsDiv = safeGetElementById("settingsMenu");
+const settingsButton = safeGetElementById("settings");
+
+const particleSlider = safeGetElementById("particles");
+const particleAmount = safeGetElementById("particleAmount");
+
+particleSlider.oninput = function() {
+    particleAmount.innerHTML = (particleSlider as HTMLInputElement).value + "%";
+}
 
 let classType: ClassType = "ninja";
 const storageClassType = localStorage.getItem('classType') as ClassType | null;
@@ -27,11 +36,13 @@ safeGetElementById('warrior').onclick = () => {
 
 safeGetElementById("gameDiv").style.display = "none";
 instructionDiv.style.display = "none";
+settingsDiv.style.display = "none";
 
 const savedFields = [
     'name',
     'team',
     'color',
+    'particles'
 ];
 savedFields.forEach(id => {
     const field = safeGetElementById(id) as HTMLInputElement;
@@ -40,6 +51,7 @@ savedFields.forEach(id => {
         field.value = value
     }
 });
+particleAmount.innerHTML = (particleSlider as HTMLInputElement).value + "%";
 
 
 safeGetElementById("start").onclick = async () => {
@@ -47,7 +59,6 @@ safeGetElementById("start").onclick = async () => {
         const field = safeGetElementById(id) as HTMLInputElement;
         localStorage.setItem(id, field.value);
     });
-    //config.playerName = safeGetElementById("name").value; // shows an error but it works?
 
     let name: string = (safeGetElementById("name") as HTMLInputElement).value;
     if (name === "") name = "Player";
@@ -60,9 +71,8 @@ safeGetElementById("start").onclick = async () => {
         team: parseInt((safeGetElementById("team") as HTMLInputElement).value),
     });
     const { id, info, config } = await serverTalker.serverTalkerReady;
-    const game = new Game(info, config, id, serverTalker);
+    const game = new Game(info, config, id, serverTalker, parseInt((particleSlider as HTMLInputElement).value));
     game.start();
-    instructionDiv.style.display = "none";
     safeGetElementById("end").onclick = () => {
         game.end();
     };
@@ -74,6 +84,16 @@ instructionButton.onclick = () => {
     } else {
         instructionDiv.style.display = "none";
         instructionButton.classList.remove("selected");
+    }
+};
+
+settingsButton.onclick = () => {
+    if (settingsDiv.style.display != "none") {
+        settingsDiv.style.display = "none";
+        settingsButton.classList.remove("selected");
+    } else {
+        settingsDiv.style.display = "block";
+        settingsButton.classList.add("selected");
     }
 };
 

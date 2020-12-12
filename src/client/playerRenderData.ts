@@ -83,14 +83,6 @@ export const playerRenderData: Record<ClassType, (ctx: CanvasRenderingContext2D,
     },
 }
 
-/*export const playerRenderWeapon: Record<ClassType, (ctx: CanvasRenderingContext2D, img: HTMLImageElement) => void> = {
-    "ninja": (ctx) => {},
-    "wizard": (ctx) => {},
-    "warrior": (ctx) => {},
-    "axeai": (ctx) => {},
-    "archerai": (ctx) => {},
-}*/
-
 export const playerRenderFirstAbilityPointer: Record<ClassType, (ctx: CanvasRenderingContext2D) => void> = {
     "ninja": (ctx) => {},
     "wizard": (ctx) => {},
@@ -99,32 +91,22 @@ export const playerRenderFirstAbilityPointer: Record<ClassType, (ctx: CanvasRend
     "archerai": (ctx) => {},
 }
 
-export function renderPlayerOrItemFocus(ctx: CanvasRenderingContext2D, originalPlayer: Player, players: Player[], items: Item[]) {
-    let targetPlayer: Player | undefined;
+export function renderPlayerOrItemFocus(ctx: CanvasRenderingContext2D, player: Player, items: Item[]) {
+
     let targetItem: Item | undefined;
-    let targetPlayerDistanceFromCursor: number | undefined;
     let targetItemDistanceFromCursor: number | undefined;
-    players.forEach((player) => {
-        if (!player.isDead && !player.effects.isStealthed && player.team != originalPlayer.team) {
-            const distanceFromCursor: number = Math.sqrt(Math.pow(player.position.x + player.size.width / 2 - originalPlayer.focusPosition.x, 2) + Math.pow(player.position.y + player.size.height / 2 - originalPlayer.focusPosition.y, 2));
-            if ((!targetPlayer && distanceFromCursor < 100) || (targetPlayer && targetPlayerDistanceFromCursor && distanceFromCursor < targetPlayerDistanceFromCursor)) {
-                targetPlayer = player;
-                targetPlayerDistanceFromCursor = distanceFromCursor;
-            }
-        }
-    });
+    
     items.forEach((item) => {
-        const distanceFromCursor: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - originalPlayer.focusPosition.x, 2) + Math.pow(item.position.y + item.itemSize / 2 - originalPlayer.focusPosition.y, 2));
-        const distanceFromPlayer: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - originalPlayer.position.x - originalPlayer.size.width / 2, 2) + Math.pow(item.position.y + item.itemSize / 2 - originalPlayer.position.y - originalPlayer.size.height / 2, 2));
-        if ((!targetItem && distanceFromCursor < 10 && distanceFromPlayer < 60) || (targetItem && targetItemDistanceFromCursor && distanceFromCursor < targetItemDistanceFromCursor)) {
+        const distanceFromCursor: number = Math.sqrt(Math.pow(item.position.x + item.itemSize / 2 - player.focusPosition.x, 2) + Math.pow(item.position.y + item.itemSize / 2 - player.focusPosition.y, 2));
+        if ((!targetItem && distanceFromCursor < 20) || (targetItem && targetItemDistanceFromCursor && distanceFromCursor < targetItemDistanceFromCursor)) {
             
             targetItem = item;
             targetItemDistanceFromCursor = distanceFromCursor;
         }
     });
-    if (targetItem) {
+    if (targetItem && Math.sqrt(Math.pow(targetItem.position.x + targetItem.itemSize / 2 - player.position.x - player.size.width / 2, 2) + Math.pow(targetItem.position.y + targetItem.itemSize / 2 - player.position.y - player.size.height / 2, 2)) < 150) {
         ctx.save()
-        ctx.fillStyle = "red";
+        ctx.fillStyle = "cyan";
         ctx.shadowBlur = 2;
         ctx.shadowColor = "black";
         ctx.beginPath();
@@ -149,35 +131,6 @@ export function renderPlayerOrItemFocus(ctx: CanvasRenderingContext2D, originalP
         ctx.moveTo(targetItem.position.x + targetItem.itemSize, targetItem.position.y + targetItem.itemSize);
         ctx.lineTo(targetItem.position.x + targetItem.itemSize, targetItem.position.y + targetItem.itemSize - 5);
         ctx.lineTo(targetItem.position.x + targetItem.itemSize - 5, targetItem.position.y + targetItem.itemSize);
-        ctx.fill();
-        ctx.restore();
-    } else if (targetPlayer) {
-        ctx.save()
-        ctx.fillStyle = "red";
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "black";
-        ctx.beginPath();
-        ctx.moveTo(targetPlayer.position.x, targetPlayer.position.y);
-        ctx.lineTo(targetPlayer.position.x, targetPlayer.position.y + 15);
-        ctx.lineTo(targetPlayer.position.x + 10, targetPlayer.position.y);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(targetPlayer.position.x + targetPlayer.size.width, targetPlayer.position.y);
-        ctx.lineTo(targetPlayer.position.x + targetPlayer.size.width, targetPlayer.position.y + 15);
-        ctx.lineTo(targetPlayer.position.x + targetPlayer.size.width - 10, targetPlayer.position.y);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(targetPlayer.position.x, targetPlayer.position.y + targetPlayer.size.height);
-        ctx.lineTo(targetPlayer.position.x, targetPlayer.position.y + targetPlayer.size.height - 15);
-        ctx.lineTo(targetPlayer.position.x + 10, targetPlayer.position.y + targetPlayer.size.height);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(targetPlayer.position.x + targetPlayer.size.width, targetPlayer.position.y + targetPlayer.size.height);
-        ctx.lineTo(targetPlayer.position.x + targetPlayer.size.width, targetPlayer.position.y + targetPlayer.size.height - 15);
-        ctx.lineTo(targetPlayer.position.x + targetPlayer.size.width - 10, targetPlayer.position.y + targetPlayer.size.height);
         ctx.fill();
         ctx.restore();
     }

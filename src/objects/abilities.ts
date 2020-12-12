@@ -1,88 +1,54 @@
 import { ImageName } from "../client/assetmanager";
+import { findAngle } from "../findAngle";
+import { getWeaponStats, Weapon } from "../weapon";
 import { Platform } from "./platform";
-import { Player, PlayerAbilityClass } from "./player";
-
+import { Player, PlayerAbilityType } from "./player";
 
 export type PlayerAbilities = "basicAttack" | "secondaryAttack" | "firstAbility" | "secondAbility" | "thirdAbility";
 export type AbilityName = "none" | "basicAttack" | "shurikenToss" | "stealth" | "blizzard" | "meteorStrike" | "iceShard" | "healingAura" | "chains" | "shieldSlam" | "charge";
-export type AbilityCastReqs = "onClick" | "onClickRepeat" | "onCharge" | "onChargeRepeat" | "onRelease";
+export type AbilityCastReq = "onClick" | "onClickRepeat" | "onCharge" | "onChargeRepeat" | "onRelease";
 
-class AbilityClass {
-    abilityName: AbilityName;
-    abilityCastReqs: AbilityCastReqs;
-    cooldown: number;
-    chargeReq: number;
-
-    constructor(
-        abilityName: AbilityName,
-        abilityCastReqs: AbilityCastReqs,
-        cooldown: number,
-        chargeReq: number = 0,
-        ) {
-        this.abilityName = abilityName;
-        this.abilityCastReqs = abilityCastReqs;
-        this.cooldown = cooldown;
-        this.chargeReq = chargeReq;
-    }
+export type AbilityType = {
+    abilityCastReq: AbilityCastReq,
+    cooldownReq: number,
+    chargeReq: number,
 }
 
-export const abilities: AbilityClass[] = [
-    new AbilityClass ("none", "onClick", 1),
-    new AbilityClass ("basicAttack", "onClickRepeat", 1),
-    new AbilityClass ("shurikenToss", "onClickRepeat", 2.5),
-    new AbilityClass ("stealth", "onCharge", 1, 0.25),
-    new AbilityClass ("blizzard", "onRelease", 1, 0.25),
-    new AbilityClass ("meteorStrike", "onRelease", 1, 0.25),
-    new AbilityClass ("iceShard", "onChargeRepeat", 1, 0.3),
-    new AbilityClass ("healingAura", "onRelease", 1, 0.25),
-    new AbilityClass ("chains", "onClick", 1),
-    new AbilityClass ("shieldSlam", "onClick", 1),
-    new AbilityClass ("charge", "onClick", 1),
-];
+export function updateAndCheckAbilites(elapsedTime: number, player: Player, ability: PlayerAbilityType, whichAbility: PlayerAbilities) {
+    if (ability.abilityName === "none") return;
 
-export function findCorrespondingAbility(abilityName: AbilityName): AbilityClass {
-    for (let i = 0; i < abilities.length; i++) {
-        if (abilities[i].abilityName === abilityName) return abilities[i];
-    }
-    console.log("Error, couldn't find " + abilityName);
-    return abilities[0];
-}
-
-export function updateAndCheckAbilites(elapsedTime: number, player: Player, ability: PlayerAbilityClass, whichAbility: PlayerAbilities) {
-    if (whichAbility === "basicAttack") {
-        updateAndCheckBasicAttack(elapsedTime, player, ability);
-        return;
-    } else if (ability.abilityName === "none") return;
-
-    const abilityType: AbilityClass = findCorrespondingAbility(ability.abilityName);
-
-    if ((((abilityType.abilityCastReqs === "onClick" || abilityType.abilityCastReqs === "onClickRepeat") && ability.isCharging === true) || 
-    ((abilityType.abilityCastReqs === "onCharge" || abilityType.abilityCastReqs === "onChargeRepeat") && ability.isCharging === true && ability.chargeAmount >= abilityType.chargeReq) || 
-    ((abilityType.abilityCastReqs === "onRelease") && ability.isCharging === false && ability.chargeAmount >= abilityType.chargeReq)) &&
-    ability.cooldown <= 0) { // if it meets the requirements for any type
+    if ((((ability.abilityType.abilityCastReq === "onClick" || ability.abilityType.abilityCastReq === "onClickRepeat") && ability.isCharging === true) || 
+    ((ability.abilityType.abilityCastReq === "onCharge" || ability.abilityType.abilityCastReq === "onChargeRepeat") && ability.isCharging === true && ability.chargeAmount >= ability.abilityType.chargeReq) || 
+    ((ability.abilityType.abilityCastReq === "onRelease") && ability.isCharging === false && ability.chargeAmount >= ability.abilityType.chargeReq)) &&
+    ability.cooldown <= 0) { // if it meets the requirements for its type
 
         //console.log(ability.abilityName);
         
         switch (whichAbility) {
+            case "basicAttack" : 
+                player.actionsNextFrame.basicAttack = true;
+                break;
             case "secondaryAttack" : 
-            player.actionsNextFrame.secondaryAttack = true;
-            break;
+                player.actionsNextFrame.secondaryAttack = true;
+                break;
             case "firstAbility" : 
-            player.actionsNextFrame.firstAbility = true;
-            break;
+                player.actionsNextFrame.firstAbility = true;
+                break;
             case "secondAbility" : 
-            player.actionsNextFrame.secondAbility = true;
-            break;
+                player.actionsNextFrame.secondAbility = true;
+                break;
             case "thirdAbility" : 
-            player.actionsNextFrame.thirdAbility = true;
-            break;
+                player.actionsNextFrame.thirdAbility = true;
+                break;
             default: console.log("Ability update error!");
         }
         
-        if (abilityType.abilityCastReqs != "onChargeRepeat" && abilityType.abilityCastReqs != "onClickRepeat") ability.isCharging = false;
-        ability.cooldown = abilityType.cooldown;
+        if (ability.abilityType.abilityCastReq != "onChargeRepeat" && ability.abilityType.abilityCastReq != "onClickRepeat")
+            ability.isCharging = false;
+        ability.cooldown = ability.abilityType.cooldownReq;
         ability.chargeAmount = 0;
-    } else if (ability.isCharging && abilityType.abilityCastReqs != "onClick" && abilityType.abilityCastReqs != "onClickRepeat" && ability.cooldown <= 0) {
+
+    } else if (ability.isCharging && ability.abilityType.abilityCastReq != "onClick" && ability.abilityType.abilityCastReq != "onClickRepeat" && ability.cooldown <= 0) {
         ability.chargeAmount += elapsedTime;
     } else if (ability.chargeAmount != 0) {
         ability.chargeAmount = 0;
@@ -92,43 +58,28 @@ export function updateAndCheckAbilites(elapsedTime: number, player: Player, abil
     else if (ability.cooldown < 0) ability.cooldown = 0;
 }
 
-function updateAndCheckBasicAttack(elapsedTime: number, player: Player, ability: PlayerAbilityClass) {
-
-    if (ability.cooldown <= 0 && ability.isCharging === true) player.actionsNextFrame.basicAttack = true;
-
-    if (ability.cooldown > 0) ability.cooldown -= elapsedTime;
-    else if (ability.cooldown < 0) ability.cooldown = 0;
-}
-
 export function cancelAbilites(player: Player) {
-    player.abilities[0].chargeAmount = 0;
-    player.abilities[1].chargeAmount = 0;
-    player.abilities[2].chargeAmount = 0;
-    player.abilities[3].chargeAmount = 0;
-    player.abilities[4].chargeAmount = 0;
+    player.playerAbilities[0].chargeAmount = 0;
+    player.playerAbilities[1].chargeAmount = 0;
+    player.playerAbilities[2].chargeAmount = 0;
+    player.playerAbilities[3].chargeAmount = 0;
+    player.playerAbilities[4].chargeAmount = 0;
 
-    player.abilities[0].isCharging = false;
-    player.abilities[1].isCharging = false;
-    player.abilities[2].isCharging = false;
-    player.abilities[3].isCharging = false;
-    player.abilities[4].isCharging = false;
+    player.playerAbilities[0].isCharging = false;
+    player.playerAbilities[1].isCharging = false;
+    player.playerAbilities[2].isCharging = false;
+    player.playerAbilities[3].isCharging = false;
+    player.playerAbilities[4].isCharging = false;
 }
 
-export const AbilityFunction: Record<AbilityName, (player: Player, players: Player[], platforms: Platform[]) => void> = {
-    "none": (originalPlayer, players) => {
-        console.log("Tried to 'none' for their ability?");
-    },
-    "basicAttack": (originalPlayer, players) => {
-        console.log("Tried to basic attack for their ability?");
-    },
+export const AbilityCastFunction: Record<AbilityName, (player: Player, players: Player[], platforms: Platform[]) => void> = {
+    "none": () => {},
+    "basicAttack": () => {},
     "shurikenToss": (player) => {
-        let newX: number = player.focusPosition.x - player.position.x - player.size.width / 2;
-        let newY: number = player.focusPosition.y - player.position.y - player.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
+        const angle: number = findAngle({x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2}, player.focusPosition);
 
-        player.momentum.x += player.momentum.x / 2 - 1000 * Math.cos(angle);
-        player.momentum.y += player.momentum.y / 2 - 1000 * Math.sin(angle);
+        player.momentum.x += player.momentum.x / 2 - 800 * Math.cos(angle);
+        player.momentum.y += player.momentum.y / 2 - 800 * Math.sin(angle);
 
         player.doProjectile(
             "shuriken",
@@ -188,10 +139,7 @@ export const AbilityFunction: Record<AbilityName, (player: Player, players: Play
         );
     },
     "iceShard": (player) => {
-        let newX: number = player.focusPosition.x - player.position.x - player.size.width / 2;
-        let newY: number = player.focusPosition.y - player.position.y - player.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
+        const angle: number = findAngle({x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2}, player.focusPosition);
 
         player.doProjectile(
             "ice",
@@ -214,10 +162,7 @@ export const AbilityFunction: Record<AbilityName, (player: Player, players: Play
         }, 200);
     },
     "healingAura": (player) => {
-        let newX: number = player.focusPosition.x - player.position.x - player.size.width / 2;
-        let newY: number = player.focusPosition.y - player.position.y - player.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
+        const angle: number = findAngle({x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2}, player.focusPosition);
 
         player.doTargetedProjectile(
             "healingAura",
@@ -232,10 +177,7 @@ export const AbilityFunction: Record<AbilityName, (player: Player, players: Play
         );
     },
     "chains": (player) => {
-        let newX: number = player.focusPosition.x - player.position.x - player.size.width / 2;
-        let newY: number = player.focusPosition.y - player.position.y - player.size.height / 2;
-        let angle: number = Math.atan(newY / newX);
-        if (newX < 0) angle += Math.PI;
+        const angle: number = findAngle({x: player.position.x + player.size.width / 2, y: player.position.y + player.size.height / 2}, player.focusPosition);
 
         player.doTargetedProjectile(
             "chains",
@@ -277,30 +219,58 @@ export const AbilityFunction: Record<AbilityName, (player: Player, players: Play
     },
 }
 
+export function getAbilityStats(abilityName: AbilityName, weapon: Weapon): AbilityType {
+    switch (abilityName) {
+        case "none" :
+            return {abilityCastReq: "onClick", cooldownReq: 1, chargeReq: 0,};
+        case "basicAttack" :
+            return getWeaponStats(weapon);
+        case "shurikenToss" :
+            return {abilityCastReq: "onClickRepeat", cooldownReq: 1, chargeReq: 0,};
+        case "stealth" :
+            return {abilityCastReq: "onCharge", cooldownReq: 1, chargeReq: 0.25,};
+        case "blizzard" :
+            return {abilityCastReq: "onRelease", cooldownReq: 1, chargeReq: 0.25,};
+        case "meteorStrike" :
+            return {abilityCastReq: "onRelease", cooldownReq: 1, chargeReq: 0.25,};
+        case "iceShard" :
+            return {abilityCastReq: "onChargeRepeat", cooldownReq: 1, chargeReq: 0.25,};
+        case "healingAura" :
+            return {abilityCastReq: "onRelease", cooldownReq: 1, chargeReq: 0.25,};
+        case "chains" :
+            return {abilityCastReq: "onClick", cooldownReq: 1, chargeReq: 0,};
+        case "shieldSlam" :
+            return {abilityCastReq: "onClick", cooldownReq: 1, chargeReq: 0,};
+        case "charge" :
+            return {abilityCastReq: "onClick", cooldownReq: 1, chargeReq: 0,};
+        default :
+            return {abilityCastReq: "onClick", cooldownReq: 1, chargeReq: 0,};
+    }
+}
+
 export function getAbilityIcon(abilityName: AbilityName): ImageName {
     switch (abilityName) {
         case "none" :
-            return "iceIcon";//
+            return "fistIcon";
         case "shurikenToss" :
             return "shurikenIcon";
         case "stealth" :
             return "stealthIcon";
         case "blizzard" :
-            return "iceIcon";//
+            return "blizzardIcon";
         case "meteorStrike" :
             return "meteorStrikeIcon";
         case "iceShard" :
             return "iceIcon";
         case "healingAura" :
-            return "iceIcon";//
+            return "healingAuraIcon";
         case "chains" :
             return "chainsIcon";
         case "shieldSlam" :
             return "shieldslamIcon";
         case "charge" :
-            return "iceIcon";//
+            return "chargeIcon";
         default :
-            return "iceIcon";//
-
+            return "fistIcon";
     }
 }

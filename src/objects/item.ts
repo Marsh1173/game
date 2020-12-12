@@ -9,7 +9,7 @@ import { Player } from "./player";
 export type ItemType = "nullItem" | "bow" | "dagger" | "staff" | "axe" | "hammer";
 
 export function getRandomWeapon(): ItemType {
-    const random: number = Math.floor(Math.random() * 20);
+    const random: number = Math.floor(Math.random() * 10);
     switch (random) {
         case 0 : 
             return "bow";
@@ -22,7 +22,7 @@ export function getRandomWeapon(): ItemType {
         case 4 : 
             return "hammer";
         default : 
-            return "hammer";
+            return "nullItem";
     }
 }
 
@@ -30,9 +30,11 @@ export abstract class Item {
 
     public itemSize: number = 25;
     public totalLife: number;
+    private ifOnGround: boolean = false;
 
     constructor(public readonly config: Config,
         public itemType: ItemType,
+        public id: number,
         public position: Vector,
         public momentum: Vector,
         public life: number,
@@ -43,82 +45,140 @@ export abstract class Item {
     public serialize(): SerializedItem {
         return {
             itemType: this.itemType,
+            id: this.id,
             position: this.position,
             momentum: this.momentum,
             life: this.life,
         };
     }
 
-    public pickUp(player: Player) {
+    public pickUp(player: Player): boolean {
         switch (this.itemType) {
             case "dagger" :
                 player.weaponEquipped = "dagger";
-                this.life = 0;
-                break;
+                return true;
             case "staff" :
                 player.weaponEquipped = "staff";
-                this.life = 0;
-                break;
+                return true;
             case "hammer" :
                 player.weaponEquipped = "hammer";
-                this.life = 0;
-                break;
+                return true;
             case "axe" :
                 player.weaponEquipped = "axe";
-                this.life = 0;
-                break;
+                return true;
             case "bow" :
                 player.weaponEquipped = "bow";
-                this.life = 0;
-                break;
+                return true;
+            default :
+                return false;
         }
     }
 
-    public checkCollisionWithRectangularObject(object: { size: Size; position: Vector }, elapsedTime: number): boolean {
+    private checkCollisionWithRectangularObject(object: { size: Size; position: Vector }, elapsedTime: number) {
         let futurePosX = this.position.x + this.momentum.x * elapsedTime;
-        let futurePosY = this.position.y + this.momentum.y * elapsedTime + 10;
+        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (
             futurePosX < object.position.x + object.size.width &&
             futurePosX + this.itemSize > object.position.x &&
-            futurePosY <= object.position.y + object.size.height &&
-            futurePosY + this.itemSize >= object.position.y
+            futurePosY < object.position.y + object.size.height &&
+            futurePosY + this.itemSize > object.position.y
         ) {
-            if (this.momentum.y >= 10) {
-                this.momentum.y /= 1.2;
-                this.momentum.y -= elapsedTime * 2000;
-                this.momentum.x /= 1.05;
-                this.position.y = object.position.y - this.itemSize - 10;
-                return true;
-            } else if (this.momentum.y >= -10) {
-                this.momentum.y = 0;
-                this.momentum.x /= 1.05;
-                this.position.y = object.position.y - this.itemSize - 10;
-                return true;
-            } else {
-                this.momentum.y *= -0.8;
+            const points: Vector[] = [
+                {
+                    // above
+                    x: this.position.x,
+                    y: object.position.y - this.itemSize,
+                },
+                {
+                    // below
+                    x: this.position.x,
+                    y: object.position.y + object.size.height,
+                },
+                {
+                    // left
+                    x: object.position.x - this.itemSize,
+                    y: this.position.y,
+                },
+                {
+                    // right
+                    x: object.position.x + object.size.width,
+                    y: this.position.y,
+                },
+            ];
+
+            const distances = points.map((point) => Math.sqrt((point.x - this.position.x) ** 2 + (point.y - this.position.y) ** 2));
+
+            let smallest = distances[0];
+            let smallestIndex = 0;
+            distances.forEach((distance, i) => {
+                if (distance < smallest) {
+                    smallest = distance;
+                    smallestIndex = i;
+                }
+            });
+
+            this.position.x = points[smallestIndex].x;
+            this.position.y = points[smallestIndex].y;
+            switch (smallestIndex) {
+                case 0: // above
+                    if (this.momentum.y > 0) this.momentum.y = 0;
+                    this.ifOnGround = true;
+                    break;
+                case 1: // below
+                    if (this.momentum.y < 0) this.momentum.y = 0;
+                    break;
+                case 2: // left
+                    if (this.momentum.x > 0) this.momentum.x = 0;
+                    break;
+                case 3: // right
+                    if (this.momentum.x < 0) this.momentum.x = 0;
+                    break;
             }
         }
-        return false;
+    }
+
+    private checkCollisionWithItem(item: Item) {
+        if (
+            this.position.x < item.position.x + item.itemSize &&
+            this.position.x + this.itemSize > item.position.x &&
+            this.position.y < item.position.y + item.itemSize &&
+            this.position.y + this.itemSize > item.position.y
+        ) {
+            const xDistance: number = (item.position.x - this.position.x);
+            if (xDistance > 0) this.momentum.x -= 20;
+            else this.momentum.x += 20;
+        }
     }
 
     public checkSideCollision(elapsedTime: number) {
         let futurePosX = this.position.x + this.momentum.x * elapsedTime;
-        let futurePosY = this.position.y + this.momentum.y * elapsedTime + 20;
+        let futurePosY = this.position.y + this.momentum.y * elapsedTime;
         if (futurePosX + this.itemSize > this.config.xSize || futurePosX < 0) this.momentum.x *= -0.9;
-        if (futurePosY + this.itemSize > this.config.ySize || futurePosY < 0) this.momentum.y *= -0.4;
+        if (futurePosY + this.itemSize > this.config.ySize || futurePosY < 0) {
+            this.position.y = this.config.ySize - this.itemSize;
+            this.momentum.y = 0;
+            this.ifOnGround = true;
+        }
     }
 
-    public update(elapsedTime: number, platforms: Platform[]) {
+    public update(elapsedTime: number, platforms: Platform[], items: Item[]) {
 
         this.life -= elapsedTime;
         
-        var ifOnGround: boolean = false;
+        this.ifOnGround = false;
         platforms.forEach((platform) => {
-            if (this.checkCollisionWithRectangularObject(platform, elapsedTime)) ifOnGround = true;
+            (this.checkCollisionWithRectangularObject(platform, elapsedTime))
+        });
+        items.forEach((item) => {
+            if (item != this) this.checkCollisionWithItem(item);
         });
         this.checkSideCollision(elapsedTime);
         
-        if (!ifOnGround) this.momentum.y += elapsedTime * 700;
+        if (!this.ifOnGround) this.momentum.y += elapsedTime * 700;
+        else {
+            if (Math.abs(this.momentum.x) < 10) this.momentum.x = 0;
+            else this.momentum.x *= 1 - elapsedTime * 10;
+        }
 
         this.position.x += this.momentum.x * elapsedTime;
         this.position.y += this.momentum.y * elapsedTime;

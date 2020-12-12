@@ -10,8 +10,6 @@ import { Vector } from "../vector";
 import { Game } from "./game";
 import { ServerPlayer } from "./player";
 
-export type AIstate = "pacified" | "aggroed";
-
 export class PlayerAI extends ServerPlayer {
 
     private targetedPlayer?: Player; // the ai's current target
@@ -29,7 +27,7 @@ export class PlayerAI extends ServerPlayer {
         config: Config,id: number,team: number,name: string,color: string,classType: AiClassType,position: Vector,
         doProjectile: (projectileType: ProjectileType,damageType: DamageType,damage: number,id: number,team: number,position: Vector,momentum: Vector,fallSpeed: number,knockback: number,range: number,life: number,inGround: boolean) => void,
         doTargetedProjectile: (targetedProjectileType: TargetedProjectileType,id: number,team: number,position: Vector,momentum: Vector,destination: Vector,isDead: boolean,life: number,) => void,
-        doItem: (itemType: ItemType,position: Vector,momentum: Vector,life: number,) => void,
+        doItem: (itemType: ItemType, id: number, position: Vector,momentum: Vector,life: number,) => void,
     ) {
 
         super(config,id,team,name,color,classType,{x: position.x,y: position.y},doProjectile,doTargetedProjectile,doItem);
@@ -136,60 +134,38 @@ export class PlayerAI extends ServerPlayer {
 
 
     protected broadcastActions() {
-
-        if (this.actionsNextFrame.jump) {
-            Game.broadcastMessage({
-                type: "serverJump",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.moveLeft) {
-            Game.broadcastMessage({
-                type: "serverMoveLeft",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.moveRight) {
-            Game.broadcastMessage({
-                type: "serverMoveRight",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.basicAttack) {
-            Game.broadcastMessage({
-                type: "serverBasicAttack",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.secondaryAttack) {
-            Game.broadcastMessage({
-                type: "serverSecondaryAttack",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.firstAbility) {
-            Game.broadcastMessage({
-                type: "serverFirstAbility",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.secondAbility) {
-            Game.broadcastMessage({
-                type: "serverSecondAbility",
-                id: this.id,
-            });
-        }
-        if (this.actionsNextFrame.thirdAbility) {
-            Game.broadcastMessage({
-                type: "serverThirdAbility",
-                id: this.id,
-            });
-        }
+        Game.broadcastMessage({
+            type: "serverPlayerActions",
+            id: this.id,
+            moveRight: this.actionsNextFrame.moveRight,
+            moveLeft: this.actionsNextFrame.moveLeft,
+            jump: this.actionsNextFrame.jump,
+            basicAttack: this.actionsNextFrame.basicAttack,
+            secondaryAttack: this.actionsNextFrame.secondaryAttack,
+            firstAbility: this.actionsNextFrame.firstAbility,
+            secondAbility: this.actionsNextFrame.secondAbility,
+            thirdAbility: this.actionsNextFrame.thirdAbility,
+            die: this.actionsNextFrame.die,
+            level: this.actionsNextFrame.level,
+    
+            focusPosition: this.focusPosition,
+            position: this.position,
+            health: this.health,
+        });
         if (this.actionsNextFrame.die) {
-            Game.broadcastMessage({
-                type: "serverDie",
-                id: this.id,
-            });
+            const droppedWeapon: ItemType = getRandomWeapon();
+            if (droppedWeapon != "nullItem") {
+                Game.broadcastMessage({
+                    type: "serverItemMessage",
+                    itemType: droppedWeapon,
+                    id: Game.itemId,
+                    position: {x: this.position.x + 15, y: this.position.y + 15},
+                    momentum: {x: 0, y: -100},
+                    life: 10,
+                });
+                this.doItem(droppedWeapon, Game.itemId, {x: this.position.x + 15, y: this.position.y + 15}, {x: 0, y: -100}, 20);
+                Game.itemId++;
+            }
         }
         
         super.broadcastActions();

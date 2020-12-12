@@ -56,7 +56,7 @@ export const defaultConfig: Config = {
     platformColor: "grey",
     fallingAcceleration: 3500,
     standingSidewaysAcceleration: 10000,
-    nonStandingSidewaysAcceleration: 2000,
-    maxSidewaysMomentum: 700,
+    nonStandingSidewaysAcceleration: 4000,
+    maxSidewaysMomentum: 600,
     gameSpeed: 1,
 };
